@@ -1,0 +1,16 @@
+{
+  "name": "cash-track-types",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "node ../node_modules/typescript/bin/tsc -b",
+    "watch": "pnpm build -w"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "prettier": "^2.6.2"
+  }
+}
