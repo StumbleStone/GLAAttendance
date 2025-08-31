@@ -45,9 +45,12 @@ export const QRCode: React.FC<QRCodeProps> = (props: QRCodeProps) => {
       el.width = QR_SIZE;
       el.height = QR_SIZE;
 
-      const dtx = el.getContext("2d");
+      const ctx: CanvasRenderingContext2D = el.getContext("2d")!;
+      ctx.font = "24px monospace";
 
-      dtx?.drawImage(qrCode, 0, 0, QR_SIZE, QR_SIZE);
+      const len = ctx.measureText(dataString)?.width || 0;
+      ctx.drawImage(qrCode, 0, 0, QR_SIZE, QR_SIZE);
+      ctx.fillText(dataString, QR_SIZE / 2 - len / 2, 24);
     });
   }, [qrCode]);
 

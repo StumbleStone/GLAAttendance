@@ -1,10 +1,11 @@
 import * as React from "react";
 
 import styled from "@emotion/styled";
-import { faCartPlus } from "@fortawesome/free-solid-svg-icons";
+import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { useOutletContext } from "react-router-dom";
+import { AttendeeAddWindow } from "../Attendees/AttendeeAddWindow";
 import { AttendeesTable } from "../Attendees/AttendeesTable";
-import { AtendeeWindow } from "../Attendees/AttendeeWindow";
+import { AttendeeWindow } from "../Attendees/AttendeeWindow";
 import { CaptureButton } from "../Capture/CaptureButton";
 import { CaptureWindow } from "../Capture/CaptureWindow";
 import { FAB } from "../Components/FloatingActionButton/FAB";
@@ -38,12 +39,14 @@ export const Dashboard: React.FC = (props) => {
   const fabItems = React.useCallback((close: () => void) => {
     return [
       <FABItem
-        key="addC"
+        key="addAtt"
         close={close}
-        icon={faCartPlus}
-        label={"Add Category"}
+        icon={faUserPlus}
+        label={"Add Attendee"}
         onClick={() => {
-          LayerHandler.AddLayer((item: LayerItem) => null);
+          LayerHandler.AddLayer((item: LayerItem) => (
+            <AttendeeAddWindow layerItem={item} supabase={supabase} />
+          ));
         }}
       />,
     ];
@@ -51,7 +54,13 @@ export const Dashboard: React.FC = (props) => {
 
   const clickedAttendee = React.useCallback((entry: AttendeesEntry) => {
     LayerHandler.AddLayer((layerItem: LayerItem) => {
-      return <AtendeeWindow layerItem={layerItem} entry={entry} />;
+      return (
+        <AttendeeWindow
+          layerItem={layerItem}
+          entry={entry}
+          supabase={supabase}
+        />
+      );
     });
   }, []);
 

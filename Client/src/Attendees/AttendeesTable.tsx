@@ -1,5 +1,15 @@
 import styled from "@emotion/styled";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from "react";
+import { Table } from "../Components/Table/Table";
+import { TableCell } from "../Components/Table/TableCell";
+import { TableHeading } from "../Components/Table/TableHeading";
+import { TableRow } from "../Components/Table/TableRow";
 import {
   AttendeesEntry,
   SupaBase,
@@ -24,29 +34,28 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 ) => {
   const { supabase, filter, onClickedAttendee } = props;
 
-  const [attendees, setAttendees] = useState<AttendeesEntry[]>(
-    supabase.attendees
-  );
-
   const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.NAME);
   const [sortAsc, setSortAsc] = useState<boolean>(true);
 
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+
   useEffect(() => {
     const l = supabase.addListener({
-      [SupaBaseEventKey.LOADED_ATTENDEES]: (attendees) =>
-        setAttendees(attendees),
+      [SupaBaseEventKey.LOADED_ATTENDEES]: () => forceUpdate(),
+      [SupaBaseEventKey.DELETED_ATTENDEES]: () => forceUpdate(),
+      [SupaBaseEventKey.ADDED_ATTENDEES]: () => forceUpdate(),
     });
 
     return l;
   }, []);
 
   const filtered = useMemo<AttendeesEntry[]>(() => {
-    if (!attendees || attendees.length == 0) {
+    if (!supabase.attendees || supabase.attendees.length == 0) {
       return [];
     }
 
     if (!filter || filter == "") {
-      return attendees;
+      return supabase.attendees;
     }
 
     let outArr: AttendeesEntry[] = [];
@@ -55,7 +64,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       .toLowerCase()
       .split(/ +/)
       .forEach((part) => {
-        attendees.forEach((att) => {
+        supabase.attendees.forEach((att) => {
           if (
             att.name?.toLowerCase().includes(part) ||
             att.surname?.toLowerCase().includes(part)
@@ -66,7 +75,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       });
 
     return outArr;
-  }, [filter, attendees]);
+  }, [filter, supabase.attendees]);
 
   const handleClickCol = useCallback(
     (name: SortColumns) => {
@@ -110,28 +119,47 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 
   return (
     <S.TableContainer>
-      <S.Table>
+      <Table>
         <tbody>
-          <S.Row key="heading">
-            <S.Heading onClick={() => handleClickCol(SortColumns.NAME)}>
+          <TableRow key="heading">
+            <TableHeading
+              color={
+                sortCol === SortColumns.NAME
+                  ? DefaultColors.BrightGreen
+                  : undefined
+              }
+              onClick={() => handleClickCol(SortColumns.NAME)}
+            >
               Name
-            </S.Heading>
-            <S.Heading onClick={() => handleClickCol(SortColumns.SURNAME)}>
+            </TableHeading>
+            <TableHeading
+              color={
+                sortCol === SortColumns.SURNAME
+                  ? DefaultColors.BrightGreen
+                  : undefined
+              }
+              onClick={() => handleClickCol(SortColumns.SURNAME)}
+            >
               Surname
-            </S.Heading>
-            <S.Heading
+            </TableHeading>
+            <TableHeading
+              color={
+                sortCol === SortColumns.STATUS
+                  ? DefaultColors.BrightGreen
+                  : undefined
+              }
               onClick={() => handleClickCol(SortColumns.STATUS)}
-            ></S.Heading>
-          </S.Row>
+            ></TableHeading>
+          </TableRow>
           {sorted.map((att) => (
-            <S.Row key={att.id} onClick={() => onClickedAttendee(att)}>
+            <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
               <S.NameCell>{att.name}</S.NameCell>
               <S.NameCell>{att.surname}</S.NameCell>
               <S.Cell></S.Cell>
-            </S.Row>
+            </TableRow>
           ))}
         </tbody>
-      </S.Table>
+      </Table>
     </S.TableContainer>
   );
 };
@@ -141,47 +169,11 @@ namespace S {
     color: ${DefaultColors.Text_Color};
   `;
 
-  export const Table = styled.table`
-    color: ${DefaultColors.Text_Color};
-    font-family: monospace;
-    font-size: 18px;
-    border-collapse: collapse;
-    width: 100%;
-    user-select: none;
-  `;
-
-  export const Row = styled.tr`
-    border: 1px solid ${DefaultColors.Black};
-    cursor: pointer;
-
-    :nth-of-type(odd) {
-      background-color: ${DefaultColors.Black}22;
-    }
-
-    :nth-of-type(even) {
-      background-color: ${"#3f3f3f"};
-    }
-  `;
-
-  export const SharedCell = styled.td`
-    border-top: 1px solid ${DefaultColors.Black};
-    border-bottom: 1px solid ${DefaultColors.Black};
-    padding: 0px 6px;
-    user-select: none;
-  `;
-
-  export const Cell = styled(SharedCell)`
+  export const Cell = styled(TableCell)`
     border-left: 1px solid ${DefaultColors.Black};
   `;
 
-  export const NameCell = styled(SharedCell)`
+  export const NameCell = styled(TableCell)`
     width: 0px;
-  `;
-
-  export const Heading = styled.th`
-    border-top: 1px solid ${DefaultColors.Black};
-    border-bottom: 1px solid ${DefaultColors.Black};
-    font-weight: bolder;
-    padding: 0px 6px;
   `;
 }

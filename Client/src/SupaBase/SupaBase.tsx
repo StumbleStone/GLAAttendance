@@ -1,6 +1,7 @@
 import {
   AuthChangeEvent,
   createClient,
+  RealtimePostgresChangesPayload,
   Session,
   SupabaseClient,
   User,
@@ -12,7 +13,9 @@ import { Database } from "./supabase-types";
 export enum SupaBaseEventKey {
   USER_LOGIN = "user_login",
   INIT_DONE = "init_done",
-  LOADED_ATTENDEES = "loaded_kids",
+  LOADED_ATTENDEES = "loaded_attendees",
+  DELETED_ATTENDEES = "deleted_attendees",
+  ADDED_ATTENDEES = "added_attendees",
 }
 
 export interface SupaBaseEvent extends EventClassEvents {
@@ -178,20 +181,71 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   async listenToAttendeesChanges() {
-    const l = this.client.channel("schema-db-changes").on(
+    const channel = this.client.channel("attendees-channel").on(
       "postgres_changes",
       {
         event: "*",
         schema: "public",
+        table: Tables.ATTENDEES,
       },
       (payload) => {
-        console.log(`Changes:`, payload);
+        console.log("Realtime payload *:", payload);
+        switch (payload.table) {
+          case Tables.ATTENDEES:
+            this.handleAttendeesChanges(payload);
+            return;
+        }
       }
     );
 
-    l.subscribe((...items: any[]) => {
+    channel.subscribe((...items: any[]) => {
       console.log(`Subscribed to changes:`, ...items);
     });
+  }
+
+  async handleAttendeesChanges(
+    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>
+  ) {
+    switch (payload.eventType) {
+      case "DELETE":
+        return this, this.removeAttendee(payload.old.id);
+      case "INSERT":
+        return this, this.addAttendee(payload.new as AttendeesEntry);
+    }
+
+    debugger;
+  }
+
+  async addAttendee(entry: AttendeesEntry) {
+    const record = this.attendees.find((att) => att.id === entry.id);
+    if (record) {
+      return;
+    }
+
+    console.log(`Attendee added: ${entry.name} ${entry.surname}`);
+
+    this.attendees.push(entry);
+
+    this.fireUpdate((cb) =>
+      cb[SupaBaseEventKey.ADDED_ATTENDEES]?.(this.attendees)
+    );
+  }
+
+  async removeAttendee(id: number) {
+    const record = this.attendees.find((att) => att.id === id);
+    if (!record) {
+      return;
+    }
+
+    console.log(
+      `Attendee deleted, removing from list: ${record.name} ${record.surname}`
+    );
+
+    this.attendees = this.attendees.filter((att) => att.id !== id);
+
+    this.fireUpdate((cb) =>
+      cb[SupaBaseEventKey.DELETED_ATTENDEES]?.(this.attendees)
+    );
   }
 
   async loadAttendees(): Promise<void> {
@@ -211,5 +265,29 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.fireUpdate((cb) =>
       cb[SupaBaseEventKey.LOADED_ATTENDEES]?.(this.attendees)
     );
+  }
+
+  async deleteAttendee(entry: AttendeesEntry) {
+    const { error } = await this.client
+      .from(Tables.ATTENDEES)
+      .delete()
+      .eq("id", entry.id);
+
+    if (error) {
+      console.error(error);
+    }
+  }
+
+  async addNewAttendees(
+    newEntries: Pick<AttendeesEntry, "name" | "surname">[]
+  ) {
+    const { error, data } = await this.client
+      .from(Tables.ATTENDEES)
+      .insert(newEntries)
+      .select();
+
+    if (error) {
+      console.error(`addNewAttendees`, error);
+    }
   }
 }
