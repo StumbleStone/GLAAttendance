@@ -1,5 +1,5 @@
 {
-  "name": "cash-track",
+  "name": "gla-attendance",
   "version": "1.0.0",
   "description": "Pure TS/JS app to create characters and their relationships",
   "main": "index.js",
@@ -13,13 +13,13 @@
   "scripts": {
     "build": "pnpm --recursive build",
   
-    "start:server": "pnpm --recursive --filter cash-track-server start",
-    "build:server": "pnpm --recursive --filter cash-track-server build",
-    "watch:server": "pnpm --recursive --filter cash-track-server watch",
+    "start:server": "pnpm --recursive --filter gla-attendance-server start",
+    "build:server": "pnpm --recursive --filter gla-attendance-server build",
+    "watch:server": "pnpm --recursive --filter gla-attendance-server watch",
 
-    "watch:client": "pnpm --recursive --filter cash-track-client watch",
+    "watch:client": "pnpm --recursive --filter gla-attendance-client watch",
 
-    "watch:types": "pnpm --recursive --filter cash-track-types watch"
+    "watch:types": "pnpm --recursive --filter gla-attendance-types watch"
   },
   "keywords": [],
   "author": "",

@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import * as React from "react";
+import { DefaultColors } from "../Tools/Toolbox";
 
 export interface HeadingProps {
   text?: string;
@@ -14,7 +15,7 @@ export const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
 
 namespace S {
   export const HeadingEl = styled("div")`
-    color: whitesmoke;
+    color: ${(p) => p.color ?? DefaultColors.Text_Color};
     margin: 0;
     font-size: 32px;
   `;

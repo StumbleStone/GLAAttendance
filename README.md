@@ -1,2 +1,3 @@
-# CashTrack
- Simple web app to track cash flow
+# GLA Attendance
+
+Simple web app to take roll-call

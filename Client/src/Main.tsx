@@ -1,7 +1,6 @@
 import * as React from "react";
 import ReactDom from "react-dom/client";
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
-import { CategoryView } from "./Categories/CategoryView";
 import { Login } from "./Components/Login/Login";
 import { Reset } from "./Components/Login/Reset";
 import { GlobalElements } from "./GlobalElements";
@@ -29,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <Route path={"login"} element={<Login />} />
             <Route path={"reset"} element={<Reset />} />
             <Route path={"dashboard"} element={<Dashboard />} />
-            <Route path={"category/:id"} element={<CategoryView />} />
           </Route>
         </Route>
 

@@ -2,9 +2,9 @@ import styled from "@emotion/styled";
 import * as React from "react";
 import {
   DeregisterCB,
-  EventableClass,
-  ListenerCB,
-} from "../../Tools/EventableClass";
+  EventClass,
+  EventClassEvents,
+} from "../../Tools/EventClass";
 import { DefaultColors, GenerateId } from "../../Tools/Toolbox";
 
 export interface LayerProps {}
@@ -45,8 +45,12 @@ namespace S {
   `;
 }
 
-export enum LayerEvent {
+export enum LayerEventKey {
   CHANGED = "changed",
+}
+
+export interface LayerEvent extends EventClassEvents {
+  [LayerEventKey.CHANGED]: (layers: LayerItem[]) => void;
 }
 
 export interface LayerItem {
@@ -56,7 +60,7 @@ export interface LayerItem {
   close: () => void;
 }
 
-export class LayerHandler extends EventableClass<LayerEvent> {
+export class LayerHandler extends EventClass<LayerEvent> {
   private static _instance: LayerHandler;
 
   _layers: LayerItem[];
@@ -78,18 +82,18 @@ export class LayerHandler extends EventableClass<LayerEvent> {
     return LayerHandler.Instance._layers;
   }
 
-  static AddListener(cb: ListenerCB<LayerEvent>): DeregisterCB {
+  static AddListener(cb: Partial<LayerEvent>): DeregisterCB {
     return LayerHandler.Instance.addListener(cb);
   }
 
   removeLayer(id: string) {
     this._layers = this._layers.filter((l) => l.id !== id);
-    this.fireUpdate(LayerEvent.CHANGED, this._layers);
+    this.fireUpdate((cb) => cb[LayerEventKey.CHANGED]?.(this._layers));
   }
 
   addLayer(item: LayerItem) {
     this._layers.push(item);
-    this.fireUpdate(LayerEvent.CHANGED, this._layers);
+    this.fireUpdate((cb) => cb[LayerEventKey.CHANGED]?.(this._layers));
   }
 
   static AddLayer(render: (l: LayerItem) => React.ReactNode): LayerItem {

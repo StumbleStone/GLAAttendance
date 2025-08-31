@@ -1,5 +1,5 @@
-import React, { ReactNode, useEffect, useRef, useState } from "react";
 import styled from "@emotion/styled";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import { DefaultColors, elementIsChildOf } from "../../Tools/Toolbox";
 
 export interface BackdropProps {
@@ -35,7 +35,10 @@ export const Backdrop: React.FC<BackdropProps> = (props: BackdropProps) => {
         return;
       }
 
-      if (elementIsChildOf(ev.target as HTMLElement, containerRef.current)) {
+      if (
+        ev.target !== containerRef.current &&
+        elementIsChildOf(ev.target as HTMLElement, containerRef.current)
+      ) {
         return;
       }
 
@@ -74,6 +77,6 @@ namespace S {
 
     background-color: ${DefaultColors.Black}bb;
 
-    pointer-events: ${(p) => (p.blockClicks ? "all" : "none")};
+    pointer-events: ${(p) => "all"};
   `;
 }

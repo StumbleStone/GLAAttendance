@@ -6,6 +6,8 @@ body {
     align-items: flex-start;
     justify-content: center;
     overscroll-behavior: none;
+    font-family: monospace;
+    color: whitesmoke;
 }
 
 div#Container {

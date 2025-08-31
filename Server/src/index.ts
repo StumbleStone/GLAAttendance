@@ -1,12 +1,20 @@
 import chalk from "chalk";
 import express, { NextFunction, Request, Response } from "express";
+import * as fse from "fs-extra";
+import * as https from "https";
 import * as path from "path";
 import { Tool } from "./Toolbox.js";
-
 const app = express();
-const port: number = 8180;
-const cwd = process.cwd();
-const clientPath: string = path.join(cwd.substring(0, cwd.indexOf('Server')), "/Client/dist/");
+const port: number = 8181;
+const cwd = (() => {
+  const cw = process.cwd();
+  return cw.substring(
+    0,
+    cw.indexOf("Server") > -1 ? cw.indexOf("Server") : cw.length
+  );
+})();
+const clientPath: string = path.join(cwd, "/Client/dist/");
+const serverPath: string = path.join(cwd, "/Server/");
 
 console.log(chalk.green(`Serving files from ${chalk.cyan(clientPath)}`));
 
@@ -32,8 +40,8 @@ function redirect(route: string) {
   };
 }
 
-function sendFile(path: string) {
-  let fullPath: string = clientPath + path;
+function sendFile(_path: string) {
+  let fullPath: string = path.join(clientPath, _path);
   return (req: Request, res: Response) => {
     res.sendFile(fullPath, (err: Error) => {
       if (err) console.error("sendFile", err);
@@ -75,6 +83,31 @@ app.listen(port, () => {
   console.log(chalk.green("Listening on http://localhost:" + port));
 });
 
+async function setupSecureServer() {
+  let cert: Buffer;
+  let key: Buffer;
+  try {
+    cert = await fse.readFile(path.join(serverPath, "/certs/server.cert"));
+    key = await fse.readFile(path.join(serverPath, "/certs/server.key"));
+  } catch (err) {
+    console.error("Cannot start HTTPS server");
+    console.error(err);
+    return;
+  }
+
+  const httpsServer = https
+    .createServer(
+      {
+        key,
+        cert,
+      },
+      app
+    )
+    .listen(8443, () => {
+      console.log("Listening on https://localhost:8443");
+    });
+}
+
 function close() {
   console.log("Closing server.");
   // inspector.close();
@@ -83,3 +116,4 @@ function close() {
 
 process.on("SIGTERM", close);
 process.on("SIGINT", close);
+setupSecureServer();

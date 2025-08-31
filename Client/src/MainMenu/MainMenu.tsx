@@ -7,7 +7,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Heading } from "../Components/Heading";
 import { Icon } from "../Components/Icon";
 import { Tile } from "../Components/Tile";
-import { SupaBase, SupaBaseEvent } from "../SupaBase/SupaBase";
+import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
 
 export const MainMenu: React.FC<{}> = () => {
@@ -21,10 +21,10 @@ export const MainMenu: React.FC<{}> = () => {
 
   useEffect(() => {
     const l = supabase.addListener({
-      [SupaBaseEvent.INIT_DONE]: (done: boolean) => {
+      [SupaBaseEventKey.INIT_DONE]: (done: boolean) => {
         setIsSupabaseLoading(!done);
       },
-      [SupaBaseEvent.USER_LOGIN]: () => {
+      [SupaBaseEventKey.USER_LOGIN]: () => {
         setIsLoggedIn(supabase.isLoggedIn);
       },
     });
@@ -103,9 +103,8 @@ export const MainMenu: React.FC<{}> = () => {
           />
         </S.BackIcon>
         <Heading>
-          <S.TitlePart>{"Ca"}</S.TitlePart>
-          <S.TitlePartDollar>{"$"}</S.TitlePartDollar>
-          <S.TitlePart>{"hTrack"}</S.TitlePart>
+          <S.TitlePart color={DefaultColors.BrightGreen}>{"GLA "}</S.TitlePart>
+          <S.TitlePart>{"Attendance"}</S.TitlePart>
         </Heading>
       </S.TitleTile>
       {content}
@@ -128,10 +127,8 @@ namespace S {
     flex-direction: column;
   `;
 
-  export const TitlePart = styled("span")``;
-
-  export const TitlePartDollar = styled("span")`
-    color: ${DefaultColors.BrightGreen};
+  export const TitlePart = styled("span")<{ color?: string }>`
+    color: ${(p) => p.color};
   `;
 
   export const TitleTile = styled(Tile)`
