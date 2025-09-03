@@ -31,6 +31,7 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
   const [text, setText] = useState<string>("");
 
   const [preview, setPreview] = useState<boolean>(false);
+  const [flip, setFlip] = useState<boolean>(false);
 
   const bdClick = useCallback(() => {
     layerItem.close();
@@ -44,6 +45,10 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
     setPreview((prev) => !prev);
   }, []);
 
+  const handleFLipClick = useCallback(() => {
+    setFlip((prev) => !prev);
+  }, []);
+
   const records = useMemo<{ name: string; surname: string }[]>(() => {
     if (!preview || text == "") {
       return [];
@@ -52,16 +57,18 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
     let outArr: { name: string; surname: string }[] = [];
     const dataRows = text.trim().split("\n");
     dataRows.forEach((row) => {
-      const [surname, name] = row.trim().split(",");
+      const [a1, a2] = row.trim().split(",");
+
+      const [b1, b2] = [(a1 || "").trim(), (a2 || "").trim()];
 
       outArr.push({
-        surname: (surname || "").trim(),
-        name: (name || "").trim(),
+        surname: flip ? b2 : b1,
+        name: flip ? b1 : b2,
       });
     });
 
     return outArr;
-  }, [preview]);
+  }, [preview, flip]);
 
   const handleSaveClick = useCallback(() => {
     supabase.addNewAttendees(records);
@@ -86,6 +93,7 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
             label={preview ? "Edit" : "Preview"}
           />
           {preview && <Button onClick={handleSaveClick} label={"Save"} />}
+          {preview && <Button onClick={handleFLipClick} label={"Flip"} />}
         </S.ButtonContainer>
       </S.AttendeeAddWindowEl>
     </S.StyledBackdrop>

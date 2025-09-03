@@ -46,7 +46,6 @@ export const Backdrop: React.FC<BackdropProps> = (props: BackdropProps) => {
       ev.stopImmediatePropagation();
 
       setTimeout(() => {
-        console.log("Closing");
         onClose?.();
       }, 150);
     };

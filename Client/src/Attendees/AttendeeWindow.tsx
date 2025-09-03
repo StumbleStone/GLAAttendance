@@ -4,30 +4,32 @@ import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Button } from "../Components/Button/Button";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { Tile } from "../Components/Tile";
-import { AttendeesEntry, SupaBase } from "../SupaBase/SupaBase";
+import { Attendee } from "../SupaBase/Attendee";
+import { SupaBase } from "../SupaBase/SupaBase";
+
 import { QRCode } from "./QRCode";
 
 export interface AtendeeWindowProps {
   layerItem: LayerItem;
-  entry: AttendeesEntry;
+  attendee: Attendee;
   supabase: SupaBase;
 }
 
 export interface ConfirmProps {
   layerItem: LayerItem;
-  entry: AttendeesEntry;
+  attendee: Attendee;
   supabase: SupaBase;
   onConfirm: () => void;
 }
 
 export const Confirm: React.FC<ConfirmProps> = (props: ConfirmProps) => {
-  const { layerItem, entry, supabase } = props;
+  const { layerItem, attendee, supabase } = props;
   const bdClick = useCallback(() => {
     layerItem.close();
   }, [layerItem]);
 
   const handleYes = useCallback(() => {
-    supabase.deleteAttendee(entry).then(() => {
+    supabase.deleteAttendee(attendee).then(() => {
       layerItem.close();
     });
   }, []);
@@ -38,13 +40,13 @@ export const Confirm: React.FC<ConfirmProps> = (props: ConfirmProps) => {
 
   return (
     <S.StyledBackdrop onClose={bdClick}>
-      <S.AtendeeWindowEl>
-        <div>{`Are you sure you wish to delete ${entry.name} ${entry.surname}?`}</div>
+      <S.ConfirmDialog>
+        <S.ConfirmText>{`Are you sure you wish to delete ${attendee.name} ${attendee.surname}?`}</S.ConfirmText>
         <S.ButtonContainer>
           <Button onClick={handleYes}>YES</Button>
           <Button onClick={handleNo}>NO</Button>
         </S.ButtonContainer>
-      </S.AtendeeWindowEl>
+      </S.ConfirmDialog>
     </S.StyledBackdrop>
   );
 };
@@ -52,7 +54,7 @@ export const Confirm: React.FC<ConfirmProps> = (props: ConfirmProps) => {
 export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   props: AtendeeWindowProps
 ) => {
-  const { layerItem, entry, supabase } = props;
+  const { layerItem, attendee, supabase } = props;
 
   const bdClick = useCallback(() => {
     layerItem.close();
@@ -62,7 +64,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
     LayerHandler.AddLayer((layerItem2) => {
       return (
         <Confirm
-          entry={entry}
+          attendee={attendee}
           layerItem={layerItem2}
           supabase={supabase}
           onConfirm={() => {
@@ -76,8 +78,8 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   return (
     <S.StyledBackdrop onClose={bdClick}>
       <S.AtendeeWindowEl>
-        <S.Name>{`${entry.name} ${entry.surname}`}</S.Name>
-        <QRCode dataString={`${entry.name} ${entry.surname}`} />
+        <S.Name>{`${attendee.name} ${attendee.surname}`}</S.Name>
+        <QRCode dataString={attendee.hash} title={attendee.fullName} />
         <S.ButtonContainer>
           <Button onClick={handleDelete}>Delete</Button>
         </S.ButtonContainer>
@@ -89,7 +91,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
 namespace S {
   export const AtendeeWindowEl = styled(Tile)`
     max-width: min(300px, 80vw);
-    max-height: min(300px, 80vh);
+    //max-height: min(300px, 80vh);
     min-width: min(300px, 80vw);
     min-height: min(300px, 80vh);
     display: flex;
@@ -99,6 +101,22 @@ namespace S {
     justify-content: center;
     align-items: center;
     gap: 10px;
+  `;
+
+  export const ConfirmDialog = styled(Tile)`
+    max-width: min(300px, 80vw);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  `;
+
+  export const ConfirmText = styled.div`
+    text-align: center;
+    padding: 10px 0 10px;
   `;
 
   export const Name = styled.div`
@@ -117,5 +135,6 @@ namespace S {
   export const ButtonContainer = styled.div`
     display: flex;
     gap: 10px;
+    padding-bottom: 10px;
   `;
 }

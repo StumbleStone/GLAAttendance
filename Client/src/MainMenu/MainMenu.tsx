@@ -195,5 +195,6 @@ namespace S {
   export const ContentScroll = styled("div")`
     label: ContentScroll;
     overflow: auto;
+    padding-bottom: 100px;
   `;
 }

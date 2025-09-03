@@ -1,0 +1,75 @@
+import { AttendeesEntry, RollCallEntry, RollCallStatus } from "./types";
+
+export class Attendee {
+  entry: AttendeesEntry;
+  rollCalls: RollCallEntry[];
+  hash: string;
+
+  currentRollCall: RollCallEntry | null;
+
+  constructor(entry: AttendeesEntry) {
+    this.entry = entry;
+    this.hash = this.generateHash();
+    this.rollCalls = [];
+    this.currentRollCall = null;
+  }
+
+  private generateHash(): string {
+    return Attendee.GenerateHash(this.entry);
+  }
+
+  static GenerateHash(entry: AttendeesEntry): string {
+    const string = `${entry.name}${entry.surname}${entry.id}`;
+    let hash = 0;
+    for (const char of string) {
+      hash = (hash << 5) - hash + char.charCodeAt(0);
+      hash |= 0; // Constrain to 32bit integer
+    }
+    return `${hash}`;
+  }
+
+  get id(): number {
+    return this.entry.id;
+  }
+
+  get name(): string {
+    return this.entry.name;
+  }
+
+  get surname(): string {
+    return this.entry.surname;
+  }
+
+  get fullName(): string {
+    return `${this.entry.name} ${this.entry.surname}`;
+  }
+
+  get status(): RollCallStatus {
+    return this.currentRollCall?.status || RollCallStatus.MISSING;
+  }
+
+  removeRollCall(rollCall: RollCallEntry): void {
+    if (!this.rollCalls.find((r) => r.id === rollCall.id)) {
+      return;
+    }
+
+    this.rollCalls = this.rollCalls.filter((r) => r.id !== rollCall.id);
+    if (this.currentRollCall?.id === rollCall.id) {
+      this.currentRollCall = this.rollCalls.reduce((latest, r) => {
+        return new Date(r.created_at) > new Date(latest.created_at)
+          ? r
+          : latest;
+      }, this.rollCalls[0] || null);
+    }
+  }
+
+  pushRollCall(rollCall: RollCallEntry): void {
+    this.rollCalls.push(rollCall);
+    if (
+      !this.currentRollCall ||
+      new Date(rollCall.created_at) > new Date(this.currentRollCall.created_at)
+    ) {
+      this.currentRollCall = rollCall;
+    }
+  }
+}

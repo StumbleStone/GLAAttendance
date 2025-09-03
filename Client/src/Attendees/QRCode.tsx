@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 export interface QRCodeProps {
   dataString: string;
+  title: string;
 }
 
 const QR_SIZE: number = 250;
@@ -20,7 +21,7 @@ async function generateQRCode(str: string): Promise<HTMLCanvasElement | null> {
 }
 
 export const QRCode: React.FC<QRCodeProps> = (props: QRCodeProps) => {
-  const { dataString } = props;
+  const { dataString, title } = props;
 
   const [qrCode, setQRCode] = useState<HTMLCanvasElement | null>(null);
   const canvRef = useRef<HTMLCanvasElement>(null);
@@ -48,11 +49,12 @@ export const QRCode: React.FC<QRCodeProps> = (props: QRCodeProps) => {
       const ctx: CanvasRenderingContext2D = el.getContext("2d")!;
       ctx.font = "24px monospace";
 
-      const len = ctx.measureText(dataString)?.width || 0;
       ctx.drawImage(qrCode, 0, 0, QR_SIZE, QR_SIZE);
-      ctx.fillText(dataString, QR_SIZE / 2 - len / 2, 24);
+
+      const len = ctx.measureText(title)?.width || 0;
+      ctx.fillText(title, QR_SIZE / 2 - len / 2, 24);
     });
-  }, [qrCode]);
+  }, [qrCode, title]);
 
   return (
     <S.QRCodeEl>

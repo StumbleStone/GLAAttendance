@@ -8,8 +8,12 @@ import React, {
 } from "react";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Tile } from "../Components/Tile";
+import { SupaBase } from "../SupaBase/SupaBase";
 
-export interface CaptureWindowProps {}
+export interface CaptureWindowProps {
+  supabase: SupaBase;
+  isCapturing: boolean;
+}
 
 export interface Barcodes {
   rawValue: string;
@@ -20,38 +24,53 @@ export interface BarcodeDetector {
   detect: (video: HTMLVideoElement) => Promise<Barcodes[]>;
 }
 
-function startDetectLoop(el: HTMLVideoElement) {
+let lastResultSet: Set<string> = new Set();
+async function processBarcode(result: Barcodes, supabase: SupaBase) {
+  const val = `${result.rawValue}`;
+  if (lastResultSet.has(val)) {
+    return;
+  }
+
+  lastResultSet.add(val);
+
+  // Clear it after some time so that we can rescan if necessary
+  setTimeout(() => {
+    lastResultSet.delete(val);
+  }, 5000);
+
+  console.log(`New QR Code: ${val}`);
+  await supabase.barcodeScanned(val);
+}
+
+function startDetectLoop(el: HTMLVideoElement, supabase: SupaBase) {
   let loop = true;
 
   const detector: BarcodeDetector = new (globalThis as any).BarcodeDetector({
     formats: ["qr_code"],
   });
 
-  let lastResultSet: Set<string> = new Set();
+  let latestTimeout: NodeJS.Timeout | null = null;
   const runDetect = async () => {
     try {
       const results = await detector.detect(el);
-
-      results.forEach((res) => {
-        const val = `${res.rawValue}`;
-        if (lastResultSet.has(val)) {
-          return;
-        }
-
-        lastResultSet.add(val);
-
-        // Clear it after some time so that we can rescan if necessary
-        setTimeout(() => {
-          lastResultSet.delete(val);
-        }, 5000);
-        console.log(`New QR Code: ${val}`);
-      });
 
       if (!loop) {
         return;
       }
 
-      setTimeout(() => {
+      for (let result of results) {
+        await processBarcode(result, supabase);
+      }
+
+      if (!loop) {
+        return;
+      }
+
+      latestTimeout = setTimeout(() => {
+        if (!loop) {
+          return;
+        }
+
         runDetect();
       }, 250);
     } catch (err) {
@@ -63,6 +82,7 @@ function startDetectLoop(el: HTMLVideoElement) {
 
   return () => {
     console.log("Barcode Detection Stopped!");
+    !!latestTimeout && clearTimeout(latestTimeout);
     lastResultSet.clear();
     loop = false;
   };
@@ -71,13 +91,18 @@ function startDetectLoop(el: HTMLVideoElement) {
 export const CaptureWindow: React.FC<CaptureWindowProps> = (
   props: CaptureWindowProps
 ) => {
-  const {} = props;
+  const { supabase, isCapturing } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [vidReady, setVidReady] = useState<boolean>(false);
 
-  const handleVideoReady = useCallback(() => {
-    setVidReady(true);
-  }, []);
+  const handleVideoReady = useCallback(
+    (isReady: boolean) => {
+      setVidReady((prev) => {
+        return isReady;
+      });
+    },
+    [vidReady]
+  );
 
   useEffect(() => {
     if (!vidReady) {
@@ -88,8 +113,12 @@ export const CaptureWindow: React.FC<CaptureWindowProps> = (
       return;
     }
 
-    return startDetectLoop(videoRef.current);
+    return startDetectLoop(videoRef.current, supabase);
   }, [vidReady]);
+
+  if (!isCapturing) {
+    return null;
+  }
 
   return (
     <S.Container>
@@ -102,7 +131,7 @@ export const CaptureWindow: React.FC<CaptureWindowProps> = (
 
 export interface CamProps {
   forwardRef: RefObject<HTMLVideoElement>;
-  onReady: () => void;
+  onReady: (isReady: boolean) => void;
 }
 
 const Cam: React.FC<CamProps> = (props: CamProps) => {
@@ -113,6 +142,7 @@ const Cam: React.FC<CamProps> = (props: CamProps) => {
   useEffect(() => {
     setMounted(true);
     return () => {
+      onReady(false);
       setMounted(false);
     };
   }, []);
@@ -127,6 +157,8 @@ const Cam: React.FC<CamProps> = (props: CamProps) => {
       return;
     }
 
+    let activeStream: MediaStream | null;
+
     navigator.mediaDevices
       .getUserMedia({
         video: {
@@ -136,10 +168,12 @@ const Cam: React.FC<CamProps> = (props: CamProps) => {
       })
       .then(function (stream) {
         if (!forwardRef.current || !mounted) {
+          stream.getTracks().forEach((t) => t.stop());
           return;
         }
 
         forwardRef.current.srcObject = stream;
+        activeStream = stream;
       })
       .catch(function (error) {
         console.log("Something went wrong!", error);
@@ -147,14 +181,18 @@ const Cam: React.FC<CamProps> = (props: CamProps) => {
 
     return () => {
       console.log(`Closing Camera feed`);
-      const tracks = (
-        forwardRef.current?.srcObject as MediaStream
-      )?.getTracks();
-      tracks?.forEach((t) => t.stop());
+      activeStream?.getTracks()?.forEach((t) => t.stop());
+      activeStream = null;
     };
   }, [mounted]);
 
-  return <S.Video onPlay={onReady} autoPlay={true} ref={forwardRef}></S.Video>;
+  const handleOnPlay = useCallback(() => {
+    onReady(true);
+  }, [onReady]);
+
+  return (
+    <S.Video onPlay={handleOnPlay} autoPlay={true} ref={forwardRef}></S.Video>
+  );
 };
 
 namespace S {

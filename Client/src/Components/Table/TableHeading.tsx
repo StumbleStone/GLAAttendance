@@ -7,4 +7,5 @@ export const TableHeading = styled.th<{ color?: null | string }>`
   font-weight: bolder;
   padding: 0px 6px;
   color: ${(p) => p.color};
+  text-align: left;
 `;

@@ -12,7 +12,9 @@ import { FAB } from "../Components/FloatingActionButton/FAB";
 import { FABItem } from "../Components/FloatingActionButton/Items/FABItem";
 import { Input } from "../Components/Inputs/BaseInput";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
-import { AttendeesEntry, SupaBase } from "../SupaBase/SupaBase";
+import { Attendee } from "../SupaBase/Attendee";
+import { SupaBase } from "../SupaBase/SupaBase";
+import { AttendeesEntry } from "../SupaBase/types";
 
 export interface DashboardProps {
   supabase: SupaBase;
@@ -52,12 +54,12 @@ export const Dashboard: React.FC = (props) => {
     ];
   }, []);
 
-  const clickedAttendee = React.useCallback((entry: AttendeesEntry) => {
+  const clickedAttendee = React.useCallback((attendee: Attendee) => {
     LayerHandler.AddLayer((layerItem: LayerItem) => {
       return (
         <AttendeeWindow
           layerItem={layerItem}
-          entry={entry}
+          attendee={attendee}
           supabase={supabase}
         />
       );
@@ -67,7 +69,7 @@ export const Dashboard: React.FC = (props) => {
   return (
     <S.Container>
       <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
-      {captureCode && <CaptureWindow />}
+      <CaptureWindow supabase={supabase} isCapturing={captureCode} />
       <Input value={filter} onChange={handleChange} />
       <AttendeesTable
         supabase={supabase}

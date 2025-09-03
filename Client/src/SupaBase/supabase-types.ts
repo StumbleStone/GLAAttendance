@@ -42,20 +42,49 @@ export type Database = {
       Attendees: {
         Row: {
           id: number
-          name: string | null
-          surname: string | null
+          name: string
+          surname: string
         }
         Insert: {
           id?: number
-          name?: string | null
-          surname?: string | null
+          name: string
+          surname: string
         }
         Update: {
           id?: number
-          name?: string | null
-          surname?: string | null
+          name?: string
+          surname?: string
         }
         Relationships: []
+      }
+      RollCall: {
+        Row: {
+          attendee_id: number
+          created_at: string
+          id: number
+          status: Database["public"]["Enums"]["RollCallStatus"]
+        }
+        Insert: {
+          attendee_id: number
+          created_at?: string
+          id?: number
+          status?: Database["public"]["Enums"]["RollCallStatus"]
+        }
+        Update: {
+          attendee_id?: number
+          created_at?: string
+          id?: number
+          status?: Database["public"]["Enums"]["RollCallStatus"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "RollCall_attendee_id_fkey"
+            columns: ["attendee_id"]
+            isOneToOne: false
+            referencedRelation: "Attendees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -65,7 +94,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      RollCallStatus: "MISSING" | "PRESENT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -195,6 +224,8 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      RollCallStatus: ["MISSING", "PRESENT"],
+    },
   },
 } as const

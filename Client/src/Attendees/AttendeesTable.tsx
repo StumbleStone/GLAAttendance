@@ -10,17 +10,15 @@ import { Table } from "../Components/Table/Table";
 import { TableCell } from "../Components/Table/TableCell";
 import { TableHeading } from "../Components/Table/TableHeading";
 import { TableRow } from "../Components/Table/TableRow";
-import {
-  AttendeesEntry,
-  SupaBase,
-  SupaBaseEventKey,
-} from "../SupaBase/SupaBase";
+import { Attendee } from "../SupaBase/Attendee";
+import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
+import { RollCallStatus } from "../SupaBase/types";
 import { DefaultColors } from "../Tools/Toolbox";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
   filter: string;
-  onClickedAttendee: (entry: AttendeesEntry) => void;
+  onClickedAttendee: (attendee: Attendee) => void;
 }
 
 enum SortColumns {
@@ -34,14 +32,14 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 ) => {
   const { supabase, filter, onClickedAttendee } = props;
 
-  const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.NAME);
-  const [sortAsc, setSortAsc] = useState<boolean>(true);
+  const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.STATUS);
+  const [sortAsc, setSortAsc] = useState<boolean>(false);
 
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
     const l = supabase.addListener({
-      [SupaBaseEventKey.LOADED_ATTENDEES]: () => forceUpdate(),
+      [SupaBaseEventKey.LOADED_ROLLCALLS]: () => forceUpdate(),
       [SupaBaseEventKey.DELETED_ATTENDEES]: () => forceUpdate(),
       [SupaBaseEventKey.ADDED_ATTENDEES]: () => forceUpdate(),
     });
@@ -49,16 +47,16 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     return l;
   }, []);
 
-  const filtered = useMemo<AttendeesEntry[]>(() => {
-    if (!supabase.attendees || supabase.attendees.length == 0) {
+  const filtered = useMemo<Attendee[]>(() => {
+    if (!supabase.attendees || supabase.attendees.size == 0) {
       return [];
     }
 
     if (!filter || filter == "") {
-      return supabase.attendees;
+      return Array.from(supabase.attendees.values());
     }
 
-    let outArr: AttendeesEntry[] = [];
+    let outArr: Attendee[] = [];
 
     filter
       .toLowerCase()
@@ -75,7 +73,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       });
 
     return outArr;
-  }, [filter, supabase.attendees]);
+  }, [filter, supabase.attendeesModified]);
 
   const handleClickCol = useCallback(
     (name: SortColumns) => {
@@ -90,8 +88,29 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     [sortCol]
   );
 
-  const sorted = useMemo(() => {
-    const sort = (a: AttendeesEntry, b: AttendeesEntry) => {
+  const sorted: Attendee[] = useMemo(() => {
+    const sortField = (a: Attendee, b: Attendee, field: string) =>
+      (a as any)[field].localeCompare((b as any)[field], "en", {
+        sensitivity: "base",
+      });
+    const sortStatus = (a: Attendee, b: Attendee) => {
+      if (a.status === b.status) {
+        // Cancel out the sortAsc
+        return sortField(a, b, "name") * (sortAsc ? 1 : -1);
+      }
+
+      if (a.status === RollCallStatus.PRESENT) {
+        return -1;
+      }
+
+      if (b.status === RollCallStatus.PRESENT) {
+        return 1;
+      }
+
+      return 0;
+    };
+
+    const sort = (a: Attendee, b: Attendee) => {
       let field: string;
       switch (sortCol) {
         case SortColumns.NAME:
@@ -101,17 +120,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
           field = "surname";
           break;
         case SortColumns.STATUS:
-          field = "status";
-          break;
         default:
-          field = "name";
+          return sortStatus(a, b) * (sortAsc ? 1 : -1);
       }
 
-      const res = (a as any)[field].localeCompare((b as any)[field], "en", {
-        sensitivity: "base",
-      });
-
-      return res * (sortAsc ? 1 : -1);
+      return sortField(a, b, field) * (sortAsc ? 1 : -1);
     };
 
     return filtered.sort(sort);
@@ -124,9 +137,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
           <TableRow key="heading">
             <TableHeading
               color={
-                sortCol === SortColumns.NAME
+                sortCol !== SortColumns.NAME
+                  ? undefined
+                  : sortAsc
                   ? DefaultColors.BrightGreen
-                  : undefined
+                  : DefaultColors.BrightRed
               }
               onClick={() => handleClickCol(SortColumns.NAME)}
             >
@@ -134,9 +149,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             </TableHeading>
             <TableHeading
               color={
-                sortCol === SortColumns.SURNAME
+                sortCol !== SortColumns.SURNAME
+                  ? undefined
+                  : sortAsc
                   ? DefaultColors.BrightGreen
-                  : undefined
+                  : DefaultColors.BrightRed
               }
               onClick={() => handleClickCol(SortColumns.SURNAME)}
             >
@@ -144,18 +161,30 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             </TableHeading>
             <TableHeading
               color={
-                sortCol === SortColumns.STATUS
+                sortCol !== SortColumns.STATUS
+                  ? undefined
+                  : sortAsc
                   ? DefaultColors.BrightGreen
-                  : undefined
+                  : DefaultColors.BrightRed
               }
               onClick={() => handleClickCol(SortColumns.STATUS)}
-            ></TableHeading>
+            >
+              Status
+            </TableHeading>
           </TableRow>
           {sorted.map((att) => (
             <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
               <S.NameCell>{att.name}</S.NameCell>
               <S.NameCell>{att.surname}</S.NameCell>
-              <S.Cell></S.Cell>
+              <S.Cell
+                color={
+                  att.status === RollCallStatus.PRESENT
+                    ? DefaultColors.BrightGreen
+                    : DefaultColors.BrightRed
+                }
+              >
+                {att.status}
+              </S.Cell>
             </TableRow>
           ))}
         </tbody>
@@ -173,7 +202,5 @@ namespace S {
     border-left: 1px solid ${DefaultColors.Black};
   `;
 
-  export const NameCell = styled(TableCell)`
-    width: 0px;
-  `;
+  export const NameCell = styled(TableCell)``;
 }
