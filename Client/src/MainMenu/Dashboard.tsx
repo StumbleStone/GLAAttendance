@@ -14,7 +14,6 @@ import { Input } from "../Components/Inputs/BaseInput";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { Attendee } from "../SupaBase/Attendee";
 import { SupaBase } from "../SupaBase/SupaBase";
-import { AttendeesEntry } from "../SupaBase/types";
 
 export interface DashboardProps {
   supabase: SupaBase;
@@ -44,7 +43,7 @@ export const Dashboard: React.FC = (props) => {
         key="addAtt"
         close={close}
         icon={faUserPlus}
-        label={"Add Attendee"}
+        label={"Add Attendee(s)"}
         onClick={() => {
           LayerHandler.AddLayer((item: LayerItem) => (
             <AttendeeAddWindow layerItem={item} supabase={supabase} />
@@ -70,7 +69,7 @@ export const Dashboard: React.FC = (props) => {
     <S.Container>
       <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
       <CaptureWindow supabase={supabase} isCapturing={captureCode} />
-      <Input value={filter} onChange={handleChange} />
+      <Input value={filter} onChange={handleChange} placeholder="Search..." />
       <AttendeesTable
         supabase={supabase}
         filter={filter}

@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
-import React, { HTMLAttributes, useCallback } from "react";
+import React, { HTMLAttributes, useCallback, useMemo } from "react";
 import { DefaultColors } from "../../Tools/Toolbox";
 import { Icon } from "../Icon";
 
@@ -34,15 +34,19 @@ export const Button: React.FC<ButtonProps> = (props) => {
     onClick();
   }, [onClick, disabled]);
 
+  const resolvedColor = useMemo(() => {
+    return disabled ? DefaultColors.Grey : color || DefaultColors.BrightCyan;
+  }, [color, disabled]);
+
   return (
     <ButtonDiv
       className={className}
       onClick={handleClick}
-      color={color}
+      color={resolvedColor}
       disabled={disabled}
       {...rest}
     >
-      {icon && <Icon icon={icon} size={20} color={color} />}
+      {icon && <Icon icon={icon} size={20} color={resolvedColor} />}
       {label ?? children}
     </ButtonDiv>
   );
@@ -54,20 +58,19 @@ const ButtonDiv = styled("div")<{ color?: string; disabled?: boolean }>`
   border-radius: 25px;
   background-color: ${DefaultColors.Container};
 
+  :hover {
+    background-color: ${(p) => (p.disabled ? null : `${p.color}22`)};
+    box-shadow: ${(p) => (p.disabled ? "none" : `0px 0px 5px 0px ${p.color}`)};
+  }
+
   display: flex;
   gap: 10px;
 
-  cursor: pointer;
+  cursor: ${(p) => (p.disabled ? "not-allowed" : "pointer")};
   user-select: none;
 
-  color: ${(p) =>
-    p.disabled
-      ? DefaultColors.BrightGrey
-      : p.color ?? DefaultColors.BrightBlue};
-  border-color: ${(p) =>
-    p.disabled
-      ? DefaultColors.BrightGrey
-      : p.color ?? DefaultColors.BrightBlue};
+  color: ${(p) => p.color};
+  border-color: ${(p) => p.color};
 
   :active {
     background-color: ${DefaultColors.Container_Active};

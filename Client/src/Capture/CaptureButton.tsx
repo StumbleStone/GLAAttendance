@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { faCameraAlt } from "@fortawesome/free-solid-svg-icons";
+import { faBarcode } from "@fortawesome/free-solid-svg-icons";
 import React, { useMemo } from "react";
 import { Button } from "../Components/Button/Button";
 import { DefaultColors } from "../Tools/Toolbox";
@@ -31,7 +31,7 @@ export const CaptureButton: React.FC<CaptureButtonProps> = (
       disabled={!isSupported}
       onClick={handleClick}
       color={DefaultColors.BrightCyan}
-      icon={faCameraAlt}
+      icon={faBarcode}
     >
       {message}
     </S.CaptureButton>
@@ -41,7 +41,6 @@ export const CaptureButton: React.FC<CaptureButtonProps> = (
 namespace S {
   export const CaptureButton = styled(Button)`
     font-family: monospace;
-    border-radius: 5px;
     width: auto;
   `;
 }

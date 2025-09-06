@@ -1,6 +1,12 @@
+import { EventClass, EventClassEvents } from "../Tools/EventClass";
 import { AttendeesEntry, RollCallEntry, RollCallStatus } from "./types";
 
-export class Attendee {
+export interface AttendeeEvents extends EventClassEvents {
+  updated: () => void;
+  statusUpdated: () => void;
+}
+
+export class Attendee extends EventClass<AttendeeEvents> {
   entry: AttendeesEntry;
   rollCalls: RollCallEntry[];
   hash: string;
@@ -8,6 +14,7 @@ export class Attendee {
   currentRollCall: RollCallEntry | null;
 
   constructor(entry: AttendeesEntry) {
+    super();
     this.entry = entry;
     this.hash = this.generateHash();
     this.rollCalls = [];
@@ -55,11 +62,24 @@ export class Attendee {
 
     this.rollCalls = this.rollCalls.filter((r) => r.id !== rollCall.id);
     if (this.currentRollCall?.id === rollCall.id) {
-      this.currentRollCall = this.rollCalls.reduce((latest, r) => {
-        return new Date(r.created_at) > new Date(latest.created_at)
-          ? r
-          : latest;
-      }, this.rollCalls[0] || null);
+      this.updateCurrentRollCall(
+        this.rollCalls.reduce((latest, r) => {
+          return new Date(r.created_at) > new Date(latest.created_at)
+            ? r
+            : latest;
+        }, this.rollCalls[0] || null)
+      );
+    }
+
+    this.fireUpdate((cb) => cb.updated?.());
+  }
+
+  updateCurrentRollCall(newCurrent: RollCallEntry) {
+    let statusChanged = !(this.currentRollCall?.status === newCurrent?.status);
+    this.currentRollCall = newCurrent;
+
+    if (statusChanged) {
+      this.fireUpdate((cb) => cb.statusUpdated?.());
     }
   }
 
@@ -69,7 +89,9 @@ export class Attendee {
       !this.currentRollCall ||
       new Date(rollCall.created_at) > new Date(this.currentRollCall.created_at)
     ) {
-      this.currentRollCall = rollCall;
+      this.updateCurrentRollCall(rollCall);
     }
+
+    this.fireUpdate((cb) => cb.updated?.());
   }
 }

@@ -1,4 +1,8 @@
 import styled from "@emotion/styled";
+import {
+  faCheckSquare,
+  faXmarkSquare,
+} from "@fortawesome/free-solid-svg-icons";
 import React, {
   useCallback,
   useEffect,
@@ -6,6 +10,7 @@ import React, {
   useReducer,
   useState,
 } from "react";
+import { Icon } from "../Components/Icon";
 import { Table } from "../Components/Table/Table";
 import { TableCell } from "../Components/Table/TableCell";
 import { TableHeading } from "../Components/Table/TableHeading";
@@ -132,7 +137,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 
   return (
     <S.TableContainer>
-      <Table>
+      <S.PrimaryTable>
         <tbody>
           <TableRow key="heading">
             <TableHeading
@@ -159,7 +164,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             >
               Surname
             </TableHeading>
-            <TableHeading
+            <S.CenteredHeading
               color={
                 sortCol !== SortColumns.STATUS
                   ? undefined
@@ -169,26 +174,58 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               }
               onClick={() => handleClickCol(SortColumns.STATUS)}
             >
-              Status
-            </TableHeading>
+              Present
+            </S.CenteredHeading>
           </TableRow>
           {sorted.map((att) => (
             <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
               <S.NameCell>{att.name}</S.NameCell>
               <S.NameCell>{att.surname}</S.NameCell>
-              <S.Cell
-                color={
-                  att.status === RollCallStatus.PRESENT
-                    ? DefaultColors.BrightGreen
-                    : DefaultColors.BrightRed
-                }
-              >
-                {att.status}
+              <S.Cell>
+                <Icon
+                  size={18}
+                  color={
+                    att.status === RollCallStatus.PRESENT
+                      ? DefaultColors.BrightGreen
+                      : DefaultColors.BrightRed
+                  }
+                  icon={
+                    att.status === RollCallStatus.PRESENT
+                      ? faCheckSquare
+                      : faXmarkSquare
+                  }
+                />
               </S.Cell>
             </TableRow>
           ))}
         </tbody>
-      </Table>
+      </S.PrimaryTable>
+      <S.SecondaryTable>
+        <tbody>
+          <TableRow key="heading">
+            <S.CenteredHeading>RollCall</S.CenteredHeading>
+          </TableRow>
+          {sorted.map((att) => (
+            <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
+              <S.Cell>
+                <Icon
+                  size={18}
+                  color={
+                    att.status === RollCallStatus.PRESENT
+                      ? DefaultColors.BrightGreen
+                      : DefaultColors.BrightRed
+                  }
+                  icon={
+                    att.status === RollCallStatus.PRESENT
+                      ? faCheckSquare
+                      : faXmarkSquare
+                  }
+                />
+              </S.Cell>
+            </TableRow>
+          ))}
+        </tbody>
+      </S.SecondaryTable>
     </S.TableContainer>
   );
 };
@@ -196,11 +233,28 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 namespace S {
   export const TableContainer = styled.div`
     color: ${DefaultColors.Text_Color};
+    display: flex;
   `;
 
   export const Cell = styled(TableCell)`
     border-left: 1px solid ${DefaultColors.Black};
+    padding: 2px;
+    text-align: center;
   `;
 
-  export const NameCell = styled(TableCell)``;
+  export const PrimaryTable = styled(Table)`
+    width: auto;
+  `;
+
+  export const SecondaryTable = styled(Table)`
+    flex: 1;
+  `;
+
+  export const CenteredHeading = styled(TableHeading)`
+    text-align: center;
+  `;
+
+  export const NameCell = styled(TableCell)`
+    width: 0px;
+  `;
 }
