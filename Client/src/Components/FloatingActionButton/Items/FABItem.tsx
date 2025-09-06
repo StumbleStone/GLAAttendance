@@ -7,22 +7,32 @@ import { Label } from "../../Label";
 import { Tile } from "../../Tile";
 
 export interface FABItemProps {
-  close: () => void;
+  doClose: () => void;
   icon: IconDefinition;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
+  color?: string;
 }
 
 export const FABItem: React.FC<FABItemProps> = (props: FABItemProps) => {
-  const { onClick, close, label, icon } = props;
+  const { onClick, doClose, label, icon, disabled, color } = props;
 
   const onClickHandler = React.useCallback(() => {
-    close();
+    doClose();
     onClick();
   }, []);
 
+  const resolvedColor = React.useMemo(() => {
+    return disabled ? DefaultColors.Grey : color || DefaultColors.BrightCyan;
+  }, [color, disabled]);
+
   return (
-    <S.FABItemTile onClick={onClickHandler}>
+    <S.FABItemTile
+      onClick={onClickHandler}
+      color={resolvedColor}
+      disabled={disabled}
+    >
       <Icon icon={icon} size={16} />
       <Label text={label} />
     </S.FABItemTile>
@@ -30,7 +40,10 @@ export const FABItem: React.FC<FABItemProps> = (props: FABItemProps) => {
 };
 
 namespace S {
-  export const FABItemTile = styled(Tile)`
+  export const FABItemTile = styled(Tile)<{
+    disabled?: boolean;
+    color?: string;
+  }>`
     label: FABItemTile;
     display: flex;
     font-size: 16px;
@@ -39,7 +52,15 @@ namespace S {
     gap: 5px;
     margin-bottom: 3px;
     margin-right: 3px;
-    box-shadow: 0px 5px 5px 0px ${DefaultColors.Container};
     padding: 4px 10px;
+    background-color: ${DefaultColors.Container};
+    border: 2px solid ${DefaultColors.OffWhite};
+    cursor: ${(p) => (p.disabled ? "not-allowed" : "pointer")};
+
+    :hover {
+      background-color: ${(p) => (p.disabled ? null : `${p.color}22`)};
+      box-shadow: ${(p) =>
+        p.disabled ? "none" : `0px 0px 3px 0px ${p.color}`};
+    }
   `;
 }

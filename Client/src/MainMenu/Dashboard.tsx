@@ -1,17 +1,17 @@
 import * as React from "react";
 
 import styled from "@emotion/styled";
-import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { useOutletContext } from "react-router-dom";
-import { AttendeeAddWindow } from "../Attendees/AttendeeAddWindow";
 import { AttendeesTable } from "../Attendees/AttendeesTable";
 import { AttendeeWindow } from "../Attendees/AttendeeWindow";
+import { FABAddAttendees } from "../Attendees/FABAddAttendees";
+import { FABStartRollCall } from "../Attendees/FABStartRollCall";
 import { CaptureButton } from "../Capture/CaptureButton";
 import { CaptureWindow } from "../Capture/CaptureWindow";
 import { FAB } from "../Components/FloatingActionButton/FAB";
-import { FABItem } from "../Components/FloatingActionButton/Items/FABItem";
 import { Input } from "../Components/Inputs/BaseInput";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
+import { RollCallDisplay } from "../RollCall/RollCallDisplay";
 import { Attendee } from "../SupaBase/Attendee";
 import { SupaBase } from "../SupaBase/SupaBase";
 
@@ -39,16 +39,15 @@ export const Dashboard: React.FC = (props) => {
 
   const fabItems = React.useCallback((close: () => void) => {
     return [
-      <FABItem
-        key="addAtt"
-        close={close}
-        icon={faUserPlus}
-        label={"Add Attendee(s)"}
-        onClick={() => {
-          LayerHandler.AddLayer((item: LayerItem) => (
-            <AttendeeAddWindow layerItem={item} supabase={supabase} />
-          ));
-        }}
+      <FABAddAttendees
+        doClose={close}
+        key="FABAddAttendees"
+        supabase={supabase}
+      />,
+      <FABStartRollCall
+        doClose={close}
+        key="FABStartRollCall"
+        supabase={supabase}
       />,
     ];
   }, []);
@@ -67,7 +66,10 @@ export const Dashboard: React.FC = (props) => {
 
   return (
     <S.Container>
-      <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
+      <S.HeaderContainer>
+        <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
+        <RollCallDisplay supabase={supabase} />
+      </S.HeaderContainer>
       <CaptureWindow supabase={supabase} isCapturing={captureCode} />
       <Input value={filter} onChange={handleChange} placeholder="Search..." />
       <AttendeesTable
@@ -85,6 +87,12 @@ namespace S {
     padding: 0 20px 20px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
+  `;
+
+  export const HeaderContainer = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   `;
 }

@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 import React, { useCallback, useEffect, useReducer, useState } from "react";
-import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Button } from "../Components/Button/Button";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { Tile } from "../Components/Tile";
@@ -15,7 +14,9 @@ import {
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
+import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Icon } from "../Components/Icon";
+import { PopupConfirm } from "../Components/Popup/PopupConfirm";
 import { RollCallStatus } from "../SupaBase/types";
 import { DefaultColors } from "../Tools/Toolbox";
 import { QRCode } from "./QRCode";
@@ -25,42 +26,6 @@ export interface AtendeeWindowProps {
   attendee: Attendee;
   supabase: SupaBase;
 }
-
-export interface ConfirmProps {
-  layerItem: LayerItem;
-  attendee: Attendee;
-  supabase: SupaBase;
-  onConfirm: () => void;
-}
-
-export const Confirm: React.FC<ConfirmProps> = (props: ConfirmProps) => {
-  const { layerItem, attendee, supabase } = props;
-  const bdClick = useCallback(() => {
-    layerItem.close();
-  }, [layerItem]);
-
-  const handleYes = useCallback(() => {
-    supabase.deleteAttendee(attendee).then(() => {
-      layerItem.close();
-    });
-  }, []);
-
-  const handleNo = useCallback(() => {
-    layerItem.close();
-  }, []);
-
-  return (
-    <S.StyledBackdrop onClose={bdClick}>
-      <S.ConfirmDialog>
-        <S.ConfirmText>{`Are you sure you wish to delete ${attendee.name} ${attendee.surname}?`}</S.ConfirmText>
-        <S.ButtonContainer>
-          <Button onClick={handleYes}>YES</Button>
-          <Button onClick={handleNo}>NO</Button>
-        </S.ButtonContainer>
-      </S.ConfirmDialog>
-    </S.StyledBackdrop>
-  );
-};
 
 export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   props: AtendeeWindowProps
@@ -83,13 +48,20 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   }, []);
 
   const handleDelete = useCallback(() => {
-    LayerHandler.AddLayer((layerItem2) => {
+    LayerHandler.AddLayer((layerItem2: LayerItem) => {
       return (
-        <Confirm
-          attendee={attendee}
+        <PopupConfirm
           layerItem={layerItem2}
-          supabase={supabase}
-          onConfirm={layerItem.close}
+          text={`Are you sure you wish to delete ${attendee.name} ${attendee.surname}?`}
+          onDecline={() => {
+            layerItem2.close();
+          }}
+          onConfirm={() => {
+            supabase.deleteAttendee(attendee).then(() => {
+              layerItem2.close();
+            });
+            layerItem.close();
+          }}
         />
       );
     });
@@ -98,11 +70,11 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   const present = attendee.status === RollCallStatus.PRESENT;
 
   const handlePresent = useCallback(() => {
-    supabase.addNewRollCall(attendee);
+    supabase.createNewRollCall(attendee);
   }, [present]);
 
   const handleAbsent = useCallback(() => {
-    supabase.addNewRollCall(attendee, RollCallStatus.MISSING);
+    supabase.createNewRollCall(attendee, RollCallStatus.MISSING);
   }, [present]);
 
   return (
@@ -149,22 +121,6 @@ namespace S {
     justify-content: center;
     align-items: center;
     gap: 10px;
-  `;
-
-  export const ConfirmDialog = styled(Tile)`
-    max-width: min(300px, 80vw);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding: 0;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-  `;
-
-  export const ConfirmText = styled.div`
-    text-align: center;
-    padding: 10px 0 10px;
   `;
 
   export const Heading = styled.div`

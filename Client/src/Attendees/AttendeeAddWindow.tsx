@@ -71,7 +71,7 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
   }, [preview, flip]);
 
   const handleSaveClick = useCallback(() => {
-    supabase.addNewAttendees(records);
+    supabase.createNewAttendees(records);
     layerItem.close();
   }, [records, supabase, layerItem]);
 

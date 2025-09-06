@@ -43,21 +43,24 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
-    const l = supabase.addListener({
-      [SupaBaseEventKey.LOADED_ROLLCALLS]: () => forceUpdate(),
-      [SupaBaseEventKey.DELETED_ATTENDEES]: () => forceUpdate(),
-      [SupaBaseEventKey.ADDED_ATTENDEES]: () => forceUpdate(),
+    console.log(`Listeners Setup`);
+    return supabase.addListener({
+      [SupaBaseEventKey.LOADED_ROLLCALLS]: forceUpdate,
+      [SupaBaseEventKey.DELETED_ATTENDEES]: forceUpdate,
+      [SupaBaseEventKey.ADDED_ATTENDEES]: forceUpdate,
+      [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: forceUpdate,
     });
-
-    return l;
   }, []);
 
   const filtered = useMemo<Attendee[]>(() => {
+    console.log(`Rerunning filtered`);
     if (!supabase.attendees || supabase.attendees.size == 0) {
+      console.log(`Rerunning filtered 0, attendees empty`);
       return [];
     }
 
     if (!filter || filter == "") {
+      console.log(`Rerunning filtered ${supabase.attendees.size}, no filter`);
       return Array.from(supabase.attendees.values());
     }
 
@@ -174,30 +177,35 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               }
               onClick={() => handleClickCol(SortColumns.STATUS)}
             >
-              Present
+              {`RC: ${supabase.currentRollCallEvent?.counter || 0}`}
             </S.CenteredHeading>
           </TableRow>
-          {sorted.map((att) => (
-            <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
-              <S.NameCell>{att.name}</S.NameCell>
-              <S.NameCell>{att.surname}</S.NameCell>
-              <S.Cell>
-                <Icon
-                  size={18}
-                  color={
-                    att.status === RollCallStatus.PRESENT
-                      ? DefaultColors.BrightGreen
-                      : DefaultColors.BrightRed
-                  }
-                  icon={
-                    att.status === RollCallStatus.PRESENT
-                      ? faCheckSquare
-                      : faXmarkSquare
-                  }
-                />
-              </S.Cell>
-            </TableRow>
-          ))}
+          {sorted.map((att) => {
+            const isPresentOnThisRollCall =
+              att.status === RollCallStatus.PRESENT &&
+              att.currentRollCall?.roll_call_event_id ===
+                supabase.currentRollCallEvent?.id;
+
+            return (
+              <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
+                <S.NameCell>{att.name}</S.NameCell>
+                <S.NameCell>{att.surname}</S.NameCell>
+                <S.Cell>
+                  <Icon
+                    size={18}
+                    color={
+                      isPresentOnThisRollCall
+                        ? DefaultColors.BrightGreen
+                        : DefaultColors.BrightRed
+                    }
+                    icon={
+                      isPresentOnThisRollCall ? faCheckSquare : faXmarkSquare
+                    }
+                  />
+                </S.Cell>
+              </TableRow>
+            );
+          })}
         </tbody>
       </S.PrimaryTable>
       <S.SecondaryTable>

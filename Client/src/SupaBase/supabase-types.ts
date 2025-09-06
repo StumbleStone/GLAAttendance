@@ -57,23 +57,44 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          first_name: string | null
+          last_name: string | null
+          uid: string
+        }
+        Insert: {
+          first_name?: string | null
+          last_name?: string | null
+          uid: string
+        }
+        Update: {
+          first_name?: string | null
+          last_name?: string | null
+          uid?: string
+        }
+        Relationships: []
+      }
       RollCall: {
         Row: {
           attendee_id: number
           created_at: string
           id: number
+          roll_call_event_id: number
           status: Database["public"]["Enums"]["RollCallStatus"]
         }
         Insert: {
           attendee_id: number
           created_at?: string
           id?: number
+          roll_call_event_id: number
           status?: Database["public"]["Enums"]["RollCallStatus"]
         }
         Update: {
           attendee_id?: number
           created_at?: string
           id?: number
+          roll_call_event_id?: number
           status?: Database["public"]["Enums"]["RollCallStatus"]
         }
         Relationships: [
@@ -83,6 +104,58 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "Attendees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "RollCall_roll_call_event_id_fkey"
+            columns: ["roll_call_event_id"]
+            isOneToOne: false
+            referencedRelation: "RollCallEvent"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      RollCallEvent: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          counter: number | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: number
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          counter?: number | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: number
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          counter?: number | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "RollCallEvent_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["uid"]
+          },
+          {
+            foreignKeyName: "RollCallEvent_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["uid"]
           },
         ]
       }
