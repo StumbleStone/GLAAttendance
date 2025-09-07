@@ -65,6 +65,7 @@ const ButtonDiv = styled("div")<{ color?: string; disabled?: boolean }>`
 
   display: flex;
   gap: 10px;
+  align-items: center;
 
   cursor: ${(p) => (p.disabled ? "not-allowed" : "pointer")};
   user-select: none;

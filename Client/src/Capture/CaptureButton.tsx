@@ -23,7 +23,7 @@ export const CaptureButton: React.FC<CaptureButtonProps> = (
       return `Stop Capture`;
     }
 
-    return `Capture${!isSupported ? " (Not supported)" : ""}`;
+    return `Capture${!isSupported ? " (Unsupported)" : ""}`;
   }, [isCapturing, isSupported]);
 
   return (
@@ -41,6 +41,8 @@ export const CaptureButton: React.FC<CaptureButtonProps> = (
 namespace S {
   export const CaptureButton = styled(Button)`
     font-family: monospace;
+    font-size: 22px;
     width: auto;
+    align-items: center;
   `;
 }

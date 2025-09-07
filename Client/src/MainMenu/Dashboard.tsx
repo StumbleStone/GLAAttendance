@@ -67,8 +67,8 @@ export const Dashboard: React.FC = (props) => {
   return (
     <S.Container>
       <S.HeaderContainer>
-        <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
         <RollCallDisplay supabase={supabase} />
+        <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
       </S.HeaderContainer>
       <CaptureWindow supabase={supabase} isCapturing={captureCode} />
       <Input value={filter} onChange={handleChange} placeholder="Search..." />
@@ -92,7 +92,10 @@ namespace S {
 
   export const HeaderContainer = styled.div`
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    align-items: flex-start;
+    gap: 5px;
+    /* justify-content: space-between; */
   `;
 }
