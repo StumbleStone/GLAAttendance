@@ -59,6 +59,12 @@ jobs:
       - name: Test
         run: |
           echo "$PWD"
+          echo "list"
+          ls
+          echo "list client"
+          ls ./Client
+          echo "list client dist"
+          ls ./Client/dist
 
       # - name: Setup Pages
       #   uses: actions/configure-pages@v5
