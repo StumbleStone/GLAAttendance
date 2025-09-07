@@ -1,5 +1,10 @@
 import { EventClass, EventClassEvents } from "../Tools/EventClass";
-import { AttendeesEntry, RollCallEntry, RollCallStatus } from "./types";
+import {
+  AttendeesEntry,
+  RollCallEntry,
+  RollCallEventEntry,
+  RollCallStatus,
+} from "./types";
 
 export interface AttendeeEvents extends EventClassEvents {
   updated: () => void;
@@ -93,5 +98,25 @@ export class Attendee extends EventClass<AttendeeEvents> {
     }
 
     this.fireUpdate((cb) => cb.updated?.());
+  }
+
+  isPresent(rollCallEvent: RollCallEventEntry): boolean {
+    if (!rollCallEvent) {
+      return false;
+    }
+
+    const matching = this.rollCalls
+      .filter((rc) => rc.roll_call_event_id === rollCallEvent.id)
+      .sort((a, b) => {
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      });
+
+    if (matching.length == 0) {
+      return false;
+    }
+
+    return matching[0].status === RollCallStatus.PRESENT;
   }
 }

@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
-import React, { useReducer } from "react";
+import React, { useCallback, useReducer } from "react";
+import { Button } from "../Components/Button/Button";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
 
@@ -36,8 +37,11 @@ export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
     message = ` In Progress!`;
   }
 
+  const handleClick = useCallback(() => {}, []);
+
   return (
-    <S.Container
+    <S.StyledButton
+      onClick={handleClick}
       color={
         isInProgress === true
           ? DefaultColors.BrightOrange
@@ -47,13 +51,12 @@ export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
       <S.RollCallText>{"RollCall:"}</S.RollCallText>
       {!!curRoll && <S.RollCallText>{`[${curRoll.counter}]`}</S.RollCallText>}
       <S.RollCallStatus>{message}</S.RollCallStatus>
-    </S.Container>
+    </S.StyledButton>
   );
 };
 
 namespace S {
-  export const Container = styled.div<{ color: string }>`
-    color: ${(p) => p.color};
+  export const StyledButton = styled(Button)`
     font-size: 22px;
     display: flex;
     gap: 5px;

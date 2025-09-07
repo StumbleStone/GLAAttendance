@@ -17,7 +17,6 @@ import { TableHeading } from "../Components/Table/TableHeading";
 import { TableRow } from "../Components/Table/TableRow";
 import { Attendee } from "../SupaBase/Attendee";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { RollCallStatus } from "../SupaBase/types";
 import { DefaultColors } from "../Tools/Toolbox";
 
 export interface AttendeesTableProps {
@@ -102,16 +101,19 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
         sensitivity: "base",
       });
     const sortStatus = (a: Attendee, b: Attendee) => {
-      if (a.status === b.status) {
+      const aPresent = a.isPresent(supabase.currentRollCallEvent);
+      const bPresent = b.isPresent(supabase.currentRollCallEvent);
+
+      if (aPresent === bPresent) {
         // Cancel out the sortAsc
         return sortField(a, b, "name") * (sortAsc ? 1 : -1);
       }
 
-      if (a.status === RollCallStatus.PRESENT) {
+      if (aPresent) {
         return -1;
       }
 
-      if (b.status === RollCallStatus.PRESENT) {
+      if (bPresent) {
         return 1;
       }
 
@@ -136,7 +138,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     };
 
     return filtered.sort(sort);
-  }, [filtered, sortCol, sortAsc]);
+  }, [filtered, sortCol, sortAsc, supabase.currentRollCallEvent?.id ?? 0]);
 
   return (
     <S.TableContainer>
@@ -181,10 +183,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             </S.CenteredHeading>
           </TableRow>
           {sorted.map((att) => {
-            const isPresentOnThisRollCall =
-              att.status === RollCallStatus.PRESENT &&
-              att.currentRollCall?.roll_call_event_id ===
-                supabase.currentRollCallEvent?.id;
+            const isPresentOnThisRollCall = att.isPresent(
+              supabase.currentRollCallEvent
+            );
 
             return (
               <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
@@ -210,28 +211,31 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       </S.PrimaryTable>
       <S.SecondaryTable>
         <tbody>
-          <TableRow key="heading">
-            <S.CenteredHeading>RollCall</S.CenteredHeading>
-          </TableRow>
-          {sorted.map((att) => (
-            <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
-              <S.Cell>
-                <Icon
-                  size={18}
-                  color={
-                    att.status === RollCallStatus.PRESENT
-                      ? DefaultColors.BrightGreen
-                      : DefaultColors.BrightRed
-                  }
-                  icon={
-                    att.status === RollCallStatus.PRESENT
-                      ? faCheckSquare
-                      : faXmarkSquare
-                  }
-                />
-              </S.Cell>
+          {false && (
+            <TableRow key="heading">
+              <S.CenteredHeading></S.CenteredHeading>
             </TableRow>
-          ))}
+          )}
+          {false &&
+            sorted.map((att) => (
+              <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
+                <S.Cell>
+                  <Icon
+                    size={18}
+                    color={
+                      att.isPresent(supabase.currentRollCallEvent)
+                        ? DefaultColors.BrightGreen
+                        : DefaultColors.BrightRed
+                    }
+                    icon={
+                      att.isPresent(supabase.currentRollCallEvent)
+                        ? faCheckSquare
+                        : faXmarkSquare
+                    }
+                  />
+                </S.Cell>
+              </TableRow>
+            ))}
         </tbody>
       </S.SecondaryTable>
     </S.TableContainer>
