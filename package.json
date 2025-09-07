@@ -17,8 +17,10 @@
     "build:server": "pnpm --recursive --filter gla-attendance-server build",
     "watch:server": "pnpm --recursive --filter gla-attendance-server watch",
 
+    "build:client": "pnpm --recursive --filter gla-attendance-client build",
     "watch:client": "pnpm --recursive --filter gla-attendance-client watch",
 
+    "build:types": "pnpm --recursive --filter gla-attendance-types build",
     "watch:types": "pnpm --recursive --filter gla-attendance-types watch"
   },
   "keywords": [],
