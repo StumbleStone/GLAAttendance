@@ -13,6 +13,11 @@ export enum RollCallStatus {
   PRESENT = "PRESENT",
 }
 
+export enum RollCallMethod {
+  QR = "QR",
+  MANUAL = "MANUAL",
+}
+
 export type ProfileEventEntry =
   Database["public"]["Tables"][Tables.PROFILES]["Row"];
 

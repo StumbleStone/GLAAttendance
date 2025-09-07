@@ -79,6 +79,8 @@ export type Database = {
         Row: {
           attendee_id: number
           created_at: string
+          created_by: string
+          created_method: Database["public"]["Enums"]["RollCallMethod"]
           id: number
           roll_call_event_id: number
           status: Database["public"]["Enums"]["RollCallStatus"]
@@ -86,6 +88,8 @@ export type Database = {
         Insert: {
           attendee_id: number
           created_at?: string
+          created_by: string
+          created_method: Database["public"]["Enums"]["RollCallMethod"]
           id?: number
           roll_call_event_id: number
           status?: Database["public"]["Enums"]["RollCallStatus"]
@@ -93,6 +97,8 @@ export type Database = {
         Update: {
           attendee_id?: number
           created_at?: string
+          created_by?: string
+          created_method?: Database["public"]["Enums"]["RollCallMethod"]
           id?: number
           roll_call_event_id?: number
           status?: Database["public"]["Enums"]["RollCallStatus"]
@@ -104,6 +110,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "Attendees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "RollCall_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["uid"]
           },
           {
             foreignKeyName: "RollCall_roll_call_event_id_fkey"
@@ -167,6 +180,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      RollCallMethod: "MANUAL" | "QR"
       RollCallStatus: "MISSING" | "PRESENT"
     }
     CompositeTypes: {
@@ -298,6 +312,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      RollCallMethod: ["MANUAL", "QR"],
       RollCallStatus: ["MISSING", "PRESENT"],
     },
   },
