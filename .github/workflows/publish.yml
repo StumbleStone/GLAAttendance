@@ -21,10 +21,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    if: github.ref == 'refs/heads/publish'
     strategy:
       matrix:
-        node-version: "22.x"
+        node-version: ["22.x"]
 
     steps:
       - uses: actions/checkout@v4
@@ -44,11 +44,13 @@ jobs:
           pnpm install
           pnpm build:types
           pnpm build:client
+
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/publish'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
