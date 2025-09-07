@@ -29,6 +29,10 @@ module.exports = {
   },
   output: {
     filename: "bundle.js",
-    path: path.resolve(__dirname, "dist"),
+    path: (() => {
+      const outputDir = path.resolve(__dirname, "dist");
+      console.log("Outputting to ", outputDir);
+      return outputDir;
+    })(),
   },
 };
