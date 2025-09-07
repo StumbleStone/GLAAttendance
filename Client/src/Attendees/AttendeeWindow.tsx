@@ -17,7 +17,7 @@ import {
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Icon } from "../Components/Icon";
 import { PopupConfirm } from "../Components/Popup/PopupConfirm";
-import { RollCallStatus } from "../SupaBase/types";
+import { RollCallMethod, RollCallStatus } from "../SupaBase/types";
 import { DefaultColors } from "../Tools/Toolbox";
 import { QRCode } from "./QRCode";
 
@@ -70,11 +70,15 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   const present = attendee.status === RollCallStatus.PRESENT;
 
   const handlePresent = useCallback(() => {
-    supabase.createNewRollCall(attendee);
+    supabase.createNewRollCall(attendee, RollCallMethod.MANUAL);
   }, [present]);
 
   const handleAbsent = useCallback(() => {
-    supabase.createNewRollCall(attendee, RollCallStatus.MISSING);
+    supabase.createNewRollCall(
+      attendee,
+      RollCallMethod.MANUAL,
+      RollCallStatus.MISSING
+    );
   }, [present]);
 
   return (

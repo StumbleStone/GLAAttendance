@@ -16,6 +16,7 @@ import {
   ProfileEventEntry,
   RollCallEntry,
   RollCallEventEntry,
+  RollCallMethod,
   RollCallStatus,
   Tables,
   UpdateRollCallEvent,
@@ -512,6 +513,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
   async createNewRollCall(
     attendee: Attendee,
+    method: RollCallMethod,
     status: RollCallStatus = RollCallStatus.PRESENT
   ) {
     if (!this.currentRollCallEvent) {
@@ -520,7 +522,9 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     const entry: InsertRollCallEntry = {
       attendee_id: attendee.id,
+      created_by: this.user.id,
       roll_call_event_id: this.currentRollCallEvent.id,
+      created_method: method,
       status,
     };
 
@@ -541,7 +545,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       return;
     }
 
-    await this.createNewRollCall(attendee);
+    await this.createNewRollCall(attendee, RollCallMethod.QR);
   }
 
   async createNewRollCallEvent(description: string) {
