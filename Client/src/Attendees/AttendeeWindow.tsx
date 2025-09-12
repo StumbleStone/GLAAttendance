@@ -4,13 +4,12 @@ import { Button } from "../Components/Button/Button";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { Tile } from "../Components/Tile";
 import { Attendee } from "../SupaBase/Attendee";
-import { SupaBase } from "../SupaBase/SupaBase";
+import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 
 import { keyframes } from "@emotion/react";
 import {
   faCheckCircle,
   faCheckSquare,
-  faTrash,
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
@@ -47,6 +46,12 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
     });
   }, []);
 
+  useEffect(() => {
+    return supabase.addListener({
+      [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: () => {},
+    });
+  }, []);
+
   const handleDelete = useCallback(() => {
     LayerHandler.AddLayer((layerItem2: LayerItem) => {
       return (
@@ -67,7 +72,8 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
     });
   }, []);
 
-  const present = attendee.status === RollCallStatus.PRESENT;
+  const present = attendee.isPresent(supabase.currentRollCallEvent);
+  const rollCallInProgress = supabase.rollcallInProgress;
 
   const handlePresent = useCallback(() => {
     supabase.createNewRollCall(attendee, RollCallMethod.MANUAL);
@@ -103,9 +109,17 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
         </S.Heading>
         <QRCode dataString={attendee.hash} title={attendee.fullName} />
         <S.ButtonContainer>
-          <Button onClick={handleDelete} icon={faTrash} />
-          {!present && <Button onClick={handlePresent} icon={faCheckCircle} />}
-          {present && <Button onClick={handleAbsent} icon={faXmarkCircle} />}
+          {/* <Button onClick={handleDelete} icon={faTrash} /> */}
+          <Button
+            onClick={handlePresent}
+            icon={faCheckCircle}
+            disabled={!rollCallInProgress || present}
+          />
+          <Button
+            onClick={handleAbsent}
+            icon={faXmarkCircle}
+            disabled={!rollCallInProgress || !present}
+          />
         </S.ButtonContainer>
       </S.AtendeeWindowEl>
     </S.StyledBackdrop>

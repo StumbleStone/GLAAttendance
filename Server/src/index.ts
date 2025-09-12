@@ -49,6 +49,13 @@ function sendFile(_path: string) {
   };
 }
 
+function sendScript(req: Request, res: Response) {
+  let fullPath: string = path.join(clientPath, req.url);
+  res.sendFile(fullPath, (err: Error) => {
+    if (err) console.error("sendScript", err);
+  });
+}
+
 function sendImage(req: Request, res: Response) {
   let fullPath: string = path.join(clientPath, req.url);
   res.sendFile(fullPath, (err: Error) => {
@@ -68,6 +75,7 @@ app.use(express.json());
 app.all("*", logRequest);
 
 app.get("/bundle.js", sendFile("bundle.js"));
+app.get("/*.js", sendScript);
 app.get("/Styles/main.css", sendFile("/Styles/main.css"));
 app.get("/favicon.ico", sendFile("favicon.png"));
 app.get("/AddIcon.png", sendFile("/Images/Add.png"));

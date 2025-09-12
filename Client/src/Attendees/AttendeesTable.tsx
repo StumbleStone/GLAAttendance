@@ -169,6 +169,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             >
               Surname
             </TableHeading>
+            {/* Spacer */}
+            <TableHeading />
             <S.CenteredHeading
               color={
                 sortCol !== SortColumns.STATUS
@@ -191,9 +193,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
                 <S.NameCell>{att.name}</S.NameCell>
                 <S.NameCell>{att.surname}</S.NameCell>
-                <S.Cell>
+                {/* Spacer */}
+                <TableCell />
+                <S.RCCell>
                   <Icon
-                    size={18}
+                    size={26}
                     color={
                       isPresentOnThisRollCall
                         ? DefaultColors.BrightGreen
@@ -203,13 +207,13 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
                       isPresentOnThisRollCall ? faCheckSquare : faXmarkSquare
                     }
                   />
-                </S.Cell>
+                </S.RCCell>
               </TableRow>
             );
           })}
         </tbody>
       </S.PrimaryTable>
-      <S.SecondaryTable>
+      {/* <S.SecondaryTable>
         <tbody>
           {false && (
             <TableRow key="heading">
@@ -237,7 +241,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               </TableRow>
             ))}
         </tbody>
-      </S.SecondaryTable>
+      </S.SecondaryTable> */}
     </S.TableContainer>
   );
 };
@@ -248,14 +252,15 @@ namespace S {
     display: flex;
   `;
 
-  export const Cell = styled(TableCell)`
+  export const RCCell = styled(TableCell)`
     border-left: 1px solid ${DefaultColors.Black};
     padding: 2px;
     text-align: center;
+    width: 0;
   `;
 
   export const PrimaryTable = styled(Table)`
-    width: auto;
+    width: 100%;
   `;
 
   export const SecondaryTable = styled(Table)`
@@ -267,6 +272,7 @@ namespace S {
   `;
 
   export const NameCell = styled(TableCell)`
-    width: 0px;
+    width: 0;
+    padding: 5px 10px;
   `;
 }

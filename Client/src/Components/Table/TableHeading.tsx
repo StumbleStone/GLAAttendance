@@ -8,4 +8,5 @@ export const TableHeading = styled.th<{ color?: null | string }>`
   padding: 0px 6px;
   color: ${(p) => p.color};
   text-align: left;
+  white-space: nowrap;
 `;

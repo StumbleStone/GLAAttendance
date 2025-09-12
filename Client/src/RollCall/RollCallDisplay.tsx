@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import { faListCheck } from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback, useReducer } from "react";
 import { Button } from "../Components/Button/Button";
 import { SupaBase } from "../SupaBase/SupaBase";
@@ -42,6 +43,7 @@ export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
   return (
     <S.StyledButton
       onClick={handleClick}
+      icon={faListCheck}
       color={
         isInProgress === true
           ? DefaultColors.BrightOrange
@@ -49,7 +51,6 @@ export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
       }
     >
       <S.RollCallText>{"RollCall:"}</S.RollCallText>
-      {!!curRoll && <S.RollCallText>{`[${curRoll.counter}]`}</S.RollCallText>}
       <S.RollCallStatus>{message}</S.RollCallStatus>
     </S.StyledButton>
   );
