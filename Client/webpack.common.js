@@ -3,8 +3,6 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   entry: "./src/Main.tsx",
-  devtool: "inline-source-map",
-  mode: "development",
   watchOptions: {
     ignored: ["**/node_modules", "**/Legacy", "./src/Legacy/*"],
     poll: 1000,
