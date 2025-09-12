@@ -5,14 +5,15 @@ import { DefaultColors } from "../Tools/Toolbox";
 export interface TileProps {
   children?: React.ReactNode;
   className?: string;
+  forwardRef?: React.RefObject<HTMLDivElement>;
   onClick?: (event: React.MouseEvent) => void;
 }
 
 export const Tile: React.FC<TileProps> = (props: TileProps) => {
-  const { children, className, onClick } = props;
+  const { children, className, onClick, forwardRef } = props;
 
   return (
-    <S.TileEl onClick={onClick} className={className}>
+    <S.TileEl onClick={onClick} className={className} ref={forwardRef}>
       {children}
     </S.TileEl>
   );

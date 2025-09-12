@@ -17,6 +17,7 @@
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
     "qrcode": "1.5.4",
+    "qr-scanner": "1.4.2",
     "react-router-dom": "^6.30.0"
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "prettier": "^2.6.2",
     "gla-attendance-types": "workspace:*",
     "ts-loader": "^9.2.6",
+    "worker-loader": "3.0.8",
     "copy-webpack-plugin": "13.0.1",
     "typescript": "4.9.4",
     "webpack": "^5.65.0",

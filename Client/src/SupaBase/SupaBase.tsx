@@ -31,6 +31,7 @@ export enum SupaBaseEventKey {
   DELETED_ATTENDEES = "deleted_attendees",
   ADDED_ATTENDEES = "added_attendees",
   UPDATED_ROLLCALL_EVENT = "updated_rollcall_event",
+  VISIBILITY_CHANGED = "visibility_changed",
 }
 
 export interface SupaBaseEvent extends EventClassEvents {
@@ -42,9 +43,27 @@ export interface SupaBaseEvent extends EventClassEvents {
   [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: () => void;
   [SupaBaseEventKey.DELETED_ATTENDEES]: () => void;
   [SupaBaseEventKey.ADDED_ATTENDEES]: () => void;
+  [SupaBaseEventKey.VISIBILITY_CHANGED]: (isVisible: boolean) => void;
 }
 
 export type AttendeesMap = Map<string, Attendee>;
+
+export enum BarcodeProcessState {
+  PRESENT = "present",
+  PROCESSING = "processing",
+  UNKNOWN = "unknown",
+  ERROR = "error",
+}
+
+export interface BarcodeProcessResult {
+  state: BarcodeProcessState;
+}
+
+interface BarcodeProcessingMap {
+  processing: boolean;
+  errored: boolean;
+  errorTime: number;
+}
 
 export class SupaBase extends EventClass<SupaBaseEvent> {
   client: SupabaseClient;
@@ -57,6 +76,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   rollCallEvents: RollCallEventEntry[];
   currentRollCallEvent: RollCallEventEntry;
   _attendeesModified: number; // Probably a much cleaner way to do this but I'm too tired to care
+
+  barcodeProcessMap: Map<string, BarcodeProcessingMap>;
 
   constructor() {
     super();
@@ -73,10 +94,12 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     });
 
     this.attendees = new Map<string, Attendee>();
+    this.barcodeProcessMap = new Map<string, BarcodeProcessingMap>();
     this._isLoggedIn = false;
   }
 
   async init() {
+    this.registerVisibilityChecker();
     let resolveInit: () => void;
     const waitForInitialSession = new Promise<void>((resolve) => {
       resolveInit = resolve;
@@ -116,6 +139,14 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     await waitForInitialSession;
     this.fireUpdate((cb) => cb[SupaBaseEventKey.INIT_DONE]?.(true));
+  }
+
+  registerVisibilityChecker() {
+    document.addEventListener("visibilitychange", () => {
+      const isVis: boolean = !document.hidden;
+      console.log(isVis ? "Page is visible" : "Page is hidden");
+      this.fireUpdate((cb) => cb[SupaBaseEventKey.VISIBILITY_CHANGED]?.(isVis));
+    });
   }
 
   async userSendOTP(email: string): Promise<boolean> {
@@ -416,6 +447,14 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     return this._attendeesModified;
   }
 
+  get rollcallInProgress(): boolean {
+    if (!this.currentRollCallEvent) {
+      return false;
+    }
+
+    return this.currentRollCallEvent.closed_by == null;
+  }
+
   set attendeesModified(date: number) {
     console.log(`Attendees modified`, date);
     this._attendeesModified = date;
@@ -515,9 +554,9 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     attendee: Attendee,
     method: RollCallMethod,
     status: RollCallStatus = RollCallStatus.PRESENT
-  ) {
+  ): Promise<boolean> {
     if (!this.currentRollCallEvent) {
-      return;
+      return false;
     }
 
     const entry: InsertRollCallEntry = {
@@ -535,17 +574,87 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     if (error) {
       console.error(`createNewRollCall`, error);
+      return false;
     }
+
+    return true;
   }
 
-  async barcodeScanned(hash: string) {
+  barcodeScanned(hash: string): BarcodeProcessResult {
     const attendee = this.attendees.get(hash);
 
     if (!attendee) {
+      return {
+        state: BarcodeProcessState.UNKNOWN,
+      };
+    }
+
+    if (attendee.isPresent(this.currentRollCallEvent)) {
+      return {
+        state: BarcodeProcessState.PRESENT,
+      };
+    }
+
+    const processing = this.barcodeProcessMap.get(hash);
+
+    // Never processed before, process now
+    if (!processing) {
+      this.barcodeProcess(attendee);
+      return {
+        state: BarcodeProcessState.PROCESSING,
+      };
+    }
+
+    if (processing.processing == true) {
+      return {
+        state: BarcodeProcessState.PROCESSING,
+      };
+    }
+
+    // Something went wrong the last time we processed it
+    if (processing.errored) {
+      const delta = Date.now() - processing.errorTime;
+      if (delta <= 5000) {
+        return {
+          state: BarcodeProcessState.ERROR,
+        };
+      }
+
+      // Allow retrying errored barcodes every 5s
+      processing.errorTime = 0;
+      processing.errored = false;
+    }
+
+    this.barcodeProcess(attendee);
+    return {
+      state: BarcodeProcessState.PROCESSING,
+    };
+  }
+
+  async barcodeProcess(attendee: Attendee) {
+    this.barcodeProcessMap.set(attendee.hash, {
+      processing: true,
+      errored: false,
+      errorTime: 0,
+    });
+    console.log(`${attendee.fullName} is being processed!`);
+    const success = await this.createNewRollCall(attendee, RollCallMethod.QR);
+
+    if (success == true) {
+      console.log(`${attendee.fullName} is Present!`);
+      this.barcodeProcessMap.set(attendee.hash, {
+        processing: false,
+        errored: false,
+        errorTime: 0,
+      });
       return;
     }
 
-    await this.createNewRollCall(attendee, RollCallMethod.QR);
+    this.barcodeProcessMap.set(attendee.hash, {
+      processing: false,
+      errored: true,
+      errorTime: Date.now(),
+    });
   }
 
   async createNewRollCallEvent(description: string) {

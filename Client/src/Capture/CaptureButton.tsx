@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import { faBarcode } from "@fortawesome/free-solid-svg-icons";
-import React, { useMemo } from "react";
+import QrScanner from "qr-scanner";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "../Components/Button/Button";
 import { DefaultColors } from "../Tools/Toolbox";
 
@@ -13,22 +14,34 @@ export const CaptureButton: React.FC<CaptureButtonProps> = (
   props: CaptureButtonProps
 ) => {
   const { handleClick, isCapturing } = props;
+  const [supported, setSupported] = useState<boolean>(false);
 
-  const isSupported: boolean = useMemo(() => {
-    return "BarcodeDetector" in globalThis;
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const hasCam = await QrScanner.hasCamera();
+      console.log(`QR Scan Support: ${hasCam}`);
+      if (mounted) {
+        setSupported(() => hasCam);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const message = useMemo(() => {
     if (isCapturing) {
-      return `Stop Capture`;
+      return `Stop`;
     }
 
-    return `Capture${!isSupported ? " (Not supported)" : ""}`;
-  }, [isCapturing, isSupported]);
+    return `Capture`;
+  }, [isCapturing, supported]);
 
   return (
     <S.CaptureButton
-      disabled={!isSupported}
+      disabled={!supported}
       onClick={handleClick}
       color={DefaultColors.BrightCyan}
       icon={faBarcode}
@@ -41,6 +54,6 @@ export const CaptureButton: React.FC<CaptureButtonProps> = (
 namespace S {
   export const CaptureButton = styled(Button)`
     font-family: monospace;
-    width: auto;
+    font-size: 22px;
   `;
 }

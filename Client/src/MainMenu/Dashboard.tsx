@@ -33,6 +33,13 @@ export const Dashboard: React.FC = (props) => {
     []
   );
 
+  React.useEffect(() => {
+    return supabase.addListener({
+      visibility_changed: (isVisible: boolean) =>
+        isVisible == false ? setCaptureCode(() => false) : null,
+    });
+  }, []);
+
   const captureClick = React.useCallback(() => {
     setCaptureCode((prev) => !prev);
   }, []);
@@ -66,10 +73,10 @@ export const Dashboard: React.FC = (props) => {
 
   return (
     <S.Container>
-      <S.HeaderContainer>
-        <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
+      <S.ButtonContainer>
         <RollCallDisplay supabase={supabase} />
-      </S.HeaderContainer>
+        <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
+      </S.ButtonContainer>
       <CaptureWindow supabase={supabase} isCapturing={captureCode} />
       <Input value={filter} onChange={handleChange} placeholder="Search..." />
       <AttendeesTable
@@ -90,9 +97,11 @@ namespace S {
     gap: 10px;
   `;
 
-  export const HeaderContainer = styled.div`
+  export const ButtonContainer = styled.div`
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    /* justify-content: space-between; */
   `;
 }
