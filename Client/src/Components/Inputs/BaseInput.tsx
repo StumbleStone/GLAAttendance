@@ -1,15 +1,21 @@
 import styled from "@emotion/styled";
+import * as React from "react";
 import { DefaultColors } from "../../Tools/Toolbox";
 
 export interface BaseInputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-export const Input = styled("input")`
-  font-size: 18px;
+export const Input = styled("input")<{
+  color?: string;
+  fontSize?: number;
+  padLeft?: number | null;
+}>`
+  font-size: ${(p) => p.fontSize ?? 18}px;
   background-color: ${DefaultColors.OffWhite};
 
   padding: 6px 16px;
-  color: ${DefaultColors.Container};
+  padding-left: ${(p) => (p.padLeft ? `${p.padLeft}px` : null)};
+  color: ${(p) => p.color || DefaultColors.Container};
 
   border: 2px solid ${DefaultColors.Black};
   border-radius: 20px;

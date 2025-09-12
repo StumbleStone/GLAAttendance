@@ -1,5 +1,11 @@
 import styled from "@emotion/styled";
-import React, { useCallback, useEffect, useReducer, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from "react";
 import { Button } from "../Components/Button/Button";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { Tile } from "../Components/Tile";
@@ -10,6 +16,8 @@ import { keyframes } from "@emotion/react";
 import {
   faCheckCircle,
   faCheckSquare,
+  faSave,
+  faShare,
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
@@ -38,11 +46,13 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   }, [layerItem]);
 
   useEffect(() => {
+    attendee.generateQRCode();
     return attendee.addListener({
       updated: forceUpdate,
       statusUpdated: () => {
         setShowAnim(() => true);
       },
+      qrReady: forceUpdate,
     });
   }, []);
 
@@ -79,6 +89,51 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
     supabase.createNewRollCall(attendee, RollCallMethod.MANUAL);
   }, [present]);
 
+  const handleSave = useCallback(() => {
+    // Create a temporary anchor element
+    const link = document.createElement("a");
+
+    // Set the anchor's href to the image data
+    link.href = attendee.QRCodeURL;
+
+    // Set the download attribute with a desired filename
+    link.download = `${attendee.fullNameFileSafe}.png`;
+
+    // Append the link to the document body
+    document.body.appendChild(link);
+
+    // Programmatically click the link to trigger the download
+    link.click();
+
+    // Clean up by removing the link from the document
+    document.body.removeChild(link);
+  }, [attendee.QRCodeURL]);
+
+  const canShare = useMemo(
+    () => "share" in navigator && navigator.canShare?.({ files: [] }),
+    []
+  );
+
+  const handleShare = useCallback(async () => {
+    if (!canShare) {
+      return;
+    }
+
+    const blob: Blob = await (await fetch(attendee.QRCodeURL)).blob();
+
+    const file = new File([blob], `${attendee.fullNameFileSafe}.png`, {
+      type: "image/png",
+    });
+
+    const shareData: ShareData = {
+      files: [file],
+      title: `Share Attendance QR`,
+      text: `Attendance QR code for ${attendee.fullName}`,
+    };
+
+    await navigator.share(shareData);
+  }, [canShare, attendee.QRCodeURL]);
+
   const handleAbsent = useCallback(() => {
     supabase.createNewRollCall(
       attendee,
@@ -107,18 +162,30 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
             </S.IconContainer>
           </S.Status>
         </S.Heading>
-        <QRCode dataString={attendee.hash} title={attendee.fullName} />
+        <QRCode qrCodeUrl={attendee.QRCodeURL} />
         <S.ButtonContainer>
           {/* <Button onClick={handleDelete} icon={faTrash} /> */}
           <Button
-            onClick={handlePresent}
-            icon={faCheckCircle}
-            disabled={!rollCallInProgress || present}
+            onClick={handleSave}
+            icon={faSave}
+            disabled={!attendee.QRCodeURL}
+          />
+          <Button
+            onClick={handleShare}
+            icon={faShare}
+            disabled={!attendee.QRCodeURL || !canShare}
           />
           <Button
             onClick={handleAbsent}
             icon={faXmarkCircle}
             disabled={!rollCallInProgress || !present}
+            color={DefaultColors.BrightRed}
+          />
+          <Button
+            onClick={handlePresent}
+            icon={faCheckCircle}
+            disabled={!rollCallInProgress || present}
+            color={DefaultColors.BrightGreen}
           />
         </S.ButtonContainer>
       </S.AtendeeWindowEl>
@@ -155,6 +222,7 @@ namespace S {
 
   export const Name = styled.span`
     font-size: 22px;
+    user-select: none;
   `;
 
   export const Status = styled.div`
@@ -165,6 +233,7 @@ namespace S {
 
   export const StatusText = styled.span`
     font-size: 18px;
+    user-select: none;
   `;
 
   export const IconContainer = styled.div`
