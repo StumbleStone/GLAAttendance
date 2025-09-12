@@ -1,3 +1,4 @@
+import * as qrcode from "qrcode";
 import { EventClass, EventClassEvents } from "../Tools/EventClass";
 import {
   AttendeesEntry,
@@ -6,9 +7,23 @@ import {
   RollCallStatus,
 } from "./types";
 
+const QR_SIZE: number = 512;
+
 export interface AttendeeEvents extends EventClassEvents {
   updated: () => void;
   statusUpdated: () => void;
+  qrReady: (qrCode: HTMLCanvasElement) => void;
+}
+
+async function generateQRCode(str: string): Promise<HTMLCanvasElement | null> {
+  try {
+    return await qrcode.toCanvas(`${str}`, {
+      width: QR_SIZE,
+    });
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
 }
 
 export class Attendee extends EventClass<AttendeeEvents> {
@@ -17,6 +32,10 @@ export class Attendee extends EventClass<AttendeeEvents> {
   hash: string;
 
   currentRollCall: RollCallEntry | null;
+
+  qrCode: HTMLCanvasElement;
+  qrCodeString: string;
+  qrGenPromise: Promise<HTMLCanvasElement>;
 
   constructor(entry: AttendeesEntry) {
     super();
@@ -54,6 +73,10 @@ export class Attendee extends EventClass<AttendeeEvents> {
 
   get fullName(): string {
     return `${this.entry.name} ${this.entry.surname}`;
+  }
+
+  get fullNameFileSafe(): string {
+    return this.fullName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
   }
 
   get status(): RollCallStatus {
@@ -118,5 +141,51 @@ export class Attendee extends EventClass<AttendeeEvents> {
     }
 
     return matching[0].status === RollCallStatus.PRESENT;
+  }
+
+  async generateQRCode(): Promise<HTMLCanvasElement> {
+    if (this.qrCode) {
+      return this.qrCode;
+    }
+
+    if (this.qrGenPromise) {
+      return this.qrGenPromise;
+    }
+
+    this.qrGenPromise = new Promise<HTMLCanvasElement>(async (resolve) => {
+      const canvas = await generateQRCode(this.hash);
+
+      if (!canvas) {
+        throw `Failed to create QR Code`;
+      }
+
+      requestAnimationFrame(() => {
+        const ctx: CanvasRenderingContext2D = canvas.getContext("2d")!;
+        ctx.font = "40px monospace";
+
+        // const len = ctx.measureText(title)?.width || 0;
+        const { actualBoundingBoxLeft, actualBoundingBoxRight } =
+          ctx.measureText(this.fullName);
+        const len = Math.ceil(
+          Math.abs(actualBoundingBoxLeft) + Math.abs(actualBoundingBoxRight)
+        );
+        ctx.fillText(this.fullName, QR_SIZE / 2 - len / 2, 50);
+        this.qrCodeString = canvas.toDataURL("image/png");
+        this.qrCode = canvas;
+
+        this.fireUpdate((cb) => cb.qrReady?.(canvas));
+        resolve(canvas);
+      });
+    });
+
+    return this.qrGenPromise;
+  }
+
+  get QRCodeURL(): string {
+    return this.qrCodeString;
+  }
+
+  get QRCode(): HTMLCanvasElement {
+    return this.qrCode;
   }
 }
