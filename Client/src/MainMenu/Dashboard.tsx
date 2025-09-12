@@ -1,6 +1,6 @@
-import * as React from "react";
-
 import styled from "@emotion/styled";
+import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import * as React from "react";
 import { useOutletContext } from "react-router-dom";
 import { AttendeesTable } from "../Attendees/AttendeesTable";
 import { AttendeeWindow } from "../Attendees/AttendeeWindow";
@@ -9,7 +9,7 @@ import { FABStartRollCall } from "../Attendees/FABStartRollCall";
 import { CaptureButton } from "../Capture/CaptureButton";
 import { CaptureWindow } from "../Capture/CaptureWindow";
 import { FAB } from "../Components/FloatingActionButton/FAB";
-import { Input } from "../Components/Inputs/BaseInput";
+import { InputWithIcon } from "../Components/Inputs/InputWithIcon";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { RollCallDisplay } from "../RollCall/RollCallDisplay";
 import { Attendee } from "../SupaBase/Attendee";
@@ -78,7 +78,12 @@ export const Dashboard: React.FC = (props) => {
         <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
       </S.ButtonContainer>
       <CaptureWindow supabase={supabase} isCapturing={captureCode} />
-      <Input value={filter} onChange={handleChange} placeholder="Search..." />
+      <InputWithIcon
+        icon={faMagnifyingGlass}
+        value={filter}
+        onChange={handleChange}
+        placeholder="Search..."
+      />
       <AttendeesTable
         supabase={supabase}
         filter={filter}

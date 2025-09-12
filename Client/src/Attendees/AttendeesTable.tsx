@@ -1,5 +1,9 @@
 import styled from "@emotion/styled";
 import {
+  faArrowDown,
+  faArrowDownAZ,
+  faArrowUp,
+  faArrowUpAZ,
   faCheckSquare,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
@@ -145,44 +149,33 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       <S.PrimaryTable>
         <tbody>
           <TableRow key="heading">
-            <TableHeading
-              color={
-                sortCol !== SortColumns.NAME
-                  ? undefined
-                  : sortAsc
-                  ? DefaultColors.BrightGreen
-                  : DefaultColors.BrightRed
-              }
-              onClick={() => handleClickCol(SortColumns.NAME)}
-            >
-              Name
-            </TableHeading>
-            <TableHeading
-              color={
-                sortCol !== SortColumns.SURNAME
-                  ? undefined
-                  : sortAsc
-                  ? DefaultColors.BrightGreen
-                  : DefaultColors.BrightRed
-              }
-              onClick={() => handleClickCol(SortColumns.SURNAME)}
-            >
-              Surname
-            </TableHeading>
+            <Heading
+              colName={SortColumns.NAME}
+              label={"Name"}
+              sortAsc={sortAsc}
+              sortCol={sortCol}
+              useAZArrow={true}
+              onClick={handleClickCol}
+            />
+            <Heading
+              colName={SortColumns.SURNAME}
+              label={"Surname"}
+              sortAsc={sortAsc}
+              sortCol={sortCol}
+              useAZArrow={true}
+              onClick={handleClickCol}
+            />
             {/* Spacer */}
             <TableHeading />
-            <S.CenteredHeading
-              color={
-                sortCol !== SortColumns.STATUS
-                  ? undefined
-                  : sortAsc
-                  ? DefaultColors.BrightGreen
-                  : DefaultColors.BrightRed
-              }
-              onClick={() => handleClickCol(SortColumns.STATUS)}
-            >
-              {`RC: ${supabase.currentRollCallEvent?.counter || 0}`}
-            </S.CenteredHeading>
+            <Heading
+              colName={SortColumns.STATUS}
+              label={"Present"}
+              centerLabel={true}
+              sortAsc={sortAsc}
+              sortCol={sortCol}
+              addArrowSpacer={true}
+              onClick={handleClickCol}
+            />
           </TableRow>
           {sorted.map((att) => {
             const isPresentOnThisRollCall = att.isPresent(
@@ -246,14 +239,79 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   );
 };
 
+interface HeadingProps {
+  colName: SortColumns;
+  sortCol: SortColumns;
+  sortAsc: boolean;
+  onClick: (colName: SortColumns) => void;
+  label: string;
+  centerLabel?: boolean;
+  useAZArrow?: boolean;
+  addArrowSpacer?: boolean;
+}
+
+const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
+  const {
+    colName,
+    sortAsc,
+    sortCol,
+    onClick,
+    label,
+    centerLabel,
+    useAZArrow,
+    addArrowSpacer,
+  } = props;
+
+  const handleClick = useCallback(() => onClick(colName), [onClick, colName]);
+
+  return (
+    <S.StyledTableHeading onClick={handleClick} center={centerLabel}>
+      <S.HeadingContainer>
+        {addArrowSpacer && <SortArrow selected={false} ascending={false} />}
+        <S.HeadingText>{label}</S.HeadingText>
+        <SortArrow
+          selected={sortCol === colName}
+          ascending={sortAsc}
+          useAZ={useAZArrow}
+        />
+      </S.HeadingContainer>
+    </S.StyledTableHeading>
+  );
+};
+
+export const SortArrow: React.FC<{
+  ascending: boolean;
+  selected: boolean;
+  useAZ?: boolean;
+}> = (props) => {
+  const { ascending, selected, useAZ } = props;
+
+  const icon = ascending
+    ? useAZ
+      ? faArrowDownAZ
+      : faArrowDown
+    : useAZ
+    ? faArrowUpAZ
+    : faArrowUp;
+
+  return (
+    <S.SortArrow
+      icon={icon}
+      size={16}
+      color={selected ? DefaultColors.BrightGrey : "transparent"}
+    />
+  );
+};
+
 namespace S {
+  export const SortArrow = styled(Icon)``;
+
   export const TableContainer = styled.div`
     color: ${DefaultColors.Text_Color};
     display: flex;
   `;
 
   export const RCCell = styled(TableCell)`
-    border-left: 1px solid ${DefaultColors.Black};
     padding: 2px;
     text-align: center;
     width: 0;
@@ -267,12 +325,20 @@ namespace S {
     flex: 1;
   `;
 
-  export const CenteredHeading = styled(TableHeading)`
-    text-align: center;
+  export const StyledTableHeading = styled(TableHeading)<{ center?: boolean }>`
+    text-align: ${(p) => (p.center ? "center" : null)};
   `;
 
   export const NameCell = styled(TableCell)`
     width: 0;
     padding: 5px 10px;
+  `;
+
+  export const HeadingText = styled.span``;
+
+  export const HeadingContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 5px;
   `;
 }
