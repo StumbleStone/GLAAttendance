@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "watch": "node ./node_modules/webpack/bin/webpack --watch",
-    "build": "node ./node_modules/webpack/bin/webpack"
+    "watch": "pnpm build --watch",
+    "build": "node ./node_modules/webpack/bin/webpack --config webpack.dev.js",
+    "build:prod": "node ./node_modules/webpack/bin/webpack --config webpack.prod.js"
   },
   "author": "",
   "license": "ISC",
@@ -28,12 +29,12 @@
     "@types/react-dom": "^18.0.5",
     "@types/qrcode": "1.5.5",
     "prettier": "^2.6.2",
-    "gla-attendance-types": "workspace:*",
     "ts-loader": "^9.2.6",
     "worker-loader": "3.0.8",
     "copy-webpack-plugin": "13.0.1",
     "typescript": "4.9.4",
     "webpack": "^5.65.0",
+    "webpack-merge": "6.0.1",
     "webpack-cli": "^4.9.2"
   }
 }
