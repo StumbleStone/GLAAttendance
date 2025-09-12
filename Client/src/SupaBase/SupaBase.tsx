@@ -726,4 +726,10 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       console.error(`closeCurrentRollCallEvent`, error);
     }
   }
+
+  async generateAllQRCodes(): Promise<Attendee[]> {
+    const attArr: Attendee[] = Array.from(this.attendees.values());
+    await Promise.all(attArr.map((att) => att.generateQRCode()));
+    return attArr;
+  }
 }

@@ -19,16 +19,8 @@ export class QRScanner extends EventClass<QRScannerEvents> {
   }
 
   async init(videoElement: HTMLVideoElement, overlay: HTMLDivElement) {
-    await this.setupWorker();
     await this.setupScanner(videoElement, overlay);
     this.startScanning();
-  }
-
-  async setupWorker() {
-    // const res = await fetch("qr-scanner-worker.min.js");
-    // this.worker = new Worker(URL.createObjectURL(await res.blob()), {
-    //   name: "qr-scanner-worker.min",
-    // });
   }
 
   handleScanResult(payload: QrScanner.ScanResult) {

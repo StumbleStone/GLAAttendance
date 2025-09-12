@@ -8,13 +8,15 @@ export interface IconProps {
   size: number;
   color?: string | null;
   className?: string;
+  onClick?: (ev: React.MouseEvent) => void;
 }
 
 export const Icon: React.FC<IconProps> = (props: IconProps) => {
-  const { icon, size, color, className } = props;
+  const { icon, size, color, className, onClick } = props;
 
   return (
     <S.StyledFontAwesomeIcon
+      onClick={onClick}
       icon={icon}
       width={size}
       height={size}

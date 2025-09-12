@@ -100,17 +100,13 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   );
 
   const sorted: Attendee[] = useMemo(() => {
-    const sortField = (a: Attendee, b: Attendee, field: string) =>
-      (a as any)[field].localeCompare((b as any)[field], "en", {
-        sensitivity: "base",
-      });
     const sortStatus = (a: Attendee, b: Attendee) => {
       const aPresent = a.isPresent(supabase.currentRollCallEvent);
       const bPresent = b.isPresent(supabase.currentRollCallEvent);
 
       if (aPresent === bPresent) {
         // Cancel out the sortAsc
-        return sortField(a, b, "name") * (sortAsc ? 1 : -1);
+        return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
       }
 
       if (aPresent) {
@@ -138,7 +134,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
           return sortStatus(a, b) * (sortAsc ? 1 : -1);
       }
 
-      return sortField(a, b, field) * (sortAsc ? 1 : -1);
+      return Attendee.SortByField(a, b, field) * (sortAsc ? 1 : -1);
     };
 
     return filtered.sort(sort);

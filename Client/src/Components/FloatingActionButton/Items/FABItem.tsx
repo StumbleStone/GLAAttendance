@@ -54,13 +54,14 @@ namespace S {
     margin-right: 3px;
     padding: 4px 10px;
     background-color: ${DefaultColors.Container};
-    border: 2px solid ${DefaultColors.OffWhite};
+    border: 2px solid ${DefaultColors.Background};
     cursor: ${(p) => (p.disabled ? "not-allowed" : "pointer")};
+
+    box-shadow: none;
+    user-select: none;
 
     :hover {
       background-color: ${(p) => (p.disabled ? null : `${p.color}22`)};
-      box-shadow: ${(p) =>
-        p.disabled ? "none" : `0px 0px 3px 0px ${p.color}`};
     }
   `;
 }

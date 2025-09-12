@@ -11,6 +11,7 @@ import { CaptureWindow } from "../Capture/CaptureWindow";
 import { FAB } from "../Components/FloatingActionButton/FAB";
 import { InputWithIcon } from "../Components/Inputs/InputWithIcon";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
+import { FABQRGrid } from "../QRCode/FABQRGrid";
 import { RollCallDisplay } from "../RollCall/RollCallDisplay";
 import { Attendee } from "../SupaBase/Attendee";
 import { SupaBase } from "../SupaBase/SupaBase";
@@ -56,6 +57,7 @@ export const Dashboard: React.FC = (props) => {
         key="FABStartRollCall"
         supabase={supabase}
       />,
+      <FABQRGrid doClose={close} key="FABQRGrid" supabase={supabase} />,
     ];
   }, []);
 

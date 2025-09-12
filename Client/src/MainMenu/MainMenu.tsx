@@ -1,4 +1,3 @@
-import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import React, { useEffect, useMemo, useState } from "react";
@@ -6,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Heading } from "../Components/Heading";
 import { Icon } from "../Components/Icon";
+import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
@@ -35,11 +35,7 @@ export const MainMenu: React.FC<{}> = () => {
 
   const content = useMemo(() => {
     if (isSupabaseLoading) {
-      return (
-        <S.SpinnerContainer>
-          <S.Spinner size={100} />
-        </S.SpinnerContainer>
-      );
+      return <LoadingSpinner size={100} />;
     }
 
     switch (location.pathname) {
@@ -149,39 +145,6 @@ namespace S {
   `;
 
   export const BackIcon = styled("div")``;
-
-  export const SpinnerContainer = styled("div")`
-    label: SpinnerContainer;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  `;
-
-  const anim_spin = keyframes`
-    0% {
-      transform: rotate(0);
-    }
-    50% {
-      transform: rotate(180deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  `;
-
-  export const Spinner = styled("div")<{ size: number }>`
-    label: Spinner;
-    border-top: 10px solid ${DefaultColors.OffWhite};
-    border-bottom: 10px solid ${DefaultColors.OffWhite};
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    width: ${(p) => p.size}px;
-    height: ${(p) => p.size}px;
-    border-radius: 50%;
-    animation: ${anim_spin} linear infinite 1s;
-  `;
 
   export const Content = styled("div")`
     label: Content;
