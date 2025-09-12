@@ -1,11 +1,5 @@
 import styled from "@emotion/styled";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useReducer, useState } from "react";
 import { Button } from "../Components/Button/Button";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { Tile } from "../Components/Tile";
@@ -16,17 +10,17 @@ import { keyframes } from "@emotion/react";
 import {
   faCheckCircle,
   faCheckSquare,
-  faSave,
-  faShare,
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
+import { DownloadButton } from "../Components/Button/DownloadButton";
+import { ShareButton } from "../Components/Button/ShareButton";
 import { Icon } from "../Components/Icon";
 import { PopupConfirm } from "../Components/Popup/PopupConfirm";
+import { QRCode } from "../QRCode/QRCode";
 import { RollCallMethod, RollCallStatus } from "../SupaBase/types";
 import { DefaultColors } from "../Tools/Toolbox";
-import { QRCode } from "./QRCode";
 
 export interface AtendeeWindowProps {
   layerItem: LayerItem;
@@ -89,51 +83,6 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
     supabase.createNewRollCall(attendee, RollCallMethod.MANUAL);
   }, [present]);
 
-  const handleSave = useCallback(() => {
-    // Create a temporary anchor element
-    const link = document.createElement("a");
-
-    // Set the anchor's href to the image data
-    link.href = attendee.QRCodeURL;
-
-    // Set the download attribute with a desired filename
-    link.download = `${attendee.fullNameFileSafe}.png`;
-
-    // Append the link to the document body
-    document.body.appendChild(link);
-
-    // Programmatically click the link to trigger the download
-    link.click();
-
-    // Clean up by removing the link from the document
-    document.body.removeChild(link);
-  }, [attendee.QRCodeURL]);
-
-  const canShare = useMemo(
-    () => "share" in navigator && navigator.canShare?.({ files: [] }),
-    []
-  );
-
-  const handleShare = useCallback(async () => {
-    if (!canShare) {
-      return;
-    }
-
-    const blob: Blob = await (await fetch(attendee.QRCodeURL)).blob();
-
-    const file = new File([blob], `${attendee.fullNameFileSafe}.png`, {
-      type: "image/png",
-    });
-
-    const shareData: ShareData = {
-      files: [file],
-      title: `Share Attendance QR`,
-      text: `Attendance QR code for ${attendee.fullName}`,
-    };
-
-    await navigator.share(shareData);
-  }, [canShare, attendee.QRCodeURL]);
-
   const handleAbsent = useCallback(() => {
     supabase.createNewRollCall(
       attendee,
@@ -165,15 +114,15 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
         <QRCode qrCodeUrl={attendee.QRCodeURL} />
         <S.ButtonContainer>
           {/* <Button onClick={handleDelete} icon={faTrash} /> */}
-          <Button
-            onClick={handleSave}
-            icon={faSave}
-            disabled={!attendee.QRCodeURL}
+          <DownloadButton
+            data={attendee.QRCodeURL}
+            filename={`${attendee.fullNameFileSafe}.png`}
           />
-          <Button
-            onClick={handleShare}
-            icon={faShare}
-            disabled={!attendee.QRCodeURL || !canShare}
+          <ShareButton
+            data={attendee.QRCodeURL}
+            title={"Share Attendance QR"}
+            text={"Attendance QR code for ${attendee.fullName}"}
+            filename={`${attendee.fullNameFileSafe}.png`}
           />
           <Button
             onClick={handleAbsent}

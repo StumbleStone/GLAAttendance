@@ -2,8 +2,8 @@ import styled from "@emotion/styled";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Tile } from "../Components/Tile";
+import { QRScanner } from "../QRCode/QRScanner";
 import { SupaBase } from "../SupaBase/SupaBase";
-import { QRScanner } from "./QRScanner";
 
 export interface CaptureWindowProps {
   supabase: SupaBase;

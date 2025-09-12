@@ -7,7 +7,7 @@ import {
   RollCallStatus,
 } from "./types";
 
-const QR_SIZE: number = 512;
+export const QR_SIZE: number = 512;
 
 export interface AttendeeEvents extends EventClassEvents {
   updated: () => void;
@@ -153,6 +153,7 @@ export class Attendee extends EventClass<AttendeeEvents> {
     }
 
     this.qrGenPromise = new Promise<HTMLCanvasElement>(async (resolve) => {
+      console.log(`Generating a new QR code for ${this.fullName}`);
       const canvas = await generateQRCode(this.hash);
 
       if (!canvas) {
@@ -174,6 +175,8 @@ export class Attendee extends EventClass<AttendeeEvents> {
         this.qrCode = canvas;
 
         this.fireUpdate((cb) => cb.qrReady?.(canvas));
+        console.log(`${this.fullName} QR Ready`);
+
         resolve(canvas);
       });
     });
@@ -187,5 +190,11 @@ export class Attendee extends EventClass<AttendeeEvents> {
 
   get QRCode(): HTMLCanvasElement {
     return this.qrCode;
+  }
+
+  static SortByField(a: Attendee, b: Attendee, field: string) {
+    return (a as any)[field].localeCompare((b as any)[field], "en", {
+      sensitivity: "base",
+    });
   }
 }

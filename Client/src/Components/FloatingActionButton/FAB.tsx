@@ -108,10 +108,11 @@ namespace S {
     position: fixed;
     right: 0;
     bottom: 80px;
-    height: calc(100% - 150px);
+    max-height: calc(100% - 150px);
     overflow: hidden;
 
     display: flex;
+    gap: 5px;
     flex-direction: column;
     justify-content: flex-end;
     align-items: flex-end;
@@ -137,9 +138,11 @@ namespace S {
     isTransitioning: boolean;
     open: boolean;
   }>`
+    label: FABExtChildContainer;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    gap: 5px;
 
     transform: translateY(${(p) => (p.open ? 0 : 101)}%);
     opacity: ${(p) => (p.open ? 1 : 0)};
