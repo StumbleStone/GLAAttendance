@@ -43,7 +43,7 @@ export const Login: React.FC = (props) => {
 
   const [otpLock, setOtpLock] = React.useState(0);
   const [otpLockDisable, setOtpLockDisable] = React.useState(false);
-  const [useOTP, setUseOTP] = React.useState(true);
+  const [useOTP, setUseOTP] = React.useState(false);
   const [otpSent, setOtpSent] = React.useState(false);
 
   // Uses access code in URL which I don't like
