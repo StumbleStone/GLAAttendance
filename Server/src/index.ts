@@ -77,7 +77,7 @@ app.all("*", logRequest);
 app.get("/bundle.js", sendFile("bundle.js"));
 app.get("/*.js", sendScript);
 app.get("/Styles/main.css", sendFile("/Styles/main.css"));
-app.get("/favicon.ico", sendFile("favicon.png"));
+app.get("/favicon.png", sendFile("favicon.png"));
 app.get("/AddIcon.png", sendFile("/Images/Add.png"));
 app.get("/Images/*", sendImage);
 app.get("/Svg/*", sendSvg);

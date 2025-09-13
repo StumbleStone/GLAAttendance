@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
-import React from "react";
-import { Button } from "../Button/Button";
+import React, { useCallback } from "react";
+import { Button, ButtonProps } from "../Button/Button";
 import { LayerItem } from "../Layer/Layer";
 import {
   PopupBackdrop,
@@ -11,26 +11,45 @@ import {
 export interface PopupConfirmProps {
   layerItem: LayerItem;
   text: string;
-  onConfirm: () => void;
-  onDecline: () => void;
+  buttons: PopupConfirmButton[];
+  canDismiss?: boolean;
 }
 
 export const PopupConfirm: React.FC<PopupConfirmProps> = (
   props: PopupConfirmProps
 ) => {
-  const { onDecline, onConfirm, text } = props;
+  const { buttons, text, canDismiss = true, layerItem } = props;
+
+  const handleBDClick = useCallback(() => {
+    if (!canDismiss) {
+      return;
+    }
+
+    layerItem.close();
+  }, [canDismiss, layerItem]);
 
   return (
-    <PopupBackdrop onClose={onDecline}>
+    <PopupBackdrop onClose={handleBDClick}>
       <PopupDialog>
         <S.ConfirmText>{text}</S.ConfirmText>
         <PopupButtonContainer>
-          <Button onClick={onConfirm}>YES</Button>
-          <Button onClick={onDecline}>NO</Button>
+          {buttons.map((btn, idx) => (
+            <PopupConfirmButton {...btn} key={idx} />
+          ))}
         </PopupButtonContainer>
       </PopupDialog>
     </PopupBackdrop>
   );
+};
+
+export interface PopupConfirmButton extends ButtonProps {}
+
+const PopupConfirmButton: React.FC<PopupConfirmButton> = (
+  props: PopupConfirmButton
+) => {
+  const { ...rest } = props;
+
+  return <Button {...rest} />;
 };
 
 namespace S {

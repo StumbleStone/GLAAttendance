@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import { faCaretLeft, faCaretRight } from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
+import { Attendee, QR_SIZE } from "../Attendees/Attendee";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { DownloadButton } from "../Components/Button/DownloadButton";
 import { ShareButton } from "../Components/Button/ShareButton";
@@ -9,7 +10,6 @@ import { Input } from "../Components/Inputs/BaseInput";
 import { LayerItem } from "../Components/Layer/Layer";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
-import { Attendee, QR_SIZE } from "../SupaBase/Attendee";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
 

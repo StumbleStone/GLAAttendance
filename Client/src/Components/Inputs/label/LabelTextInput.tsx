@@ -19,7 +19,7 @@ export const LabelTextInput: React.FC<LabelTextInputProps> = (
       <Label className={labelClassName} color={color}>
         {label}
       </Label>
-      <Input ref={forwardRef} color={color} {...rest} />
+      <Input forwardRef={forwardRef} color={color} {...rest} />
     </InputContainer>
   );
 };

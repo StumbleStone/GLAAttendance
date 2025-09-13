@@ -6,8 +6,8 @@ import {
   SupabaseClient,
   User,
 } from "@supabase/supabase-js";
+import { Attendee } from "../Attendees/Attendee";
 import { EventClass, EventClassEvents } from "../Tools/EventClass";
-import { Attendee } from "./Attendee";
 import { Database } from "./supabase-types";
 import {
   AttendeesEntry,
@@ -731,5 +731,15 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     const attArr: Attendee[] = Array.from(this.attendees.values());
     await Promise.all(attArr.map((att) => att.generateQRCode()));
     return attArr;
+  }
+
+  async logOut(logoutAllSessions?: boolean) {
+    const { error } = await this.client.auth.signOut({
+      scope: logoutAllSessions ? "global" : "local",
+    });
+
+    if (error) {
+      console.error(error);
+    }
   }
 }

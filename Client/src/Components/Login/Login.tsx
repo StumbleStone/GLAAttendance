@@ -1,4 +1,9 @@
 import styled from "@emotion/styled";
+import {
+  faAsterisk,
+  faHashtag,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
 import { useOutletContext } from "react-router-dom";
 import { SupaBase } from "../../SupaBase/SupaBase";
@@ -14,20 +19,32 @@ export interface LoginProps {
   supabase: SupaBase;
 }
 
+const emailRegex = /[a-zA-Z0-9+]{3,}@.{2,}\..{3,}/;
+
+function validateEmail(newEmail: string): boolean {
+  if (!newEmail) {
+    return false;
+  }
+
+  if (!emailRegex.test(newEmail)) {
+    return false;
+  }
+
+  return true;
+}
+
 export const Login: React.FC = (props) => {
   const { supabase } = useOutletContext<LoginProps>();
 
   const [username, setUsername] = React.useState("");
   const [pwd, setPwd] = React.useState("");
   const [otp, setOtp] = React.useState("");
+  const [validEmail, setValidEmail] = React.useState(false);
 
   const [otpLock, setOtpLock] = React.useState(0);
   const [otpLockDisable, setOtpLockDisable] = React.useState(false);
-  const [useOTP, setUseOTP] = React.useState(false);
-
-  const usernameRef = React.useRef<HTMLInputElement>(null);
-  const passwordRef = React.useRef<HTMLInputElement>(null);
-  const otpRef = React.useRef<HTMLInputElement>(null);
+  const [useOTP, setUseOTP] = React.useState(true);
+  const [otpSent, setOtpSent] = React.useState(false);
 
   // Uses access code in URL which I don't like
   // const handleReset = React.useCallback(async () => {
@@ -58,8 +75,7 @@ export const Login: React.FC = (props) => {
   }, [otpLock]);
 
   const handleSendOTP = React.useCallback(async () => {
-    const { current: uname } = usernameRef;
-    if (!uname || !uname.value || uname.value.length < 4) {
+    if (!validEmail) {
       return;
     }
 
@@ -70,47 +86,53 @@ export const Login: React.FC = (props) => {
 
     setOtpLock(time + 60 * 1000); // Lock for 60 seconds
 
-    await supabase.userSendOTP(uname.value);
-  }, [otpLock]);
+    await supabase.userSendOTP(username);
+    setOtpSent(() => true);
+  }, [otpLock, username, validEmail]);
 
   const toggleOTP = React.useCallback(() => {
     setUseOTP((prev) => !prev);
   }, [useOTP]);
 
   const handleOtpLogin = React.useCallback(async () => {
-    const { current: uname } = usernameRef;
-    const { current: otp } = otpRef;
-
-    if (!uname || !uname.value || uname.value.length < 4) {
+    if (!validEmail) {
       return;
     }
 
-    if (!otp || !otp.value || otp.value.length < 6) {
+    if (!otp || !otp || otp.length < 6) {
       return;
     }
 
-    await supabase.userSignInOtp(uname.value, otp.value);
-  }, []);
+    await supabase.userSignInOtp(username, otp);
+  }, [validEmail, username, otp]);
 
   const handleLogin = React.useCallback(async () => {
-    const { current: uname } = usernameRef;
-    const { current: pass } = passwordRef;
-
-    if (!uname || !uname.value || uname.value.length < 4) {
+    if (!validEmail) {
       return;
     }
 
-    if (!pass || !pass.value || pass.value.length < 6) {
+    if (!pwd || pwd.length < 6) {
       return;
     }
 
-    await supabase.userSignIn(uname.value, pass.value);
-  }, []);
+    await supabase.userSignIn(username, pwd);
+  }, [username, validEmail, pwd]);
+
+  const handleUsernameChange = React.useCallback(
+    (ev: React.ChangeEvent<HTMLInputElement>) => {
+      setUsername(ev.target.value);
+    },
+    []
+  );
+
+  React.useEffect(() => {
+    setValidEmail(() => validateEmail(username));
+  }, [username]);
 
   return (
     <S.ContainerEl>
       <S.LoginEl>
-        <SubHeading text="Login" />
+        <S.StyledSubHeading text="Login" />
         <S.InputContainer>
           <S.LoginMethodContainer>
             <S.LoginMethod
@@ -121,25 +143,33 @@ export const Login: React.FC = (props) => {
             >
               {useOTP ? "Login with OTP" : "Login with Password"}
             </S.LoginMethod>
+            {useOTP && (
+              <Button
+                onClick={handleSendOTP}
+                disabled={otpLockDisable || !validEmail}
+              >
+                Send OTP
+              </Button>
+            )}
           </S.LoginMethodContainer>
         </S.InputContainer>
         <S.InputContainer>
           <Label>Email</Label>
           <EmailInput
-            forwardRef={usernameRef}
+            icon={faUser}
             type="email"
             autoComplete={"email"}
             name="supabase-username"
             aria-label="supabase-username"
             value={username}
-            onChange={(ev) => setUsername(ev.target.value)}
+            onChange={handleUsernameChange}
           />
         </S.InputContainer>
         <S.InputContainer hide={useOTP}>
           <Label>Password</Label>
           <PasswordInput
+            icon={faAsterisk}
             key={"password"}
-            forwardRef={passwordRef}
             autoComplete={"current-password"}
             name="supabase-password"
             aria-label="supabase-password"
@@ -151,9 +181,10 @@ export const Login: React.FC = (props) => {
         <S.InputContainer hide={!useOTP}>
           <Label>OTP</Label>
           <PasswordInput
+            icon={faHashtag}
+            disabled={useOTP && !otpSent}
             key={"otp"}
             autoComplete={"off"}
-            forwardRef={otpRef}
             name="supabase-otp"
             aria-label="supabase-otp"
             value={otp}
@@ -162,14 +193,15 @@ export const Login: React.FC = (props) => {
         </S.InputContainer>
 
         <ButtonContainer>
-          {/*<Button onClick={handleReset}>Reset Password</Button>*/}
-          {useOTP && (
-            <Button onClick={handleSendOTP} disabled={otpLockDisable}>
-              Send OTP
-            </Button>
-          )}
-          {!useOTP && <Button onClick={handleLogin}>Login</Button>}
-          {useOTP && <Button onClick={handleOtpLogin}>Login</Button>}
+          <Button
+            onClick={useOTP ? handleOtpLogin : handleLogin}
+            disabled={
+              !validEmail ||
+              !((useOTP && otp?.length === 6) || (!useOTP && pwd?.length > 6))
+            }
+          >
+            Login
+          </Button>
         </ButtonContainer>
       </S.LoginEl>
     </S.ContainerEl>
@@ -188,23 +220,24 @@ namespace S {
   export const LoginEl = styled(Tile)`
     width: 80vw;
     display: flex;
+    gap: 15px;
     flex-direction: column;
   `;
 
   export const InputContainer = styled("div")<{ hide?: boolean }>`
     display: ${(p) => (p.hide ? "none" : "flex")};
     flex-direction: column;
-    gap: 15px;
-    margin-bottom: 25px;
+    gap: 5px;
     width: 100%;
   `;
 
-  export const LoginMethodContainer = styled("div")`
-    display: flex;
-    flex-direction: row;
+  export const LoginMethodContainer = styled(ButtonContainer)`
+    justify-content: flex-start;
   `;
 
-  export const LoginMethod = styled(Button)`
-    border-radius: 10px;
+  export const LoginMethod = styled(Button)``;
+
+  export const StyledSubHeading = styled(SubHeading)`
+    margin-bottom: 0;
   `;
 }

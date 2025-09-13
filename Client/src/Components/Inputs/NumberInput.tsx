@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
-import { BaseInputProps, Input } from "./BaseInput";
 import * as React from "react";
+import { BaseInputProps, Input } from "./BaseInput";
 
 export interface NumberInputProps extends BaseInputProps {
   forwardRef?: React.RefObject<HTMLInputElement>;
@@ -11,7 +11,7 @@ export const NumberInput: React.FC<NumberInputProps> = (
 ) => {
   const { forwardRef, ...rest } = props;
 
-  return <S.NumberInput type="number" {...rest} ref={forwardRef} />;
+  return <S.NumberInput type="number" {...rest} forwardRef={forwardRef} />;
 };
 
 namespace S {

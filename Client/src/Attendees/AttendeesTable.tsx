@@ -19,9 +19,9 @@ import { Table } from "../Components/Table/Table";
 import { TableCell } from "../Components/Table/TableCell";
 import { TableHeading } from "../Components/Table/TableHeading";
 import { TableRow } from "../Components/Table/TableRow";
-import { Attendee } from "../SupaBase/Attendee";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
+import { Attendee } from "./Attendee";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;

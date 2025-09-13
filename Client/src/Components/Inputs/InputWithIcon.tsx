@@ -20,7 +20,7 @@ export const InputWithIcon: React.FC<InputWithIconProps> = (
     <S.InputContainer>
       <Input
         {...rest}
-        ref={forwardRef}
+        forwardRef={forwardRef}
         color={color}
         fontSize={fontSize}
         padLeft={icon ? 16 + (fontSize || 18) : null}
@@ -45,6 +45,6 @@ namespace S {
 
   export const StyledIcon = styled(Icon)`
     position: absolute;
-    left: 16px;
+    left: 10px;
   `;
 }
