@@ -61,16 +61,19 @@ export type Database = {
         Row: {
           first_name: string | null
           last_name: string | null
+          onboarding_done: boolean
           uid: string
         }
         Insert: {
           first_name?: string | null
           last_name?: string | null
+          onboarding_done?: boolean
           uid: string
         }
         Update: {
           first_name?: string | null
           last_name?: string | null
+          onboarding_done?: boolean
           uid?: string
         }
         Relationships: []

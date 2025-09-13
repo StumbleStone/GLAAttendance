@@ -132,7 +132,7 @@ export const Login: React.FC = (props) => {
   return (
     <S.ContainerEl>
       <S.LoginEl>
-        <S.StyledSubHeading text="Login" />
+        <SubHeading text="Login" />
         <S.InputContainer>
           <S.LoginMethodContainer>
             <S.LoginMethod
@@ -236,8 +236,4 @@ namespace S {
   `;
 
   export const LoginMethod = styled(Button)``;
-
-  export const StyledSubHeading = styled(SubHeading)`
-    margin-bottom: 0;
-  `;
 }

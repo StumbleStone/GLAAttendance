@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useReducer, useState } from "react";
 
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Heading } from "../Components/Heading";
@@ -10,23 +10,66 @@ import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
 
+interface RouteState {
+  path: RoutePath;
+  canPassCheck: (s: SupaBase) => boolean;
+}
+
+enum RoutePath {
+  LOADING = "/loading",
+  LOGIN = "/login",
+  ONBOARDING = "/onboard",
+  DASHBOARD = "/dashboard",
+}
+
+// Order here very important
+const ROUTES: RouteState[] = [
+  {
+    path: RoutePath.LOADING,
+    canPassCheck: (s) => s.hasInit && s.supabaseConnected,
+  },
+  {
+    path: RoutePath.LOGIN,
+    canPassCheck: (s) => s.isLoggedIn,
+  },
+  {
+    path: RoutePath.ONBOARDING,
+    canPassCheck: (s) => s.isOnboarded,
+  },
+  {
+    path: RoutePath.DASHBOARD,
+    // Last route, will never pass
+    canPassCheck: (s) => false,
+  },
+];
+
+function calculateNextRoute(supabase: SupaBase): RouteState | null {
+  for (let route of ROUTES) {
+    if (!route.canPassCheck(supabase)) {
+      return route;
+    }
+  }
+
+  return null;
+}
+
 export const MainMenu: React.FC<{}> = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [isSupabaseLoading, setIsSupabaseLoading] = useState<boolean>(true);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   const location = useLocation();
   const nav = useNavigate();
 
-  const [supabase, _] = useState(() => new SupaBase());
+  const supabase = useMemo(() => new SupaBase(), []);
+
+  const [route, setRoute] = useState<RouteState | null>(
+    calculateNextRoute(supabase)
+  );
 
   useEffect(() => {
     const l = supabase.addListener({
-      [SupaBaseEventKey.INIT_DONE]: (done: boolean) => {
-        setIsSupabaseLoading(!done);
-      },
-      [SupaBaseEventKey.USER_LOGIN]: () => {
-        setIsLoggedIn(supabase.isLoggedIn);
-      },
+      [SupaBaseEventKey.INIT_DONE]: forceUpdate,
+      [SupaBaseEventKey.USER_LOGIN]: forceUpdate,
+      [SupaBaseEventKey.USER_PROFILE]: forceUpdate,
     });
 
     supabase.init();
@@ -34,7 +77,7 @@ export const MainMenu: React.FC<{}> = () => {
   }, []);
 
   const content = useMemo(() => {
-    if (isSupabaseLoading) {
+    if (!supabase.hasInit) {
       return <LoadingSpinner size={100} />;
     }
 
@@ -53,34 +96,49 @@ export const MainMenu: React.FC<{}> = () => {
         </S.ContentScroll>
       </S.Content>
     );
-  }, [location, isSupabaseLoading]);
+  }, [location, supabase.hasInit]);
 
   // The navigator
   useEffect(() => {
-    if (isSupabaseLoading) {
+    const nextRoute: RouteState | null = calculateNextRoute(supabase);
+
+    if (nextRoute == null) {
       return;
     }
 
-    if (isLoggedIn && ["/login"].includes(location.pathname)) {
-      nav("/dashboard");
+    if (!route || nextRoute.path != route.path) {
+      console.log(
+        `%cRoute sequence: %c${route?.path ?? "/"} %c-> %c${nextRoute.path}`,
+        "color: grey;",
+        "color: cyan;",
+        "color: grey;",
+        "color: cyan;"
+      );
+      setRoute(nextRoute);
+    }
+  });
+
+  useEffect(() => {
+    if (!route) {
       return;
     }
 
-    if (!isLoggedIn && !["/login"].includes(location.pathname)) {
-      nav("/login");
+    if (location.hash == route.path) {
       return;
     }
 
-    switch (location.pathname) {
-      case "":
-      case "/": {
-        nav("/dashboard");
-      }
-    }
-  }, [location, isLoggedIn, isSupabaseLoading]);
+    console.log(
+      `%cNavigating to: %c${route.path}`,
+      "color: grey;",
+      "color: lime;"
+    );
+    nav(route.path);
+  }, [route, location.hash]);
 
   const canBack =
-    isLoggedIn && !isSupabaseLoading && location.pathname !== "/dashboard";
+    supabase.isLoggedIn &&
+    supabase.hasInit &&
+    location.pathname !== "/dashboard";
 
   return (
     <S.ContainerEl>

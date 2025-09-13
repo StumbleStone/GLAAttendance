@@ -17,7 +17,6 @@ export const SubHeading: React.FC<SubHeadingProps> = (
 namespace S {
   export const SubHeadingEl = styled("div")`
     margin: 0;
-    margin-bottom: 10px;
     font-size: 24px;
   `;
 }

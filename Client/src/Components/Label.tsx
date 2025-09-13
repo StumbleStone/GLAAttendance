@@ -6,22 +6,22 @@ export interface LabelProps {
   text?: string;
   children?: React.ReactNode;
   className?: string;
-  color?: string;
+  color?: string | null;
 }
 
 export const Label: React.FC<LabelProps> = (props: LabelProps) => {
-  const { text, children, className, color } = props;
+  const { text, children, className, color = null } = props;
 
   return (
-    <S.LabelEl color={color} className={className}>
+    <S.LabelEl tColor={color} className={className}>
       {text ?? children}
     </S.LabelEl>
   );
 };
 
 namespace S {
-  export const LabelEl = styled("div")<{ color?: string }>`
-    color: ${(p) => p.color ?? DefaultColors.Text_Color};
+  export const LabelEl = styled("div")<{ tColor: string | null }>`
+    color: ${(p) => p.tColor ?? DefaultColors.Text_Color};
     margin: 0;
     white-space: nowrap;
   `;

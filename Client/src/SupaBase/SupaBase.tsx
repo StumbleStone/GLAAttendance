@@ -24,6 +24,7 @@ import {
 
 export enum SupaBaseEventKey {
   USER_LOGIN = "user_login",
+  USER_PROFILE = "user_profile",
   INIT_DONE = "init_done",
   LOADED_ATTENDEES = "loaded_attendees",
   LOADED_ROLLCALLS = "loaded_rollcalls",
@@ -36,6 +37,7 @@ export enum SupaBaseEventKey {
 
 export interface SupaBaseEvent extends EventClassEvents {
   [SupaBaseEventKey.USER_LOGIN]: (isLoggedIn: boolean) => void;
+  [SupaBaseEventKey.USER_PROFILE]: (profile: ProfileEventEntry) => void;
   [SupaBaseEventKey.INIT_DONE]: (done: boolean) => void;
   [SupaBaseEventKey.LOADED_ATTENDEES]: () => void;
   [SupaBaseEventKey.LOADED_ROLLCALLS]: () => void;
@@ -68,6 +70,8 @@ interface BarcodeProcessingMap {
 export class SupaBase extends EventClass<SupaBaseEvent> {
   client: SupabaseClient;
   _isLoggedIn: boolean;
+  _initDone: boolean;
+  _loadedAuthState: boolean;
 
   user: User;
   profile: ProfileEventEntry;
@@ -96,23 +100,21 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.attendees = new Map<string, Attendee>();
     this.barcodeProcessMap = new Map<string, BarcodeProcessingMap>();
     this._isLoggedIn = false;
+    this._loadedAuthState = false;
+    this._initDone = false;
   }
 
   async init() {
     this.registerVisibilityChecker();
-    let resolveInit: () => void;
-    const waitForInitialSession = new Promise<void>((resolve) => {
-      resolveInit = resolve;
-    });
 
     this.client.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
+        this._loadedAuthState = true;
         if (event === "INITIAL_SESSION") {
           if (session?.user) {
             // Don't await
             this.onLoggedIn(session);
           }
-          resolveInit();
           return;
         }
 
@@ -137,7 +139,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       }
     );
 
-    await waitForInitialSession;
+    this._initDone = true;
     this.fireUpdate((cb) => cb[SupaBaseEventKey.INIT_DONE]?.(true));
   }
 
@@ -207,15 +209,40 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this._isLoggedIn = true;
     this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_LOGIN]?.(true));
 
-    console.groupCollapsed(`Running all the queries`);
+    await this.loadProfile();
+  }
 
+  async userOnboarded() {
+    await this.loadData();
+    await this.listenToAttendeesChanges();
+  }
+
+  async loadData() {
     await this.loadAttendees();
     await this.loadRollCalls();
     await this.loadRollCallEvents();
-    console.log(`Queries Done!`);
-    console.groupEnd();
+  }
 
-    await this.listenToAttendeesChanges();
+  async loadProfile() {
+    console.log(`Loading Profile`);
+    const { data, error } = await this.client
+      .from(Tables.PROFILES)
+      .select()
+      .eq("uid", this.user.id)
+      .single();
+
+    if (error) {
+      console.error(error);
+      debugger;
+      return;
+    }
+
+    this.profile = data;
+    this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_PROFILE]?.(data));
+
+    if (this.profile.onboarding_done) {
+      await this.userOnboarded();
+    }
   }
 
   async onLoggedOut() {
@@ -227,8 +254,20 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_LOGIN]?.(false));
   }
 
+  get hasInit(): boolean {
+    return this._initDone;
+  }
+
+  get supabaseConnected(): boolean {
+    return this._loadedAuthState;
+  }
+
   get isLoggedIn(): boolean {
     return this._isLoggedIn;
+  }
+
+  get isOnboarded(): boolean {
+    return this.isLoggedIn && this.profile?.onboarding_done === true;
   }
 
   async listenToAttendeesChanges() {
