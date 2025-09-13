@@ -28,6 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
         >
           <Route path={""} element={<MainMenu />}>
             <Route path={"loading"} element={<LoadingSpinner size={100} />} />
+            <Route
+              path={"loading_profile"}
+              element={<LoadingSpinner size={100} />}
+            />
             <Route path={"login"} element={<Login />} />
             <Route path={"reset"} element={<Reset />} />
             <Route path={"onboard"} element={<Onboard />} />

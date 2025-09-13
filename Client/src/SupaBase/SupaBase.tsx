@@ -19,12 +19,15 @@ import {
   RollCallMethod,
   RollCallStatus,
   Tables,
+  UpdateProfileEventEntry,
   UpdateRollCallEvent,
 } from "./types";
 
 export enum SupaBaseEventKey {
   USER_LOGIN = "user_login",
+  USER_UPDATE = "user_update",
   USER_PROFILE = "user_profile",
+  CLIENT_CONNECTED = "client_connected",
   INIT_DONE = "init_done",
   LOADED_ATTENDEES = "loaded_attendees",
   LOADED_ROLLCALLS = "loaded_rollcalls",
@@ -37,7 +40,9 @@ export enum SupaBaseEventKey {
 
 export interface SupaBaseEvent extends EventClassEvents {
   [SupaBaseEventKey.USER_LOGIN]: (isLoggedIn: boolean) => void;
+  [SupaBaseEventKey.USER_UPDATE]: (user: User) => void;
   [SupaBaseEventKey.USER_PROFILE]: (profile: ProfileEventEntry) => void;
+  [SupaBaseEventKey.CLIENT_CONNECTED]: (done: boolean) => void;
   [SupaBaseEventKey.INIT_DONE]: (done: boolean) => void;
   [SupaBaseEventKey.LOADED_ATTENDEES]: () => void;
   [SupaBaseEventKey.LOADED_ROLLCALLS]: () => void;
@@ -67,6 +72,12 @@ interface BarcodeProcessingMap {
   errorTime: number;
 }
 
+export interface SubmitOnBoardingOptions {
+  password: string;
+  name: string;
+  surname: string;
+}
+
 export class SupaBase extends EventClass<SupaBaseEvent> {
   client: SupabaseClient;
   _isLoggedIn: boolean;
@@ -82,6 +93,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   _attendeesModified: number; // Probably a much cleaner way to do this but I'm too tired to care
 
   barcodeProcessMap: Map<string, BarcodeProcessingMap>;
+
+  loadPromise: Promise<void>;
 
   constructor() {
     super();
@@ -104,42 +117,67 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this._initDone = false;
   }
 
+  handleAuthEvent(event: AuthChangeEvent, session: Session | null) {
+    if (session) {
+      this.updateRealtimeToken(session);
+    }
+
+    if (event === "INITIAL_SESSION") {
+      if (session?.user) {
+        // Don't await
+        this.onLoggedIn(session);
+      }
+      return;
+    }
+
+    if (event === "SIGNED_OUT") {
+      // Don't await
+      this.onLoggedOut();
+
+      return;
+    }
+
+    if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+      if (session?.user) {
+        // Don't await
+        this.onLoggedIn(session);
+      }
+      return;
+    }
+
+    if (event === "USER_UPDATED") {
+      if (session?.user) {
+        this.user = this.user;
+        this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_UPDATE]?.(this.user));
+      }
+      return;
+    }
+
+    debugger;
+    if (event == "PASSWORD_RECOVERY") {
+    }
+  }
+
   async init() {
+    console.log(`Initiating client`);
     this.registerVisibilityChecker();
 
     this.client.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-        this._loadedAuthState = true;
-        if (event === "INITIAL_SESSION") {
-          if (session?.user) {
-            // Don't await
-            this.onLoggedIn(session);
-          }
-          return;
-        }
+        console.log(`Received Auth Event: ${event}`);
+        this.handleAuthEvent(event, session);
 
-        if (event === "SIGNED_OUT") {
-          // Don't await
-          this.onLoggedOut();
-
-          return;
-        }
-
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          if (session?.user) {
-            // Don't await
-            this.onLoggedIn(session);
-          }
-          return;
-        }
-
-        debugger;
-        if (event == "PASSWORD_RECOVERY") {
+        if (!this._loadedAuthState) {
+          this._loadedAuthState = true;
+          this.fireUpdate((cb) =>
+            cb[SupaBaseEventKey.CLIENT_CONNECTED]?.(true)
+          );
         }
       }
     );
 
     this._initDone = true;
+    console.log(`Client Init done`);
     this.fireUpdate((cb) => cb[SupaBaseEventKey.INIT_DONE]?.(true));
   }
 
@@ -194,12 +232,15 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
   }
 
-  async onLoggedIn(session: Session) {
+  updateRealtimeToken(session: Session) {
     if (session?.access_token) {
       this.client.realtime.setAuth(session.access_token);
     }
+  }
 
+  async onLoggedIn(session: Session) {
     this.user = session.user;
+    this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_UPDATE]?.(this.user));
 
     if (this._isLoggedIn) {
       return;
@@ -212,15 +253,20 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     await this.loadProfile();
   }
 
-  async userOnboarded() {
-    await this.loadData();
-    await this.listenToAttendeesChanges();
-  }
-
   async loadData() {
-    await this.loadAttendees();
-    await this.loadRollCalls();
-    await this.loadRollCallEvents();
+    if (this.loadPromise) {
+      return this.loadPromise;
+    }
+
+    this.loadPromise = new Promise(async (res) => {
+      await this.loadAttendees();
+      await this.loadRollCalls();
+      await this.loadRollCallEvents();
+      await this.listenToAttendeesChanges();
+      res();
+    });
+
+    return this.loadPromise;
   }
 
   async loadProfile() {
@@ -239,10 +285,6 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     this.profile = data;
     this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_PROFILE]?.(data));
-
-    if (this.profile.onboarding_done) {
-      await this.userOnboarded();
-    }
   }
 
   async onLoggedOut() {
@@ -271,6 +313,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   async listenToAttendeesChanges() {
+    console.log("Registering Realtime listener");
     const channel = this.client.channel("attendees-channel").on(
       "postgres_changes",
       {
@@ -779,6 +822,50 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     if (error) {
       console.error(error);
+      return;
     }
+  }
+
+  async updateUserDetails(name: string, surname: string, onboarded: boolean) {
+    const userDetails: UpdateProfileEventEntry = {
+      first_name: name,
+      last_name: surname,
+      onboarding_done: onboarded,
+    };
+
+    const { error, data } = await this.client
+      .from(Tables.PROFILES)
+      .update(userDetails)
+      .eq("uid", this.user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(`updateUserDetails`, error);
+      return;
+    }
+
+    debugger;
+    if (data) {
+      this.profile = data;
+      this.fireUpdate((cb) =>
+        cb[SupaBaseEventKey.USER_PROFILE]?.(this.profile)
+      );
+    }
+  }
+
+  async submitOnBoarding(options: SubmitOnBoardingOptions) {
+    debugger;
+
+    const { data: uData, error: uError } = await this.client.auth.updateUser({
+      password: options.password,
+    });
+
+    if (uError) {
+      console.error(uError);
+      return;
+    }
+
+    await this.updateUserDetails(options.name, options.surname, true);
   }
 }

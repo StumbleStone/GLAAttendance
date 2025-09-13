@@ -2,7 +2,7 @@ import styled from "@emotion/styled";
 import { faAsterisk, faSignature } from "@fortawesome/free-solid-svg-icons";
 import React, { ChangeEvent, useCallback, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Button, ButtonContainer } from "../Components/Button/Button";
+import { Button } from "../Components/Button/Button";
 import { CheckboxBool } from "../Components/Checkbox/Checkbox";
 import { Heading } from "../Components/Heading";
 import { InputWithIcon } from "../Components/Inputs/InputWithIcon";
@@ -107,7 +107,12 @@ export const Onboard: React.FC = () => {
 
   const onComplete = useCallback(async () => {
     debugger;
-  }, []);
+    await supabase.submitOnBoarding({
+      password: pwd,
+      name: name,
+      surname: surname,
+    });
+  }, [pwd, name, surname]);
 
   return (
     <S.Container>
@@ -167,42 +172,44 @@ export const Onboard: React.FC = () => {
                 passwordValid.hasLowerCase ? DefaultColors.BrightGreen : null
               }
             >
-              Has lowercase
+              {"a-z"}
             </S.PasswordCheck>
             <S.PasswordCheck
               tColor={
                 passwordValid.hasUpperCase ? DefaultColors.BrightGreen : null
               }
             >
-              Has uppercase
+              {"A-Z"}
             </S.PasswordCheck>
             <S.PasswordCheck
               tColor={
                 passwordValid.hasNumber ? DefaultColors.BrightGreen : null
               }
             >
-              Has number
+              {"0-9"}
             </S.PasswordCheck>
             <S.PasswordCheck
               tColor={
                 passwordValid.hasSpecial ? DefaultColors.BrightGreen : null
               }
             >
-              Has special character
+              {"!@#"}
             </S.PasswordCheck>
             <S.PasswordCheck
               tColor={
                 passwordValid.minLength ? DefaultColors.BrightGreen : null
               }
-            >{`Minimum length (${pwdMinLength})`}</S.PasswordCheck>
+            >{`${pwdMinLength}+`}</S.PasswordCheck>
           </S.PasswordContainer>
         </S.InputContainer>
         <S.InputContainer>
           <Label
             color={
-              !!pwd2 && passwordValid.passwordsMatch
+              !pwd
+                ? null
+                : passwordValid.passwordsMatch
                 ? DefaultColors.BrightGreen
-                : null
+                : DefaultColors.BrightRed
             }
           >
             Confirm Password
@@ -226,26 +233,26 @@ export const Onboard: React.FC = () => {
           <S.RefLink target="_blank" href="https://supabase.com/">
             {"Supabase"}
           </S.RefLink>
-          <span>{` to securely store user information and handle authentication. We do not share your personal data with third parties.`}</span>
+          <span>{` to securely store user information and handle authentication. We do not share your personal data with third parties.\n\nThis website requires an online connection in order to function.`}</span>
         </S.Disclaimer>
         <S.AcceptContainer>
           <CheckboxBool onChange={onChangeAccept} value={accepted} />
           <S.AcceptLabel>I Accept</S.AcceptLabel>
         </S.AcceptContainer>
       </S.Section>
-      <ButtonContainer>
-        <Button
-          onClick={onComplete}
-          disabled={
-            accepted !== true ||
-            !validName ||
-            !validSurname ||
-            !passwordIsValid(passwordValid)
-          }
-        >
-          Complete
-        </Button>
-      </ButtonContainer>
+      {/* <ButtonContainer> */}
+      <S.CompleteButton
+        onClick={onComplete}
+        disabled={
+          accepted !== true ||
+          !validName ||
+          !validSurname ||
+          !passwordIsValid(passwordValid)
+        }
+      >
+        Complete
+      </S.CompleteButton>
+      {/* </ButtonContainer> */}
     </S.Container>
   );
 };
@@ -254,6 +261,10 @@ namespace S {
   export const Container = styled(Tile)`
     margin-top: 0;
     margin: 30px;
+  `;
+
+  export const CompleteButton = styled(Button)`
+    justify-content: center;
   `;
 
   export const Disclaimer = styled.div`
@@ -269,14 +280,11 @@ namespace S {
   `;
 
   export const StyledSubHeading = styled(SubHeading)`
-    margin-left: 15px;
     margin-bottom: 10px;
   `;
 
   export const Section = styled.div`
     margin-bottom: 25px;
-    margin-left: 25px;
-    margin-right: 25px;
     display: flex;
     gap: 5px;
     flex-direction: column;
@@ -297,20 +305,30 @@ namespace S {
 
   export const PasswordContainer = styled.div`
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+
+    border: 1px solid ${DefaultColors.OffWhite}55;
+    border-radius: 15px;
+    padding: 0px 5px;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    user-select: none;
   `;
 
-  export const PasswordCheck = styled.div<{ tColor: string | null }>`
+  export const PasswordCheck = styled.div<{ tColor?: string | null }>`
     white-space: nowrap;
     padding: 3px 6px;
 
     font-size: 16px;
 
-    color: ${(p) => p.tColor};
+    color: ${(p) => p.tColor ?? `${DefaultColors.OffWhite}`};
+    width: 50px;
 
-    ::before {
-      content: "» ";
-      color: ${(p) => p.tColor};
-    }
+    text-align: center;
+
+    /* ::before {
+      content: "•";
+      color: ${(p) => p.tColor ?? `${DefaultColors.OffWhite}`};
+    } */
   `;
 }

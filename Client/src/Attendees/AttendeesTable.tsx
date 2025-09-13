@@ -46,7 +46,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
-    console.log(`Listeners Setup`);
     return supabase.addListener({
       [SupaBaseEventKey.LOADED_ROLLCALLS]: forceUpdate,
       [SupaBaseEventKey.DELETED_ATTENDEES]: forceUpdate,
@@ -56,14 +55,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   }, []);
 
   const filtered = useMemo<Attendee[]>(() => {
-    console.log(`Rerunning filtered`);
     if (!supabase.attendees || supabase.attendees.size == 0) {
-      console.log(`Rerunning filtered 0, attendees empty`);
       return [];
     }
 
     if (!filter || filter == "") {
-      console.log(`Rerunning filtered ${supabase.attendees.size}, no filter`);
       return Array.from(supabase.attendees.values());
     }
 
@@ -165,7 +161,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             <TableHeading />
             <Heading
               colName={SortColumns.STATUS}
-              label={"Present"}
+              label={"✓"}
               centerLabel={true}
               sortAsc={sortAsc}
               sortCol={sortCol}

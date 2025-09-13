@@ -36,6 +36,7 @@ export const Dashboard: React.FC = (props) => {
   );
 
   React.useEffect(() => {
+    supabase.loadData();
     return supabase.addListener({
       visibility_changed: (isVisible: boolean) =>
         isVisible == false ? setCaptureCode(() => false) : null,
@@ -59,7 +60,7 @@ export const Dashboard: React.FC = (props) => {
         supabase={supabase}
       />,
       <FABQRGrid doClose={close} key="FABQRGrid" supabase={supabase} />,
-      <FABLogout doClose={close} key="FABStartRollCall" supabase={supabase} />,
+      <FABLogout doClose={close} key="FABLogout" supabase={supabase} />,
     ];
   }, []);
 
