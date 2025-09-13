@@ -845,7 +845,6 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       return;
     }
 
-    debugger;
     if (data) {
       this.profile = data;
       this.fireUpdate((cb) =>
@@ -855,8 +854,6 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   async submitOnBoarding(options: SubmitOnBoardingOptions) {
-    debugger;
-
     const { data: uData, error: uError } = await this.client.auth.updateUser({
       password: options.password,
     });

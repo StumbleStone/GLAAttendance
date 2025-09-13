@@ -106,7 +106,6 @@ export const Onboard: React.FC = () => {
   );
 
   const onComplete = useCallback(async () => {
-    debugger;
     await supabase.submitOnBoarding({
       password: pwd,
       name: name,
