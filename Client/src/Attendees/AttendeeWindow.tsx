@@ -3,8 +3,8 @@ import React, { useCallback, useEffect, useReducer, useState } from "react";
 import { Button } from "../Components/Button/Button";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { Tile } from "../Components/Tile";
-import { Attendee } from "../SupaBase/Attendee";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
+import { Attendee } from "./Attendee";
 
 import { keyframes } from "@emotion/react";
 import {
@@ -17,7 +17,10 @@ import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { DownloadButton } from "../Components/Button/DownloadButton";
 import { ShareButton } from "../Components/Button/ShareButton";
 import { Icon } from "../Components/Icon";
-import { PopupConfirm } from "../Components/Popup/PopupConfirm";
+import {
+  PopupConfirm,
+  PopupConfirmButton,
+} from "../Components/Popup/PopupConfirm";
 import { QRCode } from "../QRCode/QRCode";
 import { RollCallMethod, RollCallStatus } from "../SupaBase/types";
 import { DefaultColors } from "../Tools/Toolbox";
@@ -57,20 +60,27 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   }, []);
 
   const handleDelete = useCallback(() => {
-    LayerHandler.AddLayer((layerItem2: LayerItem) => {
+    LayerHandler.AddLayer((layerItem: LayerItem) => {
+      const buttons: PopupConfirmButton[] = [
+        {
+          label: "No",
+          onClick: () => layerItem.close(),
+        },
+        {
+          label: "Yes",
+          onClick: () => {
+            supabase.deleteAttendee(attendee).then(() => {
+              layerItem.close();
+            });
+          },
+        },
+      ];
+
       return (
         <PopupConfirm
-          layerItem={layerItem2}
+          layerItem={layerItem}
           text={`Are you sure you wish to delete ${attendee.name} ${attendee.surname}?`}
-          onDecline={() => {
-            layerItem2.close();
-          }}
-          onConfirm={() => {
-            supabase.deleteAttendee(attendee).then(() => {
-              layerItem2.close();
-            });
-            layerItem.close();
-          }}
+          buttons={buttons}
         />
       );
     });

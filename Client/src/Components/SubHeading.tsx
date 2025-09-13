@@ -7,15 +7,16 @@ export interface SubHeadingProps extends HeadingProps {}
 export const SubHeading: React.FC<SubHeadingProps> = (
   props: SubHeadingProps
 ) => {
-  const { text, children } = props;
+  const { text, children, className } = props;
 
-  return <S.SubHeadingEl>{text ?? children}</S.SubHeadingEl>;
+  return (
+    <S.SubHeadingEl className={className}>{text ?? children}</S.SubHeadingEl>
+  );
 };
 
 namespace S {
   export const SubHeadingEl = styled("div")`
     margin: 0;
-    margin-bottom: 10px;
     font-size: 24px;
   `;
 }

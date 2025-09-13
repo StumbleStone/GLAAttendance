@@ -5,12 +5,13 @@ import { DefaultColors } from "../Tools/Toolbox";
 export interface HeadingProps {
   text?: string;
   children?: React.ReactNode;
+  className?: string;
 }
 
 export const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
-  const { text, children } = props;
+  const { text, children, className } = props;
 
-  return <S.HeadingEl>{text ?? children}</S.HeadingEl>;
+  return <S.HeadingEl className={className}>{text ?? children}</S.HeadingEl>;
 };
 
 namespace S {

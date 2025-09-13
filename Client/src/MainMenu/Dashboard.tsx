@@ -2,18 +2,19 @@ import styled from "@emotion/styled";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
 import { useOutletContext } from "react-router-dom";
+import { Attendee } from "../Attendees/Attendee";
 import { AttendeesTable } from "../Attendees/AttendeesTable";
 import { AttendeeWindow } from "../Attendees/AttendeeWindow";
 import { FABAddAttendees } from "../Attendees/FABAddAttendees";
-import { FABStartRollCall } from "../Attendees/FABStartRollCall";
 import { CaptureButton } from "../Capture/CaptureButton";
 import { CaptureWindow } from "../Capture/CaptureWindow";
 import { FAB } from "../Components/FloatingActionButton/FAB";
 import { InputWithIcon } from "../Components/Inputs/InputWithIcon";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { FABQRGrid } from "../QRCode/FABQRGrid";
+import { FABStartRollCall } from "../RollCall/FABStartRollCall";
 import { RollCallDisplay } from "../RollCall/RollCallDisplay";
-import { Attendee } from "../SupaBase/Attendee";
+import { FABLogout } from "../SupaBase/FABLogout";
 import { SupaBase } from "../SupaBase/SupaBase";
 
 export interface DashboardProps {
@@ -35,6 +36,7 @@ export const Dashboard: React.FC = (props) => {
   );
 
   React.useEffect(() => {
+    supabase.loadData();
     return supabase.addListener({
       visibility_changed: (isVisible: boolean) =>
         isVisible == false ? setCaptureCode(() => false) : null,
@@ -58,6 +60,7 @@ export const Dashboard: React.FC = (props) => {
         supabase={supabase}
       />,
       <FABQRGrid doClose={close} key="FABQRGrid" supabase={supabase} />,
+      <FABLogout doClose={close} key="FABLogout" supabase={supabase} />,
     ];
   }, []);
 

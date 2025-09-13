@@ -1,8 +1,8 @@
 import styled from "@emotion/styled";
-import { BaseInputProps, Input } from "./BaseInput";
 import * as React from "react";
+import { InputWithIcon, InputWithIconProps } from "./InputWithIcon";
 
-export interface EmailInputProps extends BaseInputProps {
+export interface EmailInputProps extends InputWithIconProps {
   forwardRef?: React.RefObject<HTMLInputElement>;
 }
 
@@ -11,9 +11,9 @@ export const EmailInput: React.FC<EmailInputProps> = (
 ) => {
   const { forwardRef, ...rest } = props;
 
-  return <S.EmailInput type="email" {...rest} ref={forwardRef} />;
+  return <S.EmailInput type="email" {...rest} forwardRef={forwardRef} />;
 };
 
 namespace S {
-  export const EmailInput = styled(Input)``;
+  export const EmailInput = styled(InputWithIcon)``;
 }

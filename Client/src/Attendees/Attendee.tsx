@@ -1,11 +1,11 @@
 import * as qrcode from "qrcode";
-import { EventClass, EventClassEvents } from "../Tools/EventClass";
 import {
   AttendeesEntry,
   RollCallEntry,
   RollCallEventEntry,
   RollCallStatus,
-} from "./types";
+} from "../SupaBase/types";
+import { EventClass, EventClassEvents } from "../Tools/EventClass";
 
 export const QR_SIZE: number = 512;
 

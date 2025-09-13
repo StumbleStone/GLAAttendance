@@ -2,7 +2,10 @@ import { faListCheck } from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback } from "react";
 import { FABItem } from "../Components/FloatingActionButton/Items/FABItem";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
-import { PopupConfirm } from "../Components/Popup/PopupConfirm";
+import {
+  PopupConfirm,
+  PopupConfirmButton,
+} from "../Components/Popup/PopupConfirm";
 import { PopupInput } from "../Components/Popup/PopupInput";
 import { SupaBase } from "../SupaBase/SupaBase";
 
@@ -31,7 +34,7 @@ function startRollCallEvent(supabase: SupaBase) {
 }
 
 function stopRollCallEvent(supabase: SupaBase) {
-  LayerHandler.AddLayer((layerItem2: LayerItem) => {
+  LayerHandler.AddLayer((layerItem: LayerItem) => {
     const attendeeCount = supabase.attendees.size;
     const attendeesPresent = supabase.countPresentAttendees();
 
@@ -42,18 +45,26 @@ function stopRollCallEvent(supabase: SupaBase) {
       confirmMessage = `All ${attendeesPresent} Attendees accounted for, you can conclude the RollCall`;
     }
 
+    const buttons: PopupConfirmButton[] = [
+      {
+        label: "No",
+        onClick: () => layerItem.close(),
+      },
+      {
+        label: "Yes",
+        onClick: () => {
+          supabase.closeCurrentRollCallEvent().then(() => {
+            layerItem.close();
+          });
+        },
+      },
+    ];
+
     return (
       <PopupConfirm
-        layerItem={layerItem2}
+        layerItem={layerItem}
         text={confirmMessage}
-        onDecline={() => {
-          layerItem2.close();
-        }}
-        onConfirm={() => {
-          supabase.closeCurrentRollCallEvent().then(() => {
-            layerItem2.close();
-          });
-        }}
+        buttons={buttons}
       />
     );
   });

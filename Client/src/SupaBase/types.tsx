@@ -20,6 +20,8 @@ export enum RollCallMethod {
 
 export type ProfileEventEntry =
   Database["public"]["Tables"][Tables.PROFILES]["Row"];
+export type UpdateProfileEventEntry =
+  Database["public"]["Tables"][Tables.PROFILES]["Update"];
 
 export type RollCallEventEntry =
   Database["public"]["Tables"][Tables.ROLLCALL_EVENT]["Row"];
