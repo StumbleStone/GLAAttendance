@@ -115,7 +115,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
                 icon={present ? faCheckSquare : faXmarkSquare}
                 size={22}
                 color={
-                  present ? DefaultColors.BrightGreen : DefaultColors.BrightRed
+                  present ? DefaultColors.BrightGreen : DefaultColors.BrightGrey
                 }
               />
             </S.IconContainer>
@@ -138,7 +138,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
             onClick={handleAbsent}
             icon={faXmarkCircle}
             disabled={!rollCallInProgress || !present}
-            color={DefaultColors.BrightRed}
+            color={DefaultColors.BrightGrey}
           />
           <Button
             onClick={handlePresent}

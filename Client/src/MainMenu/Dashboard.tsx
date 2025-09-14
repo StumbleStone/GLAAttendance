@@ -12,7 +12,6 @@ import { FAB } from "../Components/FloatingActionButton/FAB";
 import { InputWithIcon } from "../Components/Inputs/InputWithIcon";
 import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
 import { FABQRGrid } from "../QRCode/FABQRGrid";
-import { FABStartRollCall } from "../RollCall/FABStartRollCall";
 import { RollCallDisplay } from "../RollCall/RollCallDisplay";
 import { FABLogout } from "../SupaBase/FABLogout";
 import { SupaBase } from "../SupaBase/SupaBase";
@@ -52,11 +51,6 @@ export const Dashboard: React.FC = (props) => {
       <FABAddAttendees
         doClose={close}
         key="FABAddAttendees"
-        supabase={supabase}
-      />,
-      <FABStartRollCall
-        doClose={close}
-        key="FABStartRollCall"
         supabase={supabase}
       />,
       <FABQRGrid doClose={close} key="FABQRGrid" supabase={supabase} />,
