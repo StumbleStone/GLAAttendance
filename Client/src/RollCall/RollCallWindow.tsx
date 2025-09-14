@@ -13,7 +13,7 @@ import { PopupInput } from "../Components/Popup/PopupInput";
 import { SubHeading } from "../Components/SubHeading";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { epochToDate } from "../Tools/Toolbox";
+import { DefaultColors, epochToDate } from "../Tools/Toolbox";
 
 export function ShowRollCallWindow(supabase: SupaBase) {
   LayerHandler.AddLayer((l: LayerItem) => {
@@ -61,6 +61,7 @@ function stopRollCallEvent(supabase: SupaBase) {
       {
         label: "No",
         onClick: () => layerItem.close(),
+        color: DefaultColors.BrightRed,
       },
       {
         label: "Yes",
@@ -69,6 +70,7 @@ function stopRollCallEvent(supabase: SupaBase) {
             layerItem.close();
           });
         },
+        color: DefaultColors.BrightGreen,
       },
     ];
 
@@ -123,9 +125,18 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
     return (
       <>
         <SubHeading>{`Number: ${cur.counter}`}</SubHeading>
-        <SubHeading>{`Status: ${
-          !cur.closed_by ? "In Progress" : "Closed"
-        }`}</SubHeading>
+        <SubHeading>
+          <span>Status: </span>
+          <S.Status
+            color={
+              !cur.closed_by
+                ? DefaultColors.BrightOrange
+                : DefaultColors.BrightGrey
+            }
+          >
+            {!cur.closed_by ? "In Progress" : "Closed"}
+          </S.Status>
+        </SubHeading>
         {!!cur.description && <span>{cur.description}</span>}
         <table>
           <tbody>
@@ -207,5 +218,9 @@ namespace S {
     display: flex;
     flex-direction: column;
     gap: 10px;
+  `;
+
+  export const Status = styled.span<{ color: string }>`
+    color: ${(p) => p.color};
   `;
 }

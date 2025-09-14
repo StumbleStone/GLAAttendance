@@ -65,6 +65,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
         {
           label: "No",
           onClick: () => layerItem.close(),
+          color: DefaultColors.BrightRed,
         },
         {
           label: "Yes",
@@ -73,6 +74,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
               layerItem.close();
             });
           },
+          color: DefaultColors.BrightGreen,
         },
       ];
 
@@ -115,7 +117,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
                 icon={present ? faCheckSquare : faXmarkSquare}
                 size={22}
                 color={
-                  present ? DefaultColors.BrightGreen : DefaultColors.BrightGrey
+                  present ? DefaultColors.BrightGreen : DefaultColors.BrightRed
                 }
               />
             </S.IconContainer>
@@ -138,7 +140,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
             onClick={handleAbsent}
             icon={faXmarkCircle}
             disabled={!rollCallInProgress || !present}
-            color={DefaultColors.BrightGrey}
+            color={DefaultColors.BrightRed}
           />
           <Button
             onClick={handlePresent}

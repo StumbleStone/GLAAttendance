@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
-import React, { ReactNode, useEffect, useRef, useState } from "react";
-import { DefaultColors, elementIsChildOf } from "../../Tools/Toolbox";
+import React, { ReactNode, useCallback, useRef } from "react";
+import { DefaultColors } from "../../Tools/Toolbox";
 
 export interface BackdropProps {
   onClose?: () => void;
@@ -15,51 +15,55 @@ export const Backdrop: React.FC<BackdropProps> = (props: BackdropProps) => {
 
   const containerRef = useRef(null);
 
-  const [blocking, setBlocking] = useState(true);
+  // const [blocking, setBlocking] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setBlocking(false);
-    }, debounceThreshold);
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     setBlocking(false);
+  //   }, debounceThreshold);
 
-    return () => clearTimeout(timer);
-  }, []);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
-  useEffect(() => {
-    if (blocking) {
-      return;
-    }
+  // useEffect(() => {
+  //   // if (blocking) {
+  //   //   return;
+  //   // }
+  //   // const handleClick = (ev: MouseEvent) => {
+  //   //   if (blocking) {
+  //   //     return;
+  //   //   }
+  //   //   if (
+  //   //     ev.target !== containerRef.current &&
+  //   //     elementIsChildOf(ev.target as HTMLElement, containerRef.current)
+  //   //   ) {
+  //   //     return;
+  //   //   }
+  //   //   ev.stopPropagation();
+  //   //   ev.stopImmediatePropagation();
+  //   //   setTimeout(() => {
+  //   //     onClose?.();
+  //   //   }, 150);
+  //   // };
+  //   // document.addEventListener("click", handleClick);
+  //   // return () => document.removeEventListener("click", handleClick);
+  // }, [blocking]);
 
-    const handleClick = (ev: MouseEvent) => {
-      if (blocking) {
-        return;
-      }
-
-      if (
-        ev.target !== containerRef.current &&
-        elementIsChildOf(ev.target as HTMLElement, containerRef.current)
-      ) {
-        return;
-      }
-
-      ev.stopPropagation();
-      ev.stopImmediatePropagation();
-
-      setTimeout(() => {
+  const handleClick = useCallback(
+    (ev: React.MouseEvent) => {
+      if (ev.target === containerRef?.current) {
         onClose?.();
-      }, 150);
-    };
-
-    document.addEventListener("click", handleClick);
-
-    return () => document.removeEventListener("click", handleClick);
-  }, [blocking]);
+      }
+    },
+    [onClose]
+  );
 
   return (
     <S.Container
       ref={containerRef}
       className={className}
-      blockClicks={blocking}
+      blockClicks={false}
+      onClick={handleClick}
     >
       {children}
     </S.Container>

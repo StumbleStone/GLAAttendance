@@ -6,6 +6,7 @@ import {
   PopupConfirm,
   PopupConfirmButton,
 } from "../Components/Popup/PopupConfirm";
+import { DefaultColors } from "../Tools/Toolbox";
 import { SupaBase } from "./SupaBase";
 
 export interface FABLogoutProps {
@@ -19,6 +20,7 @@ function logoutConfirm(supabase: SupaBase) {
       {
         label: "No",
         onClick: () => layerItem.close(),
+        color: DefaultColors.BrightRed,
       },
       {
         label: "Yes",
@@ -26,6 +28,7 @@ function logoutConfirm(supabase: SupaBase) {
           layerItem.close();
           supabase.logOut();
         },
+        color: DefaultColors.BrightGreen,
       },
       {
         label: "All",
