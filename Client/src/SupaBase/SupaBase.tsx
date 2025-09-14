@@ -27,6 +27,7 @@ export enum SupaBaseEventKey {
   USER_LOGIN = "user_login",
   USER_UPDATE = "user_update",
   USER_PROFILE = "user_profile",
+  USERNAMES_LOADED = "usernames_loaded",
   CLIENT_CONNECTED = "client_connected",
   INIT_DONE = "init_done",
   LOADED_ATTENDEES = "loaded_attendees",
@@ -90,9 +91,12 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   attendees: AttendeesMap;
   rollCallEvents: RollCallEventEntry[];
   currentRollCallEvent: RollCallEventEntry;
+  rollcallEventsLoaded: boolean;
   _attendeesModified: number; // Probably a much cleaner way to do this but I'm too tired to care
 
   barcodeProcessMap: Map<string, BarcodeProcessingMap>;
+
+  userNameMap: Map<string, string>;
 
   loadPromise: Promise<void>;
 
@@ -115,6 +119,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this._isLoggedIn = false;
     this._loadedAuthState = false;
     this._initDone = false;
+    this.userNameMap = new Map();
+    this.rollcallEventsLoaded = false;
   }
 
   handleAuthEvent(event: AuthChangeEvent, session: Session | null) {
@@ -259,9 +265,15 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     this.loadPromise = new Promise(async (res) => {
-      await this.loadAttendees();
+      // These don't depend on eachother and can be ran at the same time
+      await Promise.all([
+        this.loadAttendees(),
+        this.loadUsernames(),
+        this.loadRollCallEvents(),
+      ]);
+
       await this.loadRollCalls();
-      await this.loadRollCallEvents();
+
       await this.listenToAttendeesChanges();
       res();
     });
@@ -284,6 +296,10 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     this.profile = data;
+    this.userNameMap.set(
+      this.profile.uid,
+      `${this.profile.first_name} ${this.profile.last_name}`
+    );
     this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_PROFILE]?.(data));
   }
 
@@ -525,6 +541,26 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     console.log(`[${data?.length || 0}] Attendees loaded`);
   }
 
+  async loadUsernames(): Promise<void> {
+    console.log(`Loading Usernames`);
+    const { data, error } = await this.client.from(Tables.PROFILES).select();
+
+    if (error) {
+      console.error(error);
+      debugger;
+    }
+
+    (data || []).forEach((userProfile: ProfileEventEntry) => {
+      this.userNameMap.set(
+        userProfile.uid,
+        `${userProfile.first_name} ${userProfile.last_name}`
+      );
+    });
+
+    this.fireUpdate((cb) => cb[SupaBaseEventKey.USERNAMES_LOADED]?.());
+    console.log(`[${data?.length || 0}] Usernames loaded`);
+  }
+
   get attendeesModified(): number {
     return this._attendeesModified;
   }
@@ -590,6 +626,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     this.rollCallEvents = (data ?? []).sort(this.sortRollCallEvent);
     this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]?.());
+    this.rollcallEventsLoaded = true;
     console.log(`[${this.rollCallEvents.length}] RollCall Events loaded`);
 
     this.calculateCurrentRollCallEvent();
@@ -847,6 +884,10 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     if (data) {
       this.profile = data;
+      this.userNameMap.set(
+        this.profile.uid,
+        `${this.profile.first_name} ${this.profile.last_name}`
+      );
       this.fireUpdate((cb) =>
         cb[SupaBaseEventKey.USER_PROFILE]?.(this.profile)
       );
@@ -864,5 +905,15 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     await this.updateUserDetails(options.name, options.surname, true);
+  }
+
+  getUserName(id: string): string {
+    const user = this.userNameMap.get(id);
+
+    if (!user) {
+      return "Unknown";
+    }
+
+    return user;
   }
 }

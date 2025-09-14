@@ -186,7 +186,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
                     color={
                       isPresentOnThisRollCall
                         ? DefaultColors.BrightGreen
-                        : DefaultColors.BrightRed
+                        : DefaultColors.Grey
                     }
                     icon={
                       isPresentOnThisRollCall ? faCheckSquare : faXmarkSquare

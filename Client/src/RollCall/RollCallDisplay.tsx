@@ -4,6 +4,7 @@ import React, { useCallback, useReducer } from "react";
 import { Button } from "../Components/Button/Button";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
+import { ShowRollCallWindow } from "./RollCallWindow";
 
 export interface RollCallDisplayProps {
   supabase: SupaBase;
@@ -38,7 +39,9 @@ export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
     message = ` In Progress!`;
   }
 
-  const handleClick = useCallback(() => {}, []);
+  const handleClick = useCallback(() => {
+    ShowRollCallWindow(supabase);
+  }, []);
 
   return (
     <S.StyledButton
