@@ -125,9 +125,18 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
     return (
       <>
         <SubHeading>{`Number: ${cur.counter}`}</SubHeading>
-        <SubHeading>{`Status: ${
-          !cur.closed_by ? "In Progress" : "Closed"
-        }`}</SubHeading>
+        <SubHeading>
+          <span>Status: </span>
+          <S.Status
+            color={
+              !cur.closed_by
+                ? DefaultColors.BrightOrange
+                : DefaultColors.BrightGrey
+            }
+          >
+            {!cur.closed_by ? "In Progress" : "Closed"}
+          </S.Status>
+        </SubHeading>
         {!!cur.description && <span>{cur.description}</span>}
         <table>
           <tbody>
@@ -209,5 +218,9 @@ namespace S {
     display: flex;
     flex-direction: column;
     gap: 10px;
+  `;
+
+  export const Status = styled.span<{ color: string }>`
+    color: ${(p) => p.color};
   `;
 }
