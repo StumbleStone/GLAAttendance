@@ -13,7 +13,7 @@ import { PopupInput } from "../Components/Popup/PopupInput";
 import { SubHeading } from "../Components/SubHeading";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { epochToDate } from "../Tools/Toolbox";
+import { DefaultColors, epochToDate } from "../Tools/Toolbox";
 
 export function ShowRollCallWindow(supabase: SupaBase) {
   LayerHandler.AddLayer((l: LayerItem) => {
@@ -61,6 +61,7 @@ function stopRollCallEvent(supabase: SupaBase) {
       {
         label: "No",
         onClick: () => layerItem.close(),
+        color: DefaultColors.BrightRed,
       },
       {
         label: "Yes",
@@ -69,6 +70,7 @@ function stopRollCallEvent(supabase: SupaBase) {
             layerItem.close();
           });
         },
+        color: DefaultColors.BrightGreen,
       },
     ];
 

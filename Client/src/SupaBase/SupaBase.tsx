@@ -6,7 +6,10 @@ import {
   SupabaseClient,
   User,
 } from "@supabase/supabase-js";
+import React from "react";
 import { Attendee } from "../Attendees/Attendee";
+import { LayerHandler } from "../Components/Layer/Layer";
+import { RollCallConfirm } from "../RollCall/RollCallConfirm";
 import { EventClass, EventClassEvents } from "../Tools/EventClass";
 import { Database } from "./supabase-types";
 import {
@@ -689,12 +692,21 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     const { error, data } = await this.client
       .from(Tables.ROLLCALL)
       .insert(entry)
-      .select();
+      .select()
+      .single();
 
     if (error) {
       console.error(`createNewRollCall`, error);
       return false;
     }
+
+    LayerHandler.AddLayer((li) => (
+      <RollCallConfirm
+        attendee={attendee}
+        layerItem={li}
+        present={data.status === RollCallStatus.PRESENT}
+      />
+    ));
 
     return true;
   }
