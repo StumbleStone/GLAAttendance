@@ -13,6 +13,7 @@ import { PopupInput } from "../Components/Popup/PopupInput";
 import { SubHeading } from "../Components/SubHeading";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
+import { RollCallEventEntry } from "../SupaBase/types";
 import { DefaultColors, epochToDate } from "../Tools/Toolbox";
 
 export function ShowRollCallWindow(supabase: SupaBase) {
@@ -94,8 +95,9 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
     layerItem.close();
   }, [layerItem]);
 
-  const cur = supabase.currentRollCallEvent;
-  const canStart = (!cur && supabase.rollcallEventsLoaded) || !!cur.closed_by;
+  const cur: RollCallEventEntry | null = supabase.currentRollCallEvent;
+  const canStart =
+    (!cur && supabase.rollcallEventsLoaded) || (!!cur && !!cur.closed_by);
   const canStop = !!cur && !cur.closed_by;
   const loading = !supabase.rollcallEventsLoaded;
 
@@ -124,36 +126,38 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
 
     return (
       <>
-        <SubHeading>{`Number: ${cur.counter}`}</SubHeading>
+        <SubHeading>{`Number: ${cur?.counter ?? "--"}`}</SubHeading>
         <SubHeading>
           <span>Status: </span>
           <S.Status
             color={
-              !cur.closed_by
+              cur && !cur.closed_by
                 ? DefaultColors.BrightOrange
                 : DefaultColors.BrightGrey
             }
           >
-            {!cur.closed_by ? "In Progress" : "Closed"}
+            {!cur ? "None" : !cur.closed_by ? "In Progress" : "Closed"}
           </S.Status>
         </SubHeading>
-        {!!cur.description && <span>{cur.description}</span>}
+        {!!cur?.description && <span>{cur.description}</span>}
         <table>
           <tbody>
             <tr>
               <td>Started:</td>
               <td>
-                {epochToDate(new Date(cur.created_at).getTime(), {
-                  includeTime: true,
-                })}
+                {cur
+                  ? epochToDate(new Date(cur.created_at).getTime(), {
+                      includeTime: true,
+                    })
+                  : "--"}
               </td>
             </tr>
             <tr>
               <td>Started By:</td>
-              <td>{supabase.getUserName(cur.created_by)}</td>
+              <td>{cur ? supabase.getUserName(cur.created_by) : "--"}</td>
             </tr>
 
-            {!!cur.closed_by && (
+            {!!cur?.closed_by && (
               <>
                 <tr></tr>
                 <tr>
