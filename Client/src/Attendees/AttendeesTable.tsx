@@ -311,7 +311,7 @@ namespace S {
 
   export const PrimaryTable = styled(Table)`
     width: 100%;
-    font-size: 14px;
+    font-size: 12px;
   `;
 
   export const SecondaryTable = styled(Table)`
@@ -320,7 +320,7 @@ namespace S {
 
   export const StyledTableHeading = styled(TableHeading)<{ center?: boolean }>`
     text-align: ${(p) => (p.center ? "center" : null)};
-    font-size: 18px;
+    font-size: 16px;
     padding: 4px 4px;
   `;
 
