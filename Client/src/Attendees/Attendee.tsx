@@ -7,7 +7,7 @@ import {
 } from "../SupaBase/types";
 import { EventClass, EventClassEvents } from "../Tools/EventClass";
 
-export const QR_SIZE: number = 512;
+export const QR_SIZE: number = 1024;
 
 export interface AttendeeEvents extends EventClassEvents {
   updated: () => void;
@@ -162,15 +162,22 @@ export class Attendee extends EventClass<AttendeeEvents> {
 
       requestAnimationFrame(() => {
         const ctx: CanvasRenderingContext2D = canvas.getContext("2d")!;
-        ctx.font = "40px monospace";
+        ctx.font = "60px monospace";
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "center";
 
         // const len = ctx.measureText(title)?.width || 0;
-        const { actualBoundingBoxLeft, actualBoundingBoxRight } =
-          ctx.measureText(this.fullName);
-        const len = Math.ceil(
-          Math.abs(actualBoundingBoxLeft) + Math.abs(actualBoundingBoxRight)
+        // const { actualBoundingBoxLeft, actualBoundingBoxRight } =
+        //   ctx.measureText(this.fullName);
+        // const len = Math.ceil(
+        //   Math.abs(actualBoundingBoxLeft) + Math.abs(actualBoundingBoxRight)
+        // );
+        ctx.fillText(
+          this.fullName,
+          QR_SIZE / 2,
+          QR_SIZE * 0.08,
+          QR_SIZE - QR_SIZE * 0.3
         );
-        ctx.fillText(this.fullName, QR_SIZE / 2 - len / 2, 50);
         this.qrCodeString = canvas.toDataURL("image/png");
         this.qrCode = canvas;
 

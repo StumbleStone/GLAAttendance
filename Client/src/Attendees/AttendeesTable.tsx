@@ -289,7 +289,7 @@ export const SortArrow: React.FC<{
   return (
     <S.SortArrow
       icon={icon}
-      size={16}
+      size={14}
       color={selected ? DefaultColors.BrightGrey : "transparent"}
     />
   );
@@ -311,6 +311,7 @@ namespace S {
 
   export const PrimaryTable = styled(Table)`
     width: 100%;
+    font-size: 12px;
   `;
 
   export const SecondaryTable = styled(Table)`
@@ -319,11 +320,13 @@ namespace S {
 
   export const StyledTableHeading = styled(TableHeading)<{ center?: boolean }>`
     text-align: ${(p) => (p.center ? "center" : null)};
+    font-size: 16px;
+    padding: 4px 4px;
   `;
 
   export const NameCell = styled(TableCell)`
     width: 0;
-    padding: 5px 10px;
+    padding: 0px 4px;
   `;
 
   export const HeadingText = styled.span``;
