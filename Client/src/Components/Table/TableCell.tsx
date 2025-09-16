@@ -7,4 +7,5 @@ export const TableCell = styled.td<{ color?: string }>`
   padding: 0px 6px;
   user-select: none;
   color: ${(p) => p.color};
+  white-space: nowrap;
 `;

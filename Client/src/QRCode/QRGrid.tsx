@@ -297,15 +297,18 @@ namespace S {
     flex: 1;
     width: 100%;
     display: flex;
-    flex-direction: center;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     overflow: auto;
     padding: 10px;
     box-sizing: border-box;
+    position: relative;
   `;
 
   export const StyledImage = styled.img`
+    position: absolute;
+    top: 0;
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
