@@ -130,3 +130,5 @@ dist
 .pnp.*
 Server/certs
 .idea
+
+**/.DS_Store
