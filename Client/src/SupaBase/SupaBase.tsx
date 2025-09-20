@@ -1,6 +1,8 @@
 import {
   AuthChangeEvent,
   createClient,
+  REALTIME_SUBSCRIBE_STATES,
+  RealtimeChannel,
   RealtimePostgresChangesPayload,
   Session,
   SupabaseClient,
@@ -8,20 +10,23 @@ import {
 } from "@supabase/supabase-js";
 import React from "react";
 import { Attendee } from "../Attendees/Attendee";
-import { LayerHandler } from "../Components/Layer/Layer";
+import { LayerHandler } from "../Components/Layer";
 import { RollCallConfirm } from "../RollCall/RollCallConfirm";
 import { EventClass, EventClassEvents } from "../Tools/EventClass";
+import { RealtimeChannelMonitor } from "./RealtimeChannelMonitor";
 import { Database } from "./supabase-types";
 import {
   AttendeesEntry,
   InsertRollCallEntry,
   InsertRollCallEvent,
+  PingEntry,
   ProfileEventEntry,
   RollCallEntry,
   RollCallEventEntry,
   RollCallMethod,
   RollCallStatus,
   Tables,
+  UpdatePingEntry,
   UpdateProfileEventEntry,
   UpdateRollCallEvent,
 } from "./types";
@@ -103,6 +108,9 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
   loadPromise: Promise<void>;
 
+  realtimeChannelMonitor: RealtimeChannelMonitor;
+  realtimeChannel: RealtimeChannel | null;
+
   constructor() {
     super();
 
@@ -124,6 +132,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this._initDone = false;
     this.userNameMap = new Map();
     this.rollcallEventsLoaded = false;
+    this.realtimeChannelMonitor = new RealtimeChannelMonitor(this);
   }
 
   handleAuthEvent(event: AuthChangeEvent, session: Session | null) {
@@ -195,6 +204,12 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       const isVis: boolean = !document.hidden;
       console.log(isVis ? "Page is visible" : "Page is hidden");
       this.fireUpdate((cb) => cb[SupaBaseEventKey.VISIBILITY_CHANGED]?.(isVis));
+
+      if (isVis) {
+        this.listenToAttendeesChanges();
+      } else {
+        this.realtimeUnsubscribe();
+      }
     });
   }
 
@@ -332,14 +347,21 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   async listenToAttendeesChanges() {
+    if (this.realtimeChannel) {
+      console.error(`Realtime channel already exists!`);
+      return;
+    }
+
     console.log("Registering Realtime listener");
-    const channel = this.client.channel("attendees-channel").on(
+    this.realtimeChannel = this.client.channel("attendees-channel").on(
       "postgres_changes",
       {
         event: "*",
         schema: "public",
       },
       (payload) => {
+        this.realtimeChannelMonitor.receivedRealtimeUpdate();
+
         switch (payload.table) {
           case Tables.ATTENDEES:
             this.handleAttendeesChanges(payload);
@@ -350,15 +372,41 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
           case Tables.ROLLCALL_EVENT:
             this.handleRollCallEventChanges(payload);
             return;
+          case Tables.PING_TABLE:
+            // Nothing to do
+            return;
         }
 
         debugger;
       }
     );
 
-    channel.subscribe((...items: any[]) => {
-      console.log(`Subscribed to changes:`, ...items);
+    this.realtimeChannel.subscribe((status: REALTIME_SUBSCRIBE_STATES) => {
+      console.log(`Subscribed to changes:`, status);
+
+      if (status === "SUBSCRIBED") {
+        this.realtimeChannelMonitor.setConnected();
+        return;
+      }
+
+      if (
+        status === "TIMED_OUT" ||
+        status === "CLOSED" ||
+        status === "CHANNEL_ERROR"
+      ) {
+        this.realtimeChannelMonitor.setDisconnected();
+        return;
+      }
     });
+  }
+
+  realtimeUnsubscribe() {
+    if (!this.realtimeChannel) {
+      return;
+    }
+
+    this.client.removeChannel(this.realtimeChannel);
+    this.realtimeChannel = null;
   }
 
   async handleAttendeesChanges(
@@ -927,5 +975,29 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     return user;
+  }
+
+  async firePing() {
+    const { data: readData, error: readError } = await this.client
+      .from(Tables.PING_TABLE)
+      .select()
+      .single<PingEntry>();
+
+    if (readError) {
+      console.error(`firePing read`, readError);
+      return;
+    }
+
+    const { data: fireData, error: fireError } = await this.client
+      .from(Tables.PING_TABLE)
+      .update({
+        counter: readData?.counter ? readData.counter + 1 : 1,
+      } as UpdatePingEntry)
+      .eq("id", readData.id)
+      .select();
+
+    if (fireError) {
+      console.error(`firePing fire`, fireError);
+    }
   }
 }

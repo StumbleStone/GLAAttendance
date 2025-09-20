@@ -1,29 +1,28 @@
-import styled from "@emotion/styled";
-import React, { useCallback, useEffect, useReducer, useState } from "react";
-import { Button } from "../Components/Button/Button";
-import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
-import { Tile } from "../Components/Tile";
-import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { Attendee } from "./Attendee";
-
 import { keyframes } from "@emotion/react";
+import styled from "@emotion/styled";
 import {
   faCheckCircle,
   faCheckSquare,
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
+import React, { useCallback, useEffect, useReducer, useState } from "react";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
+import { Button } from "../Components/Button/Button";
 import { DownloadButton } from "../Components/Button/DownloadButton";
 import { ShareButton } from "../Components/Button/ShareButton";
 import { Icon } from "../Components/Icon";
+import { LayerHandler, LayerItem } from "../Components/Layer";
 import {
   PopupConfirm,
   PopupConfirmButton,
 } from "../Components/Popup/PopupConfirm";
+import { Tile } from "../Components/Tile";
 import { QRCode } from "../QRCode/QRCode";
+import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { RollCallMethod, RollCallStatus } from "../SupaBase/types";
 import { DefaultColors } from "../Tools/Toolbox";
+import { Attendee } from "./Attendee";
 
 export interface AtendeeWindowProps {
   layerItem: LayerItem;

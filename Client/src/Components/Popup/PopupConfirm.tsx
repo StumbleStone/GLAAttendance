@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import React, { useCallback } from "react";
 import { Button, ButtonProps } from "../Button/Button";
-import { LayerItem } from "../Layer/Layer";
+import { LayerItem } from "../Layer";
 import {
   PopupBackdrop,
   PopupButtonContainer,

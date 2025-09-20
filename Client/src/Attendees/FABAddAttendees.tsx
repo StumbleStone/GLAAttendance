@@ -1,7 +1,7 @@
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback } from "react";
 import { FABItem } from "../Components/FloatingActionButton/Items/FABItem";
-import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
+import { LayerHandler, LayerItem } from "../Components/Layer";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { AttendeeAddWindow } from "./AttendeeAddWindow";
 

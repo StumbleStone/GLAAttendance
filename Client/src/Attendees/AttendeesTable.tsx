@@ -301,6 +301,8 @@ namespace S {
   export const TableContainer = styled.div`
     color: ${DefaultColors.Text_Color};
     display: flex;
+    align-items: center;
+    justify-content: center;
   `;
 
   export const RCCell = styled(TableCell)`

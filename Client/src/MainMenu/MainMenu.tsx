@@ -7,6 +7,7 @@ import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
+import { HeadingIcons } from "./HeadingIcons";
 
 interface RouteState {
   path: RoutePath;
@@ -146,6 +147,7 @@ export const MainMenu: React.FC<{}> = () => {
           <S.TitlePart color={DefaultColors.BrightGreen}>{"GLA "}</S.TitlePart>
           <S.TitlePart>{"Attendance"}</S.TitlePart>
         </Heading>
+        <HeadingIcons />
       </S.TitleTile>
       {content}
     </S.ContainerEl>

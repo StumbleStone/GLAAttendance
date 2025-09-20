@@ -2,6 +2,7 @@ import { DefaultColors } from "../Tools/Toolbox";
 import { Database } from "./supabase-types";
 
 export enum Tables {
+  PING_TABLE = "PingTable",
   ATTENDEES = "Attendees",
   ROLLCALL = "RollCall",
   ROLLCALL_EVENT = "RollCallEvent",
@@ -42,6 +43,10 @@ export type AttendeesEntry =
 export type AttendeesEntries = AttendeesEntry[];
 export type InsertAttendees =
   Database["public"]["Tables"][Tables.ATTENDEES]["Insert"];
+
+export type PingEntry = Database["public"]["Tables"][Tables.PING_TABLE]["Row"];
+export type UpdatePingEntry =
+  Database["public"]["Tables"][Tables.PING_TABLE]["Update"];
 
 const ORDERED_COLORS: string[] = [
   DefaultColors.BrightPurple,

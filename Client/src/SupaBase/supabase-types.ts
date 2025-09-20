@@ -57,6 +57,21 @@ export type Database = {
         }
         Relationships: []
       }
+      PingTable: {
+        Row: {
+          counter: number
+          id: number
+        }
+        Insert: {
+          counter?: number
+          id?: number
+        }
+        Update: {
+          counter?: number
+          id?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           first_name: string | null

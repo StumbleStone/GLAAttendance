@@ -6,8 +6,8 @@ import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { DownloadButton } from "../Components/Button/DownloadButton";
 import { ShareButton } from "../Components/Button/ShareButton";
 import { Icon } from "../Components/Icon";
-import { Input } from "../Components/Inputs/BaseInput";
-import { LayerItem } from "../Components/Layer/Layer";
+import { Input as iInput } from "../Components/Inputs/BaseInput";
+import { LayerItem } from "../Components/Layer";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
 import { SupaBase } from "../SupaBase/SupaBase";
@@ -364,7 +364,7 @@ namespace S {
     width: 30px;
   `;
 
-  export const ControllerInput = styled(Input)`
+  export const ControllerInput = styled(iInput)`
     border-radius: 0;
     width: 30px;
     font-size: 15px;
