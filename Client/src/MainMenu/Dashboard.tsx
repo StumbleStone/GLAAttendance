@@ -1,6 +1,8 @@
 import styled from "@emotion/styled";
+import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
+import { useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Attendee } from "../Attendees/Attendee";
 import { AttendeesTable } from "../Attendees/AttendeesTable";
@@ -10,11 +12,12 @@ import { CaptureButton } from "../Capture/CaptureButton";
 import { CaptureWindow } from "../Capture/CaptureWindow";
 import { FAB } from "../Components/FloatingActionButton/FAB";
 import { InputWithIcon } from "../Components/Inputs/InputWithIcon";
-import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
+import { LayerHandler, LayerItem } from "../Components/Layer";
 import { FABQRGrid } from "../QRCode/FABQRGrid";
 import { RollCallDisplay } from "../RollCall/RollCallDisplay";
 import { FABLogout } from "../SupaBase/FABLogout";
 import { SupaBase } from "../SupaBase/SupaBase";
+import { HeadingIconHandler } from "./HeadingIconHandler";
 
 export interface DashboardProps {
   supabase: SupaBase;
@@ -70,6 +73,16 @@ export const Dashboard: React.FC = (props) => {
     });
   }, []);
 
+  useEffect(() => {
+    const icon = HeadingIconHandler.AddIcon({
+      icon: faGithub,
+      onClick: () =>
+        window.open("https://github.com/StumbleStone/GLAAttendance", "_blank"),
+    });
+
+    return icon.remove;
+  }, []);
+
   return (
     <S.Container>
       <S.ButtonContainer>
@@ -77,7 +90,7 @@ export const Dashboard: React.FC = (props) => {
         <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
       </S.ButtonContainer>
       <CaptureWindow supabase={supabase} isCapturing={captureCode} />
-      <InputWithIcon
+      <S.Search
         icon={faMagnifyingGlass}
         value={filter}
         onChange={handleChange}
@@ -98,7 +111,13 @@ namespace S {
     padding: 0 20px 20px;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     gap: 10px;
+
+    @media (min-width: 700px) {
+      padding-left: 10vw;
+      padding-right: 10vw;
+    }
   `;
 
   export const ButtonContainer = styled.div`
@@ -108,4 +127,6 @@ namespace S {
     gap: 5px;
     /* justify-content: space-between; */
   `;
+
+  export const Search = styled(InputWithIcon)``;
 }

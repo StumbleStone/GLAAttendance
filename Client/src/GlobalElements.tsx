@@ -1,6 +1,6 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
-import { Layer } from "./Components/Layer/Layer";
+import { Layer } from "./Components/Layer";
 
 // Elements that should be present on all pages
 export const GlobalElements = (): JSX.Element => {

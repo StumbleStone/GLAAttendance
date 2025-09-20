@@ -7,7 +7,7 @@ import {
 import React, { useEffect } from "react";
 import { Attendee } from "../Attendees/Attendee";
 import { Icon } from "../Components/Icon";
-import { LayerItem } from "../Components/Layer/Layer";
+import { LayerItem } from "../Components/Layer";
 import { DefaultColors } from "../Tools/Toolbox";
 
 export interface RollCallConfirmProps {

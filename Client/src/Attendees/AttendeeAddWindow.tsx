@@ -2,7 +2,7 @@ import styled from "@emotion/styled";
 import React, { ChangeEvent, useCallback, useMemo, useState } from "react";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Button } from "../Components/Button/Button";
-import { LayerItem } from "../Components/Layer/Layer";
+import { LayerItem } from "../Components/Layer";
 import { Table } from "../Components/Table/Table";
 import { TableCell } from "../Components/Table/TableCell";
 import { TableHeading } from "../Components/Table/TableHeading";

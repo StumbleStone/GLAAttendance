@@ -3,7 +3,7 @@ import * as React from "react";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Button, ButtonContainer } from "../Components/Button/Button";
 import { Heading } from "../Components/Heading";
-import { LayerHandler, LayerItem } from "../Components/Layer/Layer";
+import { LayerHandler, LayerItem } from "../Components/Layer";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import {
   PopupConfirm,

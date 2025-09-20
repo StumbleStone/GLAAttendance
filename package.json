@@ -12,11 +12,9 @@
   },
   "scripts": {
     "build": "pnpm --recursive build",
-  
     "start:server": "pnpm --recursive --filter gla-attendance-server start",
     "build:server": "pnpm --recursive --filter gla-attendance-server build",
     "watch:server": "pnpm --recursive --filter gla-attendance-server watch",
-
     "build:client:prod": "pnpm --recursive --filter gla-attendance-client build:prod",
     "build:client": "pnpm --recursive --filter gla-attendance-client build",
     "watch:client": "pnpm --recursive --filter gla-attendance-client watch"
