@@ -91,8 +91,15 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
           <Button
             onClick={handlePreviewClick}
             label={preview ? "Edit" : "Preview"}
+            color={DefaultColors.BrightPurple}
           />
-          {preview && <Button onClick={handleSaveClick} label={"Save"} />}
+          {preview && (
+            <Button
+              color={DefaultColors.BrightGreen}
+              onClick={handleSaveClick}
+              label={"Save"}
+            />
+          )}
           {preview && <Button onClick={handleFLipClick} label={"Flip"} />}
         </S.ButtonContainer>
       </S.AttendeeAddWindowEl>

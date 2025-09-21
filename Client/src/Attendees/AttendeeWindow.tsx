@@ -3,6 +3,8 @@ import styled from "@emotion/styled";
 import {
   faCheckCircle,
   faCheckSquare,
+  faMinusSquare,
+  faTrash,
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
@@ -17,12 +19,14 @@ import {
   PopupConfirm,
   PopupConfirmButton,
 } from "../Components/Popup/PopupConfirm";
+import { Span } from "../Components/Span";
 import { Tile } from "../Components/Tile";
 import { QRCode } from "../QRCode/QRCode";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { RollCallMethod, RollCallStatus } from "../SupaBase/types";
+import { Username } from "../SupaBase/Username";
 import { DefaultColors, epochToDate } from "../Tools/Toolbox";
-import { Attendee } from "./Attendee";
+import { Attendee, AttendeeStatus } from "./Attendee";
 
 export interface AtendeeWindowProps {
   layerItem: LayerItem;
@@ -82,27 +86,41 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
       return (
         <PopupConfirm
           layerItem={layerItem}
-          text={`Are you sure you wish to delete ${attendee.name} ${attendee.surname}?`}
+          text={
+            <>
+              <Span>{`Are you sure you wish to delete `}</Span>
+              <Span
+                color={DefaultColors.BrightCyan}
+              >{`${attendee.name} ${attendee.surname}`}</Span>
+              <Span>{`?`}</Span>
+            </>
+          }
           buttons={buttons}
         />
       );
     });
   }, []);
 
-  const present = attendee.isPresent(supabase.currentRollCallEvent);
+  const status: AttendeeStatus = attendee.status(supabase.currentRollCallEvent);
+  const statusCol =
+    status === AttendeeStatus.PRESENT
+      ? DefaultColors.BrightGreen
+      : status === AttendeeStatus.ABSENT
+      ? DefaultColors.BrightRed
+      : DefaultColors.BrightGrey;
   const rollCallInProgress = supabase.rollcallInProgress;
 
   const handlePresent = useCallback(() => {
     supabase.createNewRollCall(attendee, RollCallMethod.MANUAL);
-  }, [present]);
+  }, [status]);
 
   const handleAbsent = useCallback(() => {
     supabase.createNewRollCall(
       attendee,
       RollCallMethod.MANUAL,
-      RollCallStatus.MISSING
+      RollCallStatus.ABSENT
     );
-  }, [present]);
+  }, [status]);
 
   return (
     <S.StyledBackdrop onClose={bdClick}>
@@ -113,16 +131,16 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
             <S.IconContainer>
               <S.AnimIcon
                 showAnim={showAnim}
-                key={present ? "present" : "absent"}
-                icon={present ? faCheckSquare : faXmarkSquare}
-                size={ICON_SIZE}
-                color={
-                  present
-                    ? DefaultColors.BrightGreen
-                    : !attendee.currentRollCall
-                    ? DefaultColors.BrightGrey
-                    : DefaultColors.BrightRed
+                key={status}
+                icon={
+                  status === AttendeeStatus.PRESENT
+                    ? faCheckSquare
+                    : status === AttendeeStatus.ABSENT
+                    ? faXmarkSquare
+                    : faMinusSquare
                 }
+                size={ICON_SIZE}
+                color={statusCol}
               />
             </S.IconContainer>
           </S.Name>
@@ -132,29 +150,16 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
               <tbody>
                 <tr>
                   <td>Is:</td>
-                  <S.StyledCell
-                    color={
-                      present
-                        ? DefaultColors.BrightGreen
-                        : !attendee.currentRollCall
-                        ? DefaultColors.BrightGrey
-                        : DefaultColors.BrightRed
-                    }
-                  >
-                    {present
-                      ? "Present"
-                      : !attendee.currentRollCall
-                      ? "Not Scanned"
-                      : "Absent"}
-                  </S.StyledCell>
+                  <S.StyledCell color={statusCol}>{status}</S.StyledCell>
                 </tr>
                 {!!attendee.currentRollCall && (
                   <tr>
                     <td>By:</td>
                     <td>
-                      {supabase.getUserName(
-                        attendee.currentRollCall.created_by
-                      )}
+                      <Username
+                        id={attendee.currentRollCall.created_by}
+                        supabase={supabase}
+                      />
                     </td>
                   </tr>
                 )}
@@ -180,7 +185,11 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
           <QRCode qrCodeUrl={attendee.QRCodeURL} />
         </S.QRCodeContainer>
         <S.ButtonContainer>
-          {/* <Button onClick={handleDelete} icon={faTrash} /> */}
+          <Button
+            onClick={handleDelete}
+            icon={faTrash}
+            color={DefaultColors.BrightPurple}
+          />
           <DownloadButton
             data={attendee.QRCodeURL}
             filename={`${attendee.fullNameFileSafe}.png`}
@@ -194,13 +203,13 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
           <Button
             onClick={handleAbsent}
             icon={faXmarkCircle}
-            disabled={!rollCallInProgress}
+            disabled={!rollCallInProgress || status === AttendeeStatus.ABSENT}
             color={DefaultColors.BrightRed}
           />
           <Button
             onClick={handlePresent}
             icon={faCheckCircle}
-            disabled={!rollCallInProgress}
+            disabled={!rollCallInProgress || status === AttendeeStatus.PRESENT}
             color={DefaultColors.BrightGreen}
           />
         </S.ButtonContainer>

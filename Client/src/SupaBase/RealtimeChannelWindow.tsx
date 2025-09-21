@@ -4,6 +4,7 @@ import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Button } from "../Components/Button/Button";
 import { Heading } from "../Components/Heading";
 import { LayerHandler, LayerItem } from "../Components/Layer";
+import { Span } from "../Components/Span";
 import { Tile } from "../Components/Tile";
 import { epochToDate } from "../Tools/Toolbox";
 import {
@@ -49,22 +50,20 @@ export const RealtimeChannelWindow: React.FC<RealtimeChannelWindowProps> = (
               <tr>
                 <td>Status:</td>
                 <td>
-                  <S.Status color={monitor.iconColor}>
-                    {monitor.status}
-                  </S.Status>
+                  <Span color={monitor.iconColor}>{monitor.status}</Span>
                 </td>
               </tr>
               <tr>
                 <td>Last update:</td>
                 <td>
-                  <span>
+                  <Span>
                     {monitor.lastReceived
                       ? epochToDate(monitor.lastReceived, {
                           includeTime: true,
                           includeSeconds: true,
                         })
                       : "--"}
-                  </span>
+                  </Span>
                 </td>
               </tr>
             </tbody>
@@ -103,9 +102,5 @@ namespace S {
     display: flex;
     flex-direction: column;
     gap: 10px;
-  `;
-
-  export const Status = styled.span<{ color: string }>`
-    color: ${(p) => p.color};
   `;
 }

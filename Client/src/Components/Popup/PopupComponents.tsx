@@ -13,7 +13,7 @@ export const PopupDialog = styled(Tile)`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 5px 15px;
+  padding: 20px;
   justify-content: center;
   align-items: center;
   gap: 10px;
@@ -22,5 +22,4 @@ export const PopupDialog = styled(Tile)`
 export const PopupButtonContainer = styled.div`
   display: flex;
   gap: 10px;
-  padding-bottom: 10px;
 `;

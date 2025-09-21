@@ -33,8 +33,10 @@ export const FABItem: React.FC<FABItemProps> = (props: FABItemProps) => {
       color={resolvedColor}
       disabled={disabled}
     >
-      <Icon icon={icon} size={16} />
-      <Label text={label} />
+      <S.Background color={resolvedColor} disabled={disabled}>
+        <Icon icon={icon} size={16} />
+        <Label text={label} />
+      </S.Background>
     </S.FABItemTile>
   );
 };
@@ -45,23 +47,37 @@ namespace S {
     color?: string;
   }>`
     label: FABItemTile;
-    display: flex;
     font-size: 16px;
-    flex-direction: row;
-    align-items: center;
-    gap: 5px;
     margin-bottom: 3px;
     margin-right: 3px;
-    padding: 4px 10px;
     background-color: ${DefaultColors.Container};
     border: 2px solid ${DefaultColors.Background};
     cursor: ${(p) => (p.disabled ? "not-allowed" : "pointer")};
 
     box-shadow: none;
     user-select: none;
+    padding: 0;
+    overflow: hidden;
 
     :hover {
-      background-color: ${(p) => (p.disabled ? null : `${p.color}22`)};
+      box-shadow: ${(p) =>
+        p.disabled ? "none" : `0px 0px 5px 0px ${p.color}`};
+    }
+  `;
+
+  export const Background = styled.div<{
+    disabled?: boolean;
+    color?: string;
+  }>`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 10px;
+    gap: 5px;
+
+    height: 100%;
+    :hover {
+      background-color: ${(p) => (p.disabled ? null : `${p.color}44`)};
     }
   `;
 }

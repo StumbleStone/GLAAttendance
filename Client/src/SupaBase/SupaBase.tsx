@@ -17,6 +17,7 @@ import { RealtimeChannelMonitor } from "./RealtimeChannelMonitor";
 import { Database } from "./supabase-types";
 import {
   AttendeesEntry,
+  InsertAttendees,
   InsertRollCallEntry,
   InsertRollCallEvent,
   PingEntry,
@@ -26,6 +27,7 @@ import {
   RollCallMethod,
   RollCallStatus,
   Tables,
+  UpdateAttendees,
   UpdatePingEntry,
   UpdateProfileEventEntry,
   UpdateRollCallEvent,
@@ -105,6 +107,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   barcodeProcessMap: Map<string, BarcodeProcessingMap>;
 
   userNameMap: Map<string, string>;
+  usernamesLoaded: boolean;
 
   loadPromise: Promise<void>;
 
@@ -133,6 +136,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.userNameMap = new Map();
     this.rollcallEventsLoaded = false;
     this.realtimeChannelMonitor = new RealtimeChannelMonitor(this);
+    this.usernamesLoaded = false;
   }
 
   handleAuthEvent(event: AuthChangeEvent, session: Session | null) {
@@ -283,7 +287,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     this.loadPromise = new Promise(async (res) => {
-      // These don't depend on eachother and can be ran at the same time
+      // These don't depend on each other and can be ran at the same time
       await Promise.all([
         this.loadAttendees(),
         this.loadUsernames(),
@@ -608,6 +612,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       );
     });
 
+    this.usernamesLoaded = true;
     this.fireUpdate((cb) => cb[SupaBaseEventKey.USERNAMES_LOADED]?.());
     console.log(`[${data?.length || 0}] Usernames loaded`);
   }
@@ -696,11 +701,17 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.fireUpdate((cb) => cb[SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]?.());
   }
 
-  async deleteAttendee(entry: AttendeesEntry) {
+  async deleteAttendee(attendee: Attendee) {
+    const deleteUpdate: UpdateAttendees = {
+      deleted_on: new Date().toISOString(),
+      deleted: true,
+      deleted_by: this.user.id,
+    };
+
     const { error } = await this.client
       .from(Tables.ATTENDEES)
-      .delete()
-      .eq("id", entry.id);
+      .update<UpdateAttendees>(deleteUpdate)
+      .eq("id", attendee.id);
 
     if (error) {
       console.error(error);
@@ -712,7 +723,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   ) {
     const { error, data } = await this.client
       .from(Tables.ATTENDEES)
-      .insert(newEntries)
+      .insert<InsertAttendees>(newEntries)
       .select();
 
     if (error) {
@@ -739,7 +750,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     const { error, data } = await this.client
       .from(Tables.ROLLCALL)
-      .insert(entry)
+      .insert<InsertRollCallEntry>(entry)
       .select()
       .single();
 
@@ -845,7 +856,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     const { error, data } = await this.client
       .from(Tables.ROLLCALL_EVENT)
-      .insert(entry)
+      .insert<InsertRollCallEvent>(entry)
       .select();
 
     if (error) {
@@ -853,7 +864,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
   }
 
-  countPresentAttendees(): number {
+  countAttendees(status: RollCallStatus): number {
     const curRCE = this.currentRollCallEvent?.id;
     if (!curRCE) {
       return 0;
@@ -866,7 +877,41 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
         return;
       }
 
-      if (att.currentRollCall.roll_call_event_id === curRCE) {
+      if (
+        att.currentRollCall.roll_call_event_id === curRCE &&
+        att.currentRollCall.status === status
+      ) {
+        counter += 1;
+        return;
+      }
+    });
+
+    return counter;
+  }
+
+  countPresentAttendees(): number {
+    return this.countAttendees(RollCallStatus.PRESENT);
+  }
+
+  countAbsentAttendees(): number {
+    return this.countAttendees(RollCallStatus.ABSENT);
+  }
+
+  countUnScannedAttendees(): number {
+    const curRCE = this.currentRollCallEvent?.id;
+    if (!curRCE) {
+      return 0;
+    }
+
+    let counter: number = 0;
+
+    this.attendees.forEach((att) => {
+      if (!att.currentRollCall) {
+        counter += 1;
+        return;
+      }
+
+      if (att.currentRollCall.roll_call_event_id !== curRCE) {
         counter += 1;
         return;
       }

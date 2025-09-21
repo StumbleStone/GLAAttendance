@@ -5,6 +5,7 @@ import {
   faArrowUp,
   faArrowUpAZ,
   faCheckSquare,
+  faMinusSquare,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import React, {
@@ -21,7 +22,7 @@ import { TableHeading } from "../Components/Table/TableHeading";
 import { TableRow } from "../Components/Table/TableRow";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
-import { Attendee } from "./Attendee";
+import { Attendee, AttendeeStatus } from "./Attendee";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
@@ -170,7 +171,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             />
           </TableRow>
           {sorted.map((att) => {
-            const isPresentOnThisRollCall = att.isPresent(
+            const status: AttendeeStatus = att.status(
               supabase.currentRollCallEvent
             );
 
@@ -184,12 +185,18 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
                   <Icon
                     size={26}
                     color={
-                      isPresentOnThisRollCall
+                      status === AttendeeStatus.PRESENT
                         ? DefaultColors.BrightGreen
+                        : status === AttendeeStatus.ABSENT
+                        ? DefaultColors.BrightRed
                         : DefaultColors.Grey
                     }
                     icon={
-                      isPresentOnThisRollCall ? faCheckSquare : faXmarkSquare
+                      status === AttendeeStatus.PRESENT
+                        ? faCheckSquare
+                        : status === AttendeeStatus.ABSENT
+                        ? faXmarkSquare
+                        : faMinusSquare
                     }
                   />
                 </S.RCCell>
@@ -198,35 +205,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
           })}
         </tbody>
       </S.PrimaryTable>
-      {/* <S.SecondaryTable>
-        <tbody>
-          {false && (
-            <TableRow key="heading">
-              <S.CenteredHeading></S.CenteredHeading>
-            </TableRow>
-          )}
-          {false &&
-            sorted.map((att) => (
-              <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
-                <S.Cell>
-                  <Icon
-                    size={18}
-                    color={
-                      att.isPresent(supabase.currentRollCallEvent)
-                        ? DefaultColors.BrightGreen
-                        : DefaultColors.BrightRed
-                    }
-                    icon={
-                      att.isPresent(supabase.currentRollCallEvent)
-                        ? faCheckSquare
-                        : faXmarkSquare
-                    }
-                  />
-                </S.Cell>
-              </TableRow>
-            ))}
-        </tbody>
-      </S.SecondaryTable> */}
     </S.TableContainer>
   );
 };
@@ -314,10 +292,6 @@ namespace S {
   export const PrimaryTable = styled(Table)`
     width: 100%;
     font-size: 12px;
-  `;
-
-  export const SecondaryTable = styled(Table)`
-    flex: 1;
   `;
 
   export const StyledTableHeading = styled(TableHeading)<{ center?: boolean }>`

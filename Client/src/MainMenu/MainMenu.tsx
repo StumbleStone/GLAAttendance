@@ -1,8 +1,7 @@
 import styled from "@emotion/styled";
 import React, { useEffect, useMemo, useReducer, useState } from "react";
-
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Heading } from "../Components/Heading";
+import { Heading as iHeading } from "../Components/Heading";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
@@ -143,10 +142,10 @@ export const MainMenu: React.FC<{}> = () => {
   return (
     <S.ContainerEl>
       <S.TitleTile>
-        <Heading>
+        <S.StyledHeading>
           <S.TitlePart color={DefaultColors.BrightGreen}>{"GLA "}</S.TitlePart>
           <S.TitlePart>{"Attendance"}</S.TitlePart>
-        </Heading>
+        </S.StyledHeading>
         <HeadingIcons />
       </S.TitleTile>
       {content}
@@ -205,5 +204,12 @@ namespace S {
     label: ContentScroll;
     overflow: auto;
     padding-bottom: 100px;
+  `;
+
+  export const StyledHeading = styled(iHeading)`
+    font-size: 26px;
+    @media (min-width: 700px) {
+      font-size: 32px;
+    }
   `;
 }
