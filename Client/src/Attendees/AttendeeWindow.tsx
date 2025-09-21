@@ -21,7 +21,7 @@ import { Tile } from "../Components/Tile";
 import { QRCode } from "../QRCode/QRCode";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { RollCallMethod, RollCallStatus } from "../SupaBase/types";
-import { DefaultColors } from "../Tools/Toolbox";
+import { DefaultColors, epochToDate } from "../Tools/Toolbox";
 import { Attendee } from "./Attendee";
 
 export interface AtendeeWindowProps {
@@ -29,6 +29,8 @@ export interface AtendeeWindowProps {
   attendee: Attendee;
   supabase: SupaBase;
 }
+
+const ICON_SIZE = 16;
 
 export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   props: AtendeeWindowProps
@@ -104,25 +106,79 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
 
   return (
     <S.StyledBackdrop onClose={bdClick}>
-      <S.AtendeeWindowEl>
+      <S.AttendeeWindowEl>
         <S.Heading>
-          <S.Name>{`${attendee.name} ${attendee.surname}`}</S.Name>
-          <S.Status>
-            <S.StatusText>{"Status:"}</S.StatusText>
+          <S.Name>
+            {`${attendee.name} ${attendee.surname}`}
             <S.IconContainer>
               <S.AnimIcon
                 showAnim={showAnim}
                 key={present ? "present" : "absent"}
                 icon={present ? faCheckSquare : faXmarkSquare}
-                size={22}
+                size={ICON_SIZE}
                 color={
-                  present ? DefaultColors.BrightGreen : DefaultColors.BrightRed
+                  present
+                    ? DefaultColors.BrightGreen
+                    : !attendee.currentRollCall
+                    ? DefaultColors.BrightGrey
+                    : DefaultColors.BrightRed
                 }
               />
             </S.IconContainer>
-          </S.Status>
+          </S.Name>
+
+          <S.StatusMetaContainer>
+            <S.StyledTable>
+              <tbody>
+                <tr>
+                  <td>Is:</td>
+                  <S.StyledCell
+                    color={
+                      present
+                        ? DefaultColors.BrightGreen
+                        : !attendee.currentRollCall
+                        ? DefaultColors.BrightGrey
+                        : DefaultColors.BrightRed
+                    }
+                  >
+                    {present
+                      ? "Present"
+                      : !attendee.currentRollCall
+                      ? "Not Scanned"
+                      : "Absent"}
+                  </S.StyledCell>
+                </tr>
+                {!!attendee.currentRollCall && (
+                  <tr>
+                    <td>By:</td>
+                    <td>
+                      {supabase.getUserName(
+                        attendee.currentRollCall.created_by
+                      )}
+                    </td>
+                  </tr>
+                )}
+                {!!attendee.currentRollCall && (
+                  <tr>
+                    <td>On:</td>
+                    <td>
+                      {epochToDate(
+                        new Date(attendee.currentRollCall.created_at).getTime(),
+                        {
+                          includeTime: true,
+                          includeSeconds: true,
+                        }
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </S.StyledTable>
+          </S.StatusMetaContainer>
         </S.Heading>
-        <QRCode qrCodeUrl={attendee.QRCodeURL} />
+        <S.QRCodeContainer>
+          <QRCode qrCodeUrl={attendee.QRCodeURL} />
+        </S.QRCodeContainer>
         <S.ButtonContainer>
           {/* <Button onClick={handleDelete} icon={faTrash} /> */}
           <DownloadButton
@@ -138,23 +194,23 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
           <Button
             onClick={handleAbsent}
             icon={faXmarkCircle}
-            disabled={!rollCallInProgress || !present}
+            disabled={!rollCallInProgress}
             color={DefaultColors.BrightRed}
           />
           <Button
             onClick={handlePresent}
             icon={faCheckCircle}
-            disabled={!rollCallInProgress || present}
+            disabled={!rollCallInProgress}
             color={DefaultColors.BrightGreen}
           />
         </S.ButtonContainer>
-      </S.AtendeeWindowEl>
+      </S.AttendeeWindowEl>
     </S.StyledBackdrop>
   );
 };
 
 namespace S {
-  export const AtendeeWindowEl = styled(Tile)`
+  export const AttendeeWindowEl = styled(Tile)`
     /* max-width: min(300px, 80vw); */
     //max-height: min(300px, 80vh);
     min-width: min(300px, 80vw);
@@ -162,44 +218,33 @@ namespace S {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 0;
     justify-content: center;
-    align-items: center;
-    gap: 10px;
+    align-items: stretch;
+    padding: 0;
   `;
 
   export const Heading = styled.div`
     width: 100%;
     box-sizing: border-box;
     text-align: center;
-    padding: 5px 30px;
-    padding-top: 10px;
+    padding: 10px 0 5px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
   `;
 
-  export const Name = styled.span`
+  export const Name = styled.div`
     font-size: 22px;
     user-select: none;
-  `;
-
-  export const Status = styled.div`
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 5px;
+    padding: 0 20px;
   `;
 
-  export const StatusText = styled.span`
-    font-size: 18px;
-    user-select: none;
-  `;
-
-  export const IconContainer = styled.div`
-    height: 22px;
-    width: 22px;
-  `;
+  export const IconContainer = styled.div``;
 
   const animPulse = keyframes`
     0% {
@@ -227,6 +272,23 @@ namespace S {
   export const ButtonContainer = styled.div`
     display: flex;
     gap: 10px;
-    padding-bottom: 10px;
+    padding: 10px 20px;
+    justify-content: center;
+  `;
+
+  export const StatusMetaContainer = styled.div`
+    box-sizing: border-box;
+    padding: 0 20px;
+  `;
+
+  export const StyledTable = styled.table``;
+
+  export const StyledCell = styled.td<{ color?: string }>`
+    color: ${(p) => p.color};
+  `;
+
+  export const QRCodeContainer = styled.div`
+    display: flex;
+    justify-content: center;
   `;
 }

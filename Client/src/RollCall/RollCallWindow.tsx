@@ -10,7 +10,6 @@ import {
   PopupConfirmButton,
 } from "../Components/Popup/PopupConfirm";
 import { PopupInput } from "../Components/Popup/PopupInput";
-import { SubHeading } from "../Components/SubHeading";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { RollCallEventEntry } from "../SupaBase/types";
@@ -126,24 +125,33 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
 
     return (
       <>
-        <SubHeading>{`Number: ${cur?.counter ?? "--"}`}</SubHeading>
-        <SubHeading>
-          <span>Status: </span>
-          <S.Status
-            color={
-              cur && !cur.closed_by
-                ? DefaultColors.BrightOrange
-                : DefaultColors.BrightGrey
-            }
-          >
-            {!cur ? "None" : !cur.closed_by ? "In Progress" : "Closed"}
-          </S.Status>
-        </SubHeading>
         {!!cur?.description && <span>{cur.description}</span>}
         <table>
           <tbody>
             <tr>
-              <td>Started:</td>
+              <td>Number:</td>
+              <td>{cur?.counter ?? "--"}</td>
+            </tr>
+            <tr>
+              <td>Status:</td>
+              <S.StyledCell
+                color={
+                  cur && !cur.closed_by
+                    ? DefaultColors.BrightOrange
+                    : DefaultColors.BrightGrey
+                }
+              >
+                {!cur ? "None" : !cur.closed_by ? "In Progress" : "Closed"}
+              </S.StyledCell>
+            </tr>
+            <tr>
+              <td>Present:</td>
+              <td>{`${supabase.countPresentAttendees()} / ${
+                supabase.attendees.size
+              }`}</td>
+            </tr>
+            <tr>
+              <td>Since:</td>
               <td>
                 {cur
                   ? epochToDate(new Date(cur.created_at).getTime(), {
@@ -153,7 +161,7 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
               </td>
             </tr>
             <tr>
-              <td>Started By:</td>
+              <td>By:</td>
               <td>{cur ? supabase.getUserName(cur.created_by) : "--"}</td>
             </tr>
 
@@ -224,7 +232,7 @@ namespace S {
     gap: 10px;
   `;
 
-  export const Status = styled.span<{ color: string }>`
+  export const StyledCell = styled.td<{ color?: string }>`
     color: ${(p) => p.color};
   `;
 }
