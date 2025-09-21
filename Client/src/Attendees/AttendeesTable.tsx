@@ -61,7 +61,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     }
 
     if (!filter || filter == "") {
-      return Array.from(supabase.attendees.values());
+      return Array.from(supabase.attendees.values()).filter(
+        (a) => !a.isDeleted
+      );
     }
 
     let outArr: Attendee[] = [];

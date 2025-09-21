@@ -69,6 +69,10 @@ export class Attendee extends EventClass<AttendeeEvents> {
     return this.entry.id;
   }
 
+  get isDeleted(): boolean {
+    return this.entry.deleted;
+  }
+
   get name(): string {
     return this.entry.name;
   }

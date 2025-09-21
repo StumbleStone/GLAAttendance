@@ -423,6 +423,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
         return this.removeAttendeeFromDB(payload.old.id);
       case "INSERT":
         return this.addAttendeeFromDB(payload.new as AttendeesEntry);
+      case "UPDATE":
+        return this.updateAttendeeFromDB(payload.new as AttendeesEntry);
     }
 
     debugger;
@@ -530,6 +532,19 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
   }
 
+  async updateAttendeeFromDB(entry: AttendeesEntry) {
+    const hash = Attendee.GenerateHash(entry);
+    const record = this.attendees.get(hash);
+    if (!record) {
+      console.error(`Attendee does not exist: ${entry.name} ${entry.surname}`);
+      return;
+    }
+
+    console.log(`Attendee updated: ${entry.name} ${entry.surname}`);
+    record.entry = entry;
+    this.attendeesModified = Date.now();
+  }
+
   async addAttendeeFromDB(entry: AttendeesEntry) {
     const hash = Attendee.GenerateHash(entry);
     const record = this.attendees.has(hash);
@@ -577,6 +592,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     const { data, error } = await this.client
       .from(Tables.ATTENDEES)
       .select()
+      .neq("deleted", true)
       .order("name", {
         ascending: false,
       });
@@ -637,9 +653,14 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   async loadRollCalls() {
     console.log(`Loading RollCalls`);
 
+    const attIds = Array.from(this.attendees.values())
+      .filter((a) => !a.isDeleted)
+      .map((a) => a.id);
+
     const { data, error } = await this.client
       .from(Tables.ROLLCALL)
       .select()
+      .in("attendee_id", attIds)
       .order("created_at", {
         ascending: true,
       });
@@ -708,10 +729,11 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       deleted_by: this.user.id,
     };
 
-    const { error } = await this.client
+    const { error, data } = await this.client
       .from(Tables.ATTENDEES)
-      .update<UpdateAttendees>(deleteUpdate)
-      .eq("id", attendee.id);
+      .update(deleteUpdate)
+      .eq("id", attendee.id)
+      .select();
 
     if (error) {
       console.error(error);
