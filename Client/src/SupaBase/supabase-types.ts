@@ -41,21 +41,38 @@ export type Database = {
     Tables: {
       Attendees: {
         Row: {
+          deleted: boolean
+          deleted_by: string | null
+          deleted_on: string | null
           id: number
           name: string
           surname: string
         }
         Insert: {
+          deleted?: boolean
+          deleted_by?: string | null
+          deleted_on?: string | null
           id?: number
           name: string
           surname: string
         }
         Update: {
+          deleted?: boolean
+          deleted_by?: string | null
+          deleted_on?: string | null
           id?: number
           name?: string
           surname?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "Attendees_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["uid"]
+          },
+        ]
       }
       PingTable: {
         Row: {
@@ -199,7 +216,7 @@ export type Database = {
     }
     Enums: {
       RollCallMethod: "MANUAL" | "QR"
-      RollCallStatus: "MISSING" | "PRESENT"
+      RollCallStatus: "MISSING" | "PRESENT" | "ABSENT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -331,7 +348,7 @@ export const Constants = {
   public: {
     Enums: {
       RollCallMethod: ["MANUAL", "QR"],
-      RollCallStatus: ["MISSING", "PRESENT"],
+      RollCallStatus: ["MISSING", "PRESENT", "ABSENT"],
     },
   },
 } as const

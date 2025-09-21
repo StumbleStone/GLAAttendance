@@ -15,6 +15,12 @@ export interface AttendeeEvents extends EventClassEvents {
   qrReady: (qrCode: HTMLCanvasElement) => void;
 }
 
+export enum AttendeeStatus {
+  PRESENT = "Present",
+  ABSENT = "Absent",
+  NOT_SCANNED = "Not Scanned",
+}
+
 async function generateQRCode(str: string): Promise<HTMLCanvasElement | null> {
   try {
     return await qrcode.toCanvas(`${str}`, {
@@ -63,6 +69,10 @@ export class Attendee extends EventClass<AttendeeEvents> {
     return this.entry.id;
   }
 
+  get isDeleted(): boolean {
+    return this.entry.deleted;
+  }
+
   get name(): string {
     return this.entry.name;
   }
@@ -77,10 +87,6 @@ export class Attendee extends EventClass<AttendeeEvents> {
 
   get fullNameFileSafe(): string {
     return this.fullName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-  }
-
-  get status(): RollCallStatus {
-    return this.currentRollCall?.status || RollCallStatus.MISSING;
   }
 
   removeRollCall(rollCall: RollCallEntry): void {
@@ -123,9 +129,9 @@ export class Attendee extends EventClass<AttendeeEvents> {
     this.fireUpdate((cb) => cb.updated?.());
   }
 
-  isPresent(rollCallEvent: RollCallEventEntry): boolean {
+  status(rollCallEvent: RollCallEventEntry): AttendeeStatus {
     if (!rollCallEvent) {
-      return false;
+      return AttendeeStatus.NOT_SCANNED;
     }
 
     const matching = this.rollCalls
@@ -137,10 +143,16 @@ export class Attendee extends EventClass<AttendeeEvents> {
       });
 
     if (matching.length == 0) {
-      return false;
+      return AttendeeStatus.NOT_SCANNED;
     }
 
-    return matching[0].status === RollCallStatus.PRESENT;
+    return matching[0].status === RollCallStatus.PRESENT
+      ? AttendeeStatus.PRESENT
+      : AttendeeStatus.ABSENT;
+  }
+
+  isPresent(rollCallEvent: RollCallEventEntry): boolean {
+    return this.status(rollCallEvent) === AttendeeStatus.PRESENT;
   }
 
   async generateQRCode(): Promise<HTMLCanvasElement> {

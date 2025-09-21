@@ -81,7 +81,7 @@ const ButtonDiv = styled("div")<{ color?: string; disabled?: boolean }>`
 export const ButtonContainer = styled("div")`
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   width: 100%;
   user-select: none;
   gap: 10px;

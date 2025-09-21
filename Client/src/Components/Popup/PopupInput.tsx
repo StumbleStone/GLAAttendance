@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import React, { ChangeEvent, useCallback, useState } from "react";
+import { DefaultColors } from "../../Tools/Toolbox";
 import { Button } from "../Button/Button";
 import { Input } from "../Inputs/BaseInput";
 import { LayerItem } from "../Layer";
@@ -41,8 +42,12 @@ export const PopupInput: React.FC<PopupInputProps> = (
           placeholder="Optional: Name or describe RollCall..."
         />
         <PopupButtonContainer>
-          <Button onClick={handleConfirm}>Okay</Button>
-          <Button onClick={onDecline}>Cancel</Button>
+          <Button color={DefaultColors.BrightRed} onClick={onDecline}>
+            Cancel
+          </Button>
+          <Button color={DefaultColors.BrightGreen} onClick={handleConfirm}>
+            Okay
+          </Button>
         </PopupButtonContainer>
       </PopupDialog>
     </PopupBackdrop>

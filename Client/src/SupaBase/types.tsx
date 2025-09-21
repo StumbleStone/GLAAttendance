@@ -10,7 +10,7 @@ export enum Tables {
 }
 
 export enum RollCallStatus {
-  MISSING = "MISSING",
+  ABSENT = "ABSENT",
   PRESENT = "PRESENT",
 }
 
@@ -40,9 +40,10 @@ export type RollCallEntry = Omit<
 
 export type AttendeesEntry =
   Database["public"]["Tables"][Tables.ATTENDEES]["Row"];
-export type AttendeesEntries = AttendeesEntry[];
 export type InsertAttendees =
   Database["public"]["Tables"][Tables.ATTENDEES]["Insert"];
+export type UpdateAttendees =
+  Database["public"]["Tables"][Tables.ATTENDEES]["Update"];
 
 export type PingEntry = Database["public"]["Tables"][Tables.PING_TABLE]["Row"];
 export type UpdatePingEntry =

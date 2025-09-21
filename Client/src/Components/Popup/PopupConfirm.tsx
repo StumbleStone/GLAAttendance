@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import React, { useCallback } from "react";
+import React, { ReactNode, useCallback } from "react";
 import { Button, ButtonProps } from "../Button/Button";
 import { LayerItem } from "../Layer";
 import {
@@ -10,7 +10,7 @@ import {
 
 export interface PopupConfirmProps {
   layerItem: LayerItem;
-  text: string;
+  text: (string | ReactNode) | (string | ReactNode)[];
   buttons: PopupConfirmButton[];
   canDismiss?: boolean;
 }
@@ -31,7 +31,11 @@ export const PopupConfirm: React.FC<PopupConfirmProps> = (
   return (
     <PopupBackdrop onClose={handleBDClick}>
       <PopupDialog>
-        <S.ConfirmText>{text}</S.ConfirmText>
+        {Array.isArray(text) ? (
+          text.map((t, d) => <S.ConfirmText key={d}>{t}</S.ConfirmText>)
+        ) : (
+          <S.ConfirmText>{text}</S.ConfirmText>
+        )}
         <PopupButtonContainer>
           {buttons.map((btn, idx) => (
             <PopupConfirmButton {...btn} key={idx} />
@@ -55,6 +59,5 @@ const PopupConfirmButton: React.FC<PopupConfirmButton> = (
 namespace S {
   export const ConfirmText = styled.div`
     text-align: center;
-    padding: 10px 0 10px;
   `;
 }

@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import * as React from "react";
+import { ReactNode } from "react";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Button, ButtonContainer } from "../Components/Button/Button";
 import { Heading } from "../Components/Heading";
@@ -10,10 +11,11 @@ import {
   PopupConfirmButton,
 } from "../Components/Popup/PopupConfirm";
 import { PopupInput } from "../Components/Popup/PopupInput";
-import { SubHeading } from "../Components/SubHeading";
+import { Span } from "../Components/Span";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { RollCallEventEntry } from "../SupaBase/types";
+import { Username } from "../SupaBase/Username";
 import { DefaultColors, epochToDate } from "../Tools/Toolbox";
 
 export function ShowRollCallWindow(supabase: SupaBase) {
@@ -49,13 +51,20 @@ function startRollCallEvent(supabase: SupaBase) {
 function stopRollCallEvent(supabase: SupaBase) {
   LayerHandler.AddLayer((layerItem: LayerItem) => {
     const attendeeCount = supabase.attendees.size;
-    const attendeesPresent = supabase.countPresentAttendees();
 
-    let confirmMessage: string;
-    if (attendeesPresent !== attendeeCount) {
-      confirmMessage = `Are you sure you want to conclude the RollCall? Only ${attendeesPresent}/${attendeeCount} Attendees are present.`;
+    let confirmMessage: string | (string | ReactNode)[];
+    if (supabase.countUnScannedAttendees() > 0) {
+      confirmMessage = [
+        `Are you sure you want to conclude the RollCall?`,
+        <>
+          <Span
+            color={DefaultColors.BrightRed}
+          >{`${supabase.countUnScannedAttendees()} / ${attendeeCount}`}</Span>
+          <Span>{` Attendees have not been scanned.`}</Span>
+        </>,
+      ];
     } else {
-      confirmMessage = `All ${attendeesPresent} Attendees accounted for, you can conclude the RollCall`;
+      confirmMessage = `All ${attendeeCount} Attendees accounted for, you can conclude the RollCall`;
     }
 
     const buttons: PopupConfirmButton[] = [
@@ -126,24 +135,39 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
 
     return (
       <>
-        <SubHeading>{`Number: ${cur?.counter ?? "--"}`}</SubHeading>
-        <SubHeading>
-          <span>Status: </span>
-          <S.Status
-            color={
-              cur && !cur.closed_by
-                ? DefaultColors.BrightOrange
-                : DefaultColors.BrightGrey
-            }
-          >
-            {!cur ? "None" : !cur.closed_by ? "In Progress" : "Closed"}
-          </S.Status>
-        </SubHeading>
-        {!!cur?.description && <span>{cur.description}</span>}
+        {!!cur?.description && <Span>{cur.description}</Span>}
         <table>
           <tbody>
             <tr>
-              <td>Started:</td>
+              <td>Number:</td>
+              <td>{cur?.counter ?? "--"}</td>
+            </tr>
+            <tr>
+              <td>Status:</td>
+              <S.StyledCell
+                color={
+                  cur && !cur.closed_by
+                    ? DefaultColors.BrightOrange
+                    : DefaultColors.BrightGrey
+                }
+              >
+                {!cur ? "None" : !cur.closed_by ? "In Progress" : "Closed"}
+              </S.StyledCell>
+            </tr>
+            <tr>
+              <td>Present:</td>
+              <td>{`${supabase.countPresentAttendees()} / ${
+                supabase.attendees.size
+              }`}</td>
+            </tr>
+            <tr>
+              <td>Absent:</td>
+              <td>{`${supabase.countAbsentAttendees()} / ${
+                supabase.attendees.size
+              }`}</td>
+            </tr>
+            <tr>
+              <td>Since:</td>
               <td>
                 {cur
                   ? epochToDate(new Date(cur.created_at).getTime(), {
@@ -153,8 +177,10 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
               </td>
             </tr>
             <tr>
-              <td>Started By:</td>
-              <td>{cur ? supabase.getUserName(cur.created_by) : "--"}</td>
+              <td>By:</td>
+              <td>
+                <Username id={cur?.created_by} supabase={supabase} />
+              </td>
             </tr>
 
             {!!cur?.closed_by && (
@@ -171,7 +197,9 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
 
                 <tr>
                   <td>Ended By:</td>
-                  <td>{supabase.getUserName(cur.closed_by)}</td>
+                  <td>
+                    <Username id={cur.closed_by} supabase={supabase} />
+                  </td>
                 </tr>
               </>
             )}
@@ -224,7 +252,7 @@ namespace S {
     gap: 10px;
   `;
 
-  export const Status = styled.span<{ color: string }>`
+  export const StyledCell = styled.td<{ color?: string }>`
     color: ${(p) => p.color};
   `;
 }
