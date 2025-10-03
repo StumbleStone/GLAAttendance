@@ -1,6 +1,7 @@
 import {
   faCamera,
   faCheckSquare,
+  faMinusSquare,
   faQuestionCircle,
   faWarning,
   IconDefinition,
@@ -107,15 +108,10 @@ export class QRScanner extends EventClass<QRScannerEvents> {
     return Array.from(this.emotes.values());
   }
 
-  handleScanResult(payload: QrScanner.ScanResult) {
-    // if (!this.supabase.rollcallInProgress) {
-    //   return;
-    // }
-
-    const result: BarcodeProcessResult = this.supabase.barcodeScanned(
-      payload.data
-    );
-
+  calculateEmote(
+    result: BarcodeProcessResult | null,
+    payload: QrScanner.ScanResult
+  ) {
     const top = Math.min(...payload.cornerPoints.map((p) => p.y));
     const bot = Math.max(...payload.cornerPoints.map((p) => p.y));
     const left = Math.min(...payload.cornerPoints.map((p) => p.x));
@@ -133,23 +129,25 @@ export class QRScanner extends EventClass<QRScannerEvents> {
       ((right - left) / this.frameSize) * 300 * 1.2
     );
 
-    const icon: IconDefinition =
-      result.state === BarcodeProcessState.PRESENT
-        ? faCheckSquare
-        : result.state === BarcodeProcessState.PROCESSING
-        ? faCamera
-        : result.state === BarcodeProcessState.ERROR
-        ? faWarning
-        : faQuestionCircle;
+    const icon: IconDefinition = !result
+      ? faMinusSquare
+      : result.state === BarcodeProcessState.PRESENT
+      ? faCheckSquare
+      : result.state === BarcodeProcessState.PROCESSING
+      ? faCamera
+      : result.state === BarcodeProcessState.ERROR
+      ? faWarning
+      : faQuestionCircle;
 
-    const color: string =
-      result.state === BarcodeProcessState.PRESENT
-        ? DefaultColors.BrightGreen
-        : result.state === BarcodeProcessState.PROCESSING
-        ? DefaultColors.BrightOrange
-        : result.state === BarcodeProcessState.ERROR
-        ? DefaultColors.BrightRed
-        : DefaultColors.BrightGrey;
+    const color: string = !result
+      ? DefaultColors.BrightGrey
+      : result.state === BarcodeProcessState.PRESENT
+      ? DefaultColors.BrightGreen
+      : result.state === BarcodeProcessState.PROCESSING
+      ? DefaultColors.BrightOrange
+      : result.state === BarcodeProcessState.ERROR
+      ? DefaultColors.BrightRed
+      : DefaultColors.BrightGrey;
 
     const newEmote: EmoteData = {
       color: color,
@@ -187,6 +185,19 @@ export class QRScanner extends EventClass<QRScannerEvents> {
     if (updated) {
       this.fireUpdate((cb) => cb[QRScannerEventKey.EMOTE_UPDATED]?.());
     }
+  }
+
+  handleScanResult(payload: QrScanner.ScanResult) {
+    if (!this.supabase.rollcallInProgress) {
+      this.calculateEmote(null, payload);
+      return;
+    }
+
+    const result: BarcodeProcessResult = this.supabase.barcodeScanned(
+      payload.data
+    );
+
+    this.calculateEmote(result, payload);
   }
 
   async setupScanner(videoElement: HTMLVideoElement, overlay: HTMLDivElement) {
