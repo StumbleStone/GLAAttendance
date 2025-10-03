@@ -86,4 +86,5 @@ export const ButtonContainer = styled("div")`
   user-select: none;
   gap: 10px;
   cursor: pointer;
+  white-space: nowrap;
 `;

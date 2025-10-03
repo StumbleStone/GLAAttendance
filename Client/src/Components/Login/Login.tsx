@@ -233,6 +233,7 @@ namespace S {
 
   export const LoginMethodContainer = styled(ButtonContainer)`
     justify-content: flex-start;
+    flex-wrap: wrap;
   `;
 
   export const LoginMethod = styled(Button)``;
