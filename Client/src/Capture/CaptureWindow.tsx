@@ -16,17 +16,23 @@ export const CaptureWindow: React.FC<CaptureWindowProps> = (
   const { supabase, isCapturing } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const emoteRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scanner = useMemo(() => new QRScanner(supabase), []);
 
   useEffect(() => {
-    if (!videoRef.current || !overlayRef.current || !isCapturing) {
+    if (
+      !videoRef.current ||
+      !overlayRef.current ||
+      !isCapturing ||
+      !emoteRef.current
+    ) {
       return;
     }
 
     const dereg = scanner.addListener({});
 
-    scanner.init(videoRef.current, overlayRef.current);
+    scanner.init(videoRef.current, overlayRef.current, emoteRef.current);
 
     return () => {
       scanner.dispose();
@@ -65,6 +71,7 @@ export const CaptureWindow: React.FC<CaptureWindowProps> = (
           playsInline
         ></S.Video>
         <S.Overlay ref={overlayRef} />
+        <S.Emote ref={emoteRef} />
       </S.CaptureWindowEl>
     </S.Container>
   );
@@ -104,4 +111,8 @@ namespace S {
   `;
 
   export const Overlay = styled.div``;
+
+  export const Emote = styled.div`
+    border: 1px solid red;
+  `;
 }

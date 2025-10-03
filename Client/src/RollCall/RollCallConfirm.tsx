@@ -22,16 +22,11 @@ export const RollCallConfirm: React.FC<RollCallConfirmProps> = (
   const { attendee, layerItem, present } = props;
 
   useEffect(() => {
-    let mounted = true;
     setTimeout(() => {
       if (!layerItem.destroyed) {
         layerItem.close();
       }
     }, 1800);
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   return (
@@ -61,15 +56,15 @@ namespace S {
       opacity: 0;
     }
     15% {
-      transform: scale(1.2);
+      transform: scale(1.5);
       opacity: 1;
     }
     25% {
-      transform: scale(1);
+      transform: scale(1.2);
       opacity: 1;
     }
-    90% {
-      transform: scale(1);
+    80% {
+      transform: scale(1.2);
       opacity: 1;
     }
     100% {
@@ -87,7 +82,7 @@ namespace S {
     justify-content: center;
     pointer-events: none;
 
-    animation: 1.5s linear ${anim};
+    animation: 2s linear ${anim};
     transform: scale(0.1);
     opacity: 0;
   `;

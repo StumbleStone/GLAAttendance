@@ -856,7 +856,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     const success = await this.createNewRollCall(attendee, RollCallMethod.QR);
 
     if (success == true) {
-      console.log(`${attendee.fullName} is Present!`);
+      console.log(`${attendee.fullName} is now Present!`);
       this.barcodeProcessMap.set(attendee.hash, {
         processing: false,
         errored: false,

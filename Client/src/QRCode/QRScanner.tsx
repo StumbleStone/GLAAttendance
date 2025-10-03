@@ -1,5 +1,9 @@
 import QrScanner from "qr-scanner";
-import { SupaBase } from "../SupaBase/SupaBase";
+import {
+  BarcodeProcessResult,
+  BarcodeProcessState,
+  SupaBase,
+} from "../SupaBase/SupaBase";
 import { EventClass, EventClassEvents } from "../Tools/EventClass";
 
 export interface QRScannerEvents extends EventClassEvents {}
@@ -11,6 +15,8 @@ export class QRScanner extends EventClass<QRScannerEvents> {
   isSetup: boolean;
   supabase: SupaBase;
 
+  emotes: any;
+
   constructor(supabase: SupaBase) {
     super();
     this.handleScanResult = this.handleScanResult.bind(this);
@@ -18,19 +24,35 @@ export class QRScanner extends EventClass<QRScannerEvents> {
     this.supabase = supabase;
   }
 
-  async init(videoElement: HTMLVideoElement, overlay: HTMLDivElement) {
-    await this.setupScanner(videoElement, overlay);
-    this.startScanning();
+  async init(
+    videoElement: HTMLVideoElement,
+    overlay: HTMLDivElement,
+    emote: HTMLDivElement
+  ) {
+    await this.setupScanner(videoElement, overlay, emote);
+    await this.startScanning();
   }
 
   handleScanResult(payload: QrScanner.ScanResult) {
     if (!this.supabase.rollcallInProgress) {
       return;
     }
-    this.supabase.barcodeScanned(payload.data);
+
+    const result: BarcodeProcessResult = this.supabase.barcodeScanned(
+      payload.data
+    );
+
+    if (result.state === BarcodeProcessState.PRESENT) {
+    }
+
+    debugger;
   }
 
-  async setupScanner(videoElement: HTMLVideoElement, overlay: HTMLDivElement) {
+  async setupScanner(
+    videoElement: HTMLVideoElement,
+    overlay: HTMLDivElement,
+    emote: HTMLDivElement
+  ) {
     console.log(`Setting up scanner`);
 
     // Debugging: Force it to use worker like on iOS
