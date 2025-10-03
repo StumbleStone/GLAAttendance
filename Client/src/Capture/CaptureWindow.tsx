@@ -1,13 +1,19 @@
 import styled from "@emotion/styled";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
+import { Icon } from "../Components/Icon";
 import { Tile } from "../Components/Tile";
-import { QRScanner } from "../QRCode/QRScanner";
+import { EmoteData, QRScanner } from "../QRCode/QRScanner";
 import { SupaBase } from "../SupaBase/SupaBase";
+import { DefaultColors } from "../Tools/Toolbox";
 
 export interface CaptureWindowProps {
   supabase: SupaBase;
   isCapturing: boolean;
+}
+
+function renderEmotes(emotes: EmoteData[]) {
+  return emotes.map((em) => <EmoteIcon key={em.id} {...em} />);
 }
 
 export const CaptureWindow: React.FC<CaptureWindowProps> = (
@@ -17,14 +23,20 @@ export const CaptureWindow: React.FC<CaptureWindowProps> = (
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const emoteRef = useRef<HTMLDivElement>(null);
   const scanner = useMemo(() => new QRScanner(supabase), []);
+  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
 
   useEffect(() => {
     if (!videoRef.current || !overlayRef.current || !isCapturing) {
       return;
     }
 
-    const dereg = scanner.addListener({});
+    const dereg = scanner.addListener({
+      emote_added: forceUpdate,
+      emote_removed: forceUpdate,
+      emote_updated: forceUpdate,
+    });
 
     scanner.init(videoRef.current, overlayRef.current);
 
@@ -65,8 +77,50 @@ export const CaptureWindow: React.FC<CaptureWindowProps> = (
           playsInline
         ></S.Video>
         <S.Overlay ref={overlayRef} />
+        <S.Emote ref={emoteRef}>{renderEmotes(scanner.emotesArr)}</S.Emote>
       </S.CaptureWindowEl>
     </S.Container>
+  );
+};
+
+const EmoteIcon: React.FC<EmoteData> = (props: EmoteData) => {
+  const { color, icon, size, x, y, deg } = props;
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) {
+      return;
+    }
+
+    el.style.top = `${y}px`;
+    el.style.left = `${x}px`;
+  }, [x, y]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) {
+      return;
+    }
+
+    el.style.transform = `rotateZ(${deg}deg) translate(-50%, -50%)`;
+  }, [deg]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) {
+      return;
+    }
+
+    el.style.width = `${size}px`;
+    el.style.height = `${size}px`;
+  }, [size]);
+
+  return (
+    <S.IconContainer ref={containerRef}>
+      <S.StyledIcon icon={icon} size={size} color={color} />
+    </S.IconContainer>
   );
 };
 
@@ -75,6 +129,26 @@ namespace S {
     display: flex;
     width: 100%;
     justify-content: center;
+  `;
+
+  export const StyledIcon = styled(Icon)``;
+
+  export const IconContainer = styled.div`
+    background-color: ${DefaultColors.Text_Color};
+    border-radius: 8px;
+    position: absolute;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: translate(-50%, -50%);
+    transform-origin: 0 0;
+
+    top: 50%;
+    left: 50%;
+
+    transition: transform 0.25s linear, width 0.25s linear, height 0.25s linear,
+      top 0.1s linear, left 0.1s linear;
   `;
 
   export const CaptureWindowEl = styled(Tile)`
@@ -104,4 +178,14 @@ namespace S {
   `;
 
   export const Overlay = styled.div``;
+
+  export const Emote = styled.div`
+    border: 1px solid red;
+
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  `;
 }

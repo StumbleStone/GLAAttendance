@@ -16,6 +16,7 @@ import { LayerHandler, LayerItem } from "../Components/Layer";
 import { FABQRGrid } from "../QRCode/FABQRGrid";
 import { RollCallDisplay } from "../RollCall/RollCallDisplay";
 import { FABLogout } from "../SupaBase/FABLogout";
+import { FABRefresh } from "../SupaBase/FABRefresh";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { HeadingIconHandler } from "./HeadingIconHandler";
 
@@ -41,7 +42,7 @@ export const Dashboard: React.FC = (props) => {
     supabase.loadData();
     return supabase.addListener({
       visibility_changed: (isVisible: boolean) =>
-        isVisible == false ? setCaptureCode(() => false) : null,
+        !isVisible ? setCaptureCode(() => false) : null,
     });
   }, []);
 
@@ -58,6 +59,7 @@ export const Dashboard: React.FC = (props) => {
       />,
       <FABQRGrid doClose={close} key="FABQRGrid" supabase={supabase} />,
       <FABLogout doClose={close} key="FABLogout" supabase={supabase} />,
+      <FABRefresh doClose={close} key="FABRefresh" supabase={supabase} />,
     ];
   }, []);
 

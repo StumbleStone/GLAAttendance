@@ -22,7 +22,7 @@ function validateName(name: string): boolean {
     return false;
   }
 
-  return name.length > 3;
+  return name.length >= 3;
 }
 
 interface PasswordValidation {
