@@ -180,8 +180,6 @@ namespace S {
   export const Overlay = styled.div``;
 
   export const Emote = styled.div`
-    border: 1px solid red;
-
     position: absolute;
     left: 0;
     right: 0;
