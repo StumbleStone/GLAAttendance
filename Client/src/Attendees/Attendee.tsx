@@ -95,38 +95,56 @@ export class Attendee extends EventClass<AttendeeEvents> {
     }
 
     this.rollCalls = this.rollCalls.filter((r) => r.id !== rollCall.id);
-    if (this.currentRollCall?.id === rollCall.id) {
-      this.updateCurrentRollCall(
-        this.rollCalls.reduce((latest, r) => {
-          return new Date(r.created_at) > new Date(latest.created_at)
-            ? r
-            : latest;
-        }, this.rollCalls[0] || null)
-      );
-    }
 
     this.fireUpdate((cb) => cb.updated?.());
   }
 
-  updateCurrentRollCall(newCurrent: RollCallEntry) {
-    let statusChanged = !(this.currentRollCall?.status === newCurrent?.status);
-    this.currentRollCall = newCurrent;
+  checkCurrentRollCall(currentRollCallEvent: RollCallEventEntry) {
+    const matchingRollCall = this.rollCalls.find(
+      (rc) => rc.roll_call_event_id === currentRollCallEvent.id
+    );
 
+    if (matchingRollCall) {
+      this.setCurrentRollCall(matchingRollCall);
+    } else {
+      this.setCurrentRollCall(null);
+    }
+  }
+
+  setCurrentRollCall(rollCall: RollCallEntry | null): void {
+    if (!rollCall && this.currentRollCall != null) {
+      this.currentRollCall = null;
+      this.fireUpdate((cb) => cb.statusUpdated?.());
+      return;
+    }
+
+    if (!rollCall) {
+      // Both are null
+      return;
+    }
+
+    // Unchanged
+    if (rollCall.id === this.currentRollCall?.id) {
+      return;
+    }
+
+    const statusChanged = this.currentRollCall?.status !== rollCall.status;
+    this.currentRollCall = rollCall;
+
+    this.fireUpdate((cb) => cb.updated?.());
     if (statusChanged) {
       this.fireUpdate((cb) => cb.statusUpdated?.());
     }
   }
 
-  pushRollCall(rollCall: RollCallEntry): void {
+  pushRollCall(rollCall: RollCallEntry, isCurrent: boolean): void {
     this.rollCalls.push(rollCall);
-    if (
-      !this.currentRollCall ||
-      new Date(rollCall.created_at) > new Date(this.currentRollCall.created_at)
-    ) {
-      this.updateCurrentRollCall(rollCall);
-    }
 
     this.fireUpdate((cb) => cb.updated?.());
+
+    if (isCurrent) {
+      this.setCurrentRollCall(rollCall);
+    }
   }
 
   status(rollCallEvent: RollCallEventEntry): AttendeeStatus {

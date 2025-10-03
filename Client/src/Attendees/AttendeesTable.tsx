@@ -1,8 +1,10 @@
 import styled from "@emotion/styled";
 import {
   faArrowDown,
+  faArrowDown19,
   faArrowDownAZ,
   faArrowUp,
+  faArrowUp19,
   faArrowUpAZ,
   faCheckSquare,
   faMinusSquare,
@@ -21,7 +23,7 @@ import { TableCell } from "../Components/Table/TableCell";
 import { TableHeading } from "../Components/Table/TableHeading";
 import { TableRow } from "../Components/Table/TableRow";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { DefaultColors } from "../Tools/Toolbox";
+import { DefaultColors, epochToDate } from "../Tools/Toolbox";
 import { Attendee, AttendeeStatus } from "./Attendee";
 
 export interface AttendeesTableProps {
@@ -34,6 +36,119 @@ enum SortColumns {
   NAME = "name",
   SURNAME = "surname",
   STATUS = "status",
+  BY = "by",
+  ON = "on",
+}
+
+function sortStatus(
+  a: Attendee,
+  b: Attendee,
+  supabase: SupaBase,
+  sortAsc: boolean
+) {
+  const aPresent = a.status(supabase.currentRollCallEvent);
+  const bPresent = b.status(supabase.currentRollCallEvent);
+
+  if (aPresent === bPresent) {
+    // Cancel out the sortAsc
+    return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
+  }
+
+  const bWeight =
+    bPresent === AttendeeStatus.PRESENT
+      ? 2
+      : bPresent === AttendeeStatus.ABSENT
+      ? 1
+      : 0;
+  const aWeight =
+    aPresent === AttendeeStatus.PRESENT
+      ? 2
+      : aPresent === AttendeeStatus.ABSENT
+      ? 1
+      : 0;
+
+  return bWeight - aWeight;
+}
+
+function sortBy(
+  a: Attendee,
+  b: Attendee,
+  supabase: SupaBase,
+  sortAsc: boolean
+) {
+  if (a.currentRollCall == null && b.currentRollCall == null) {
+    return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
+  }
+
+  if (a.currentRollCall == null) {
+    return 1 * (sortAsc ? 1 : -1);
+  }
+
+  if (b.currentRollCall == null) {
+    return -1 * (sortAsc ? 1 : -1);
+  }
+
+  if (a.currentRollCall.created_by === b.currentRollCall.created_by) {
+    return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
+  }
+
+  const aName = supabase.getUserName(a.currentRollCall.created_by, {
+    nameOnly: true,
+  });
+  const bName = supabase.getUserName(b.currentRollCall.created_by, {
+    nameOnly: true,
+  });
+
+  return aName.localeCompare(bName, "en", {
+    sensitivity: "base",
+  });
+}
+
+function sortOn(a: Attendee, b: Attendee, sortAsc: boolean) {
+  if (a.currentRollCall == null && b.currentRollCall == null) {
+    return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
+  }
+
+  if (a.currentRollCall == null) {
+    return 1 * (sortAsc ? 1 : -1);
+  }
+
+  if (b.currentRollCall == null) {
+    return -1 * (sortAsc ? 1 : -1);
+  }
+
+  const aTime = new Date(a.currentRollCall.created_at).getTime();
+  const bTime = new Date(b.currentRollCall.created_at).getTime();
+
+  return aTime - bTime;
+}
+
+function filterData(supabase: SupaBase, filter: string) {
+  if (!supabase.attendees || supabase.attendees.size == 0) {
+    return [];
+  }
+
+  if (!filter || filter == "") {
+    return Array.from(supabase.attendees.values()).filter((a) => !a.isDeleted);
+  }
+
+  let outArr: Attendee[] = [];
+
+  filter
+    .toLowerCase()
+    .split(/ +/)
+    .forEach((part) => {
+      supabase.attendees.forEach((att) => {
+        if (
+          att.name?.toLowerCase().includes(part) ||
+          att.surname?.toLowerCase().includes(part)
+        ) {
+          outArr.push(att);
+        }
+      });
+    });
+
+  return outArr;
 }
 
 export const AttendeesTable: React.FC<AttendeesTableProps> = (
@@ -43,6 +158,14 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 
   const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.STATUS);
   const [sortAsc, setSortAsc] = useState<boolean>(false);
+
+  const measureWidthRef = React.useRef<HTMLDivElement>(null);
+
+  const [colsToInclude, setColsToInclude] = useState<SortColumns[]>(() => [
+    SortColumns.NAME,
+    SortColumns.SURNAME,
+    SortColumns.STATUS,
+  ]);
 
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
@@ -55,35 +178,16 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     });
   }, []);
 
-  const filtered = useMemo<Attendee[]>(() => {
-    if (!supabase.attendees || supabase.attendees.size == 0) {
-      return [];
+  const filtered = filterData(supabase, filter);
+
+  useEffect(() => {
+    if (colsToInclude.includes(sortCol)) {
+      return;
     }
 
-    if (!filter || filter == "") {
-      return Array.from(supabase.attendees.values()).filter(
-        (a) => !a.isDeleted
-      );
-    }
-
-    let outArr: Attendee[] = [];
-
-    filter
-      .toLowerCase()
-      .split(/ +/)
-      .forEach((part) => {
-        supabase.attendees.forEach((att) => {
-          if (
-            att.name?.toLowerCase().includes(part) ||
-            att.surname?.toLowerCase().includes(part)
-          ) {
-            outArr.push(att);
-          }
-        });
-      });
-
-    return outArr;
-  }, [filter, supabase.attendeesModified]);
+    setSortCol(SortColumns.STATUS);
+    setSortAsc(false);
+  }, [sortCol, colsToInclude]);
 
   const handleClickCol = useCallback(
     (name: SortColumns) => {
@@ -99,26 +203,6 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   );
 
   const sorted: Attendee[] = useMemo(() => {
-    const sortStatus = (a: Attendee, b: Attendee) => {
-      const aPresent = a.isPresent(supabase.currentRollCallEvent);
-      const bPresent = b.isPresent(supabase.currentRollCallEvent);
-
-      if (aPresent === bPresent) {
-        // Cancel out the sortAsc
-        return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
-      }
-
-      if (aPresent) {
-        return -1;
-      }
-
-      if (bPresent) {
-        return 1;
-      }
-
-      return 0;
-    };
-
     const sort = (a: Attendee, b: Attendee) => {
       let field: string;
       switch (sortCol) {
@@ -128,9 +212,15 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
         case SortColumns.SURNAME:
           field = "surname";
           break;
+        case SortColumns.BY:
+          return sortBy(a, b, supabase, sortAsc) * (sortAsc ? 1 : -1);
+
+        case SortColumns.ON:
+          return sortOn(a, b, sortAsc) * (sortAsc ? 1 : -1);
+
         case SortColumns.STATUS:
         default:
-          return sortStatus(a, b) * (sortAsc ? 1 : -1);
+          return sortStatus(a, b, supabase, sortAsc) * (sortAsc ? 1 : -1);
       }
 
       return Attendee.SortByField(a, b, field) * (sortAsc ? 1 : -1);
@@ -139,12 +229,54 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     return filtered.sort(sort);
   }, [filtered, sortCol, sortAsc, supabase.currentRollCallEvent?.id ?? 0]);
 
+  useEffect(() => {
+    const el = measureWidthRef.current;
+    if (!el) {
+      return;
+    }
+
+    const onResize = (entries: ResizeObserverEntry[]) => {
+      if (entries.length == 0) {
+        return;
+      }
+
+      const entry = entries[0];
+      const width = Math.floor(entry.contentRect.width);
+
+      const newCols: SortColumns[] = [
+        SortColumns.NAME,
+        SortColumns.SURNAME,
+        SortColumns.STATUS,
+      ];
+
+      if (width > 420) {
+        newCols.push(SortColumns.ON);
+      }
+
+      if (width > 500) {
+        newCols.push(SortColumns.BY);
+      }
+
+      setColsToInclude(() => newCols);
+    };
+
+    const obs = new ResizeObserver(onResize);
+    obs.observe(el);
+
+    return () => {
+      obs.unobserve(el);
+      obs.disconnect();
+    };
+  }, []);
+
   return (
     <S.TableContainer>
+      <S.MeasureWidth ref={measureWidthRef} />
       <S.PrimaryTable>
         <tbody>
           <TableRow key="heading">
             <Heading
+              isIncluded={colsToInclude.includes(SortColumns.NAME)}
               colName={SortColumns.NAME}
               label={"Name"}
               sortAsc={sortAsc}
@@ -153,6 +285,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               onClick={handleClickCol}
             />
             <Heading
+              isIncluded={colsToInclude.includes(SortColumns.SURNAME)}
               colName={SortColumns.SURNAME}
               label={"Surname"}
               sortAsc={sortAsc}
@@ -163,6 +296,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             {/* Spacer */}
             <TableHeading />
             <Heading
+              isIncluded={colsToInclude.includes(SortColumns.STATUS)}
               colName={SortColumns.STATUS}
               label={"✓"}
               centerLabel={true}
@@ -171,37 +305,92 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               addArrowSpacer={true}
               onClick={handleClickCol}
             />
+            <Heading
+              isIncluded={colsToInclude.includes(SortColumns.ON)}
+              colName={SortColumns.ON}
+              label={"On"}
+              sortAsc={sortAsc}
+              sortCol={sortCol}
+              useAZArrow={true}
+              onClick={handleClickCol}
+            />
+            <Heading
+              isIncluded={colsToInclude.includes(SortColumns.BY)}
+              colName={SortColumns.BY}
+              label={"By"}
+              sortAsc={sortAsc}
+              sortCol={sortCol}
+              use19Arrow={true}
+              onClick={handleClickCol}
+            />
           </TableRow>
           {sorted.map((att) => {
             const status: AttendeeStatus = att.status(
               supabase.currentRollCallEvent
             );
 
+            const color =
+              status === AttendeeStatus.PRESENT
+                ? DefaultColors.BrightGreen
+                : status === AttendeeStatus.ABSENT
+                ? DefaultColors.BrightRed
+                : DefaultColors.Grey;
+
+            const textColor =
+              status === AttendeeStatus.PRESENT
+                ? DefaultColors.BrightGreen
+                : status === AttendeeStatus.ABSENT
+                ? DefaultColors.BrightRed
+                : DefaultColors.Text_Color;
+
             return (
               <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
-                <S.NameCell>{att.name}</S.NameCell>
-                <S.NameCell>{att.surname}</S.NameCell>
+                {colsToInclude.includes(SortColumns.NAME) && (
+                  <S.NameCell color={textColor}>{att.name}</S.NameCell>
+                )}
+                {colsToInclude.includes(SortColumns.SURNAME) && (
+                  <S.NameCell color={textColor}>{att.surname}</S.NameCell>
+                )}
                 {/* Spacer */}
                 <TableCell />
-                <S.RCCell>
-                  <Icon
-                    size={26}
-                    color={
-                      status === AttendeeStatus.PRESENT
-                        ? DefaultColors.BrightGreen
-                        : status === AttendeeStatus.ABSENT
-                        ? DefaultColors.BrightRed
-                        : DefaultColors.Grey
-                    }
-                    icon={
-                      status === AttendeeStatus.PRESENT
-                        ? faCheckSquare
-                        : status === AttendeeStatus.ABSENT
-                        ? faXmarkSquare
-                        : faMinusSquare
-                    }
-                  />
-                </S.RCCell>
+                {colsToInclude.includes(SortColumns.STATUS) && (
+                  <S.RCCell>
+                    <Icon
+                      size={26}
+                      color={color}
+                      icon={
+                        status === AttendeeStatus.PRESENT
+                          ? faCheckSquare
+                          : status === AttendeeStatus.ABSENT
+                          ? faXmarkSquare
+                          : faMinusSquare
+                      }
+                    />
+                  </S.RCCell>
+                )}
+                {colsToInclude.includes(SortColumns.ON) && (
+                  <S.NameCell>
+                    {status !== AttendeeStatus.NOT_SCANNED
+                      ? epochToDate(
+                          new Date(att.currentRollCall!.created_at).getTime(),
+                          {
+                            includeDate: false,
+                            includeTime: true,
+                            includeSeconds: true,
+                          }
+                        )
+                      : "--"}
+                  </S.NameCell>
+                )}
+                {colsToInclude.includes(SortColumns.BY) && (
+                  <S.NameCell>
+                    {status === AttendeeStatus.PRESENT
+                      ? supabase.getUserName(att.currentRollCall!.created_by, {
+                          nameOnly: true,
+                        })
+                      : "--"}
+                  </S.NameCell>
+                )}
               </TableRow>
             );
           })}
@@ -219,7 +408,9 @@ interface HeadingProps {
   label: string;
   centerLabel?: boolean;
   useAZArrow?: boolean;
+  use19Arrow?: boolean;
   addArrowSpacer?: boolean;
+  isIncluded?: boolean;
 }
 
 const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
@@ -231,8 +422,14 @@ const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
     label,
     centerLabel,
     useAZArrow,
+    use19Arrow,
     addArrowSpacer,
+    isIncluded,
   } = props;
+
+  if (!isIncluded) {
+    return null;
+  }
 
   const handleClick = useCallback(() => onClick(colName), [onClick, colName]);
 
@@ -245,6 +442,7 @@ const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
           selected={sortCol === colName}
           ascending={sortAsc}
           useAZ={useAZArrow}
+          use09={use19Arrow}
         />
       </S.HeadingContainer>
     </S.StyledTableHeading>
@@ -255,15 +453,20 @@ export const SortArrow: React.FC<{
   ascending: boolean;
   selected: boolean;
   useAZ?: boolean;
+  use09?: boolean;
 }> = (props) => {
-  const { ascending, selected, useAZ } = props;
+  const { ascending, selected, useAZ, use09 } = props;
 
   const icon = ascending
     ? useAZ
       ? faArrowDownAZ
+      : use09
+      ? faArrowDown19
       : faArrowDown
     : useAZ
     ? faArrowUpAZ
+    : use09
+    ? faArrowUp19
     : faArrowUp;
 
   return (
@@ -281,7 +484,8 @@ namespace S {
   export const TableContainer = styled.div`
     color: ${DefaultColors.Text_Color};
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     justify-content: center;
   `;
 
@@ -291,6 +495,8 @@ namespace S {
     width: 0;
   `;
 
+  export const MeasureWidth = styled.div``;
+
   export const PrimaryTable = styled(Table)`
     width: 100%;
     font-size: 12px;
@@ -299,12 +505,12 @@ namespace S {
   export const StyledTableHeading = styled(TableHeading)<{ center?: boolean }>`
     text-align: ${(p) => (p.center ? "center" : null)};
     font-size: 16px;
-    padding: 4px 4px;
+    padding: 4px 8px;
   `;
 
   export const NameCell = styled(TableCell)`
     width: 0;
-    padding: 0px 4px;
+    padding: 0 8px;
   `;
 
   export const HeadingText = styled.span``;

@@ -102,14 +102,13 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   rollCallEvents: RollCallEventEntry[];
   currentRollCallEvent: RollCallEventEntry;
   rollcallEventsLoaded: boolean;
-  _attendeesModified: number; // Probably a much cleaner way to do this but I'm too tired to care
 
   barcodeProcessMap: Map<string, BarcodeProcessingMap>;
 
   userNameMap: Map<string, string>;
   usernamesLoaded: boolean;
 
-  loadPromise: Promise<void>;
+  loadPromise: Promise<void> | null;
 
   realtimeChannelMonitor: RealtimeChannelMonitor;
   realtimeChannel: RealtimeChannel | null;
@@ -204,17 +203,22 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   registerVisibilityChecker() {
-    document.addEventListener("visibilitychange", () => {
-      const isVis: boolean = !document.hidden;
+    const visChanged = () => {
+      const isVis: boolean = !document.hidden && document.hasFocus();
       console.log(isVis ? "Page is visible" : "Page is hidden");
+
       this.fireUpdate((cb) => cb[SupaBaseEventKey.VISIBILITY_CHANGED]?.(isVis));
 
       if (isVis) {
-        this.listenToAttendeesChanges();
+        if (this._isLoggedIn) {
+          this.listenToAttendeesChanges();
+        }
       } else {
         this.realtimeUnsubscribe();
       }
-    });
+    };
+
+    document.addEventListener("visibilitychange", visChanged);
   }
 
   async userSendOTP(email: string): Promise<boolean> {
@@ -279,6 +283,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_LOGIN]?.(true));
 
     await this.loadProfile();
+    await this.listenToAttendeesChanges();
   }
 
   async loadData() {
@@ -287,7 +292,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     this.loadPromise = new Promise(async (res) => {
-      // These don't depend on each other and can be ran at the same time
+      // These don't depend on each other and can be run at the same time
       await Promise.all([
         this.loadAttendees(),
         this.loadUsernames(),
@@ -296,7 +301,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
       await this.loadRollCalls();
 
-      await this.listenToAttendeesChanges();
+      // Clear so that we can load again if needed
+      this.loadPromise = null;
       res();
     });
 
@@ -409,6 +415,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       return;
     }
 
+    console.log(`Unsubscribing from Realtime channel`);
+
     this.client.removeChannel(this.realtimeChannel);
     this.realtimeChannel = null;
   }
@@ -471,7 +479,6 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       }
 
       attendee.removeRollCall(rollCall);
-      this.attendeesModified = Date.now();
       this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALLS]?.());
     });
   }
@@ -486,9 +493,10 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       return;
     }
 
-    attendee.pushRollCall(entry);
-    // TODO Replace with Attendee level events
-    this.attendeesModified = Date.now();
+    attendee.pushRollCall(
+      entry,
+      entry.roll_call_event_id === this.currentRollCallEvent?.id
+    );
     this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALLS]?.());
   }
 
@@ -500,7 +508,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.rollCallEvents = this.rollCallEvents.filter(
       (rce) => rce.id !== rollCallEventId
     );
-    this.calculateCurrentRollCallEvent();
+    await this.calculateCurrentRollCallEvent();
   }
 
   async addRollCallEventFromDB(entry: RollCallEventEntry) {
@@ -510,7 +518,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     this.rollCallEvents.push(entry);
     this.rollCallEvents.sort(this.sortRollCallEvent);
-    this.calculateCurrentRollCallEvent();
+    await this.calculateCurrentRollCallEvent();
   }
 
   async updateRollCallEventFromDB(entry: RollCallEventEntry) {
@@ -525,10 +533,11 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.rollCallEvents.sort(this.sortRollCallEvent);
 
     if (this.currentRollCallEvent.id === entry.id) {
+      // Don't need to update attendeees (I think?) because the event is the same, only specific details might have changed
       this.currentRollCallEvent = entry;
       this.fireUpdate((cb) => cb[SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]?.());
     } else {
-      this.calculateCurrentRollCallEvent();
+      await this.calculateCurrentRollCallEvent();
     }
   }
 
@@ -542,7 +551,6 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     console.log(`Attendee updated: ${entry.name} ${entry.surname}`);
     record.entry = entry;
-    this.attendeesModified = Date.now();
   }
 
   async addAttendeeFromDB(entry: AttendeesEntry) {
@@ -558,7 +566,6 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     const attendee = new Attendee(entry);
 
     this.attendees.set(attendee.hash, attendee);
-    this.attendeesModified = Date.now();
     this.fireUpdate((cb) => cb[SupaBaseEventKey.ADDED_ATTENDEES]?.());
   }
 
@@ -582,7 +589,6 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     );
 
     this.attendees.delete(hash);
-    this.attendeesModified = Date.now();
 
     this.fireUpdate((cb) => cb[SupaBaseEventKey.DELETED_ATTENDEES]?.());
   }
@@ -607,7 +613,6 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       this.attendees.set(att.hash, att);
     });
 
-    this.attendeesModified = Date.now();
     this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ATTENDEES]?.());
     console.log(`[${data?.length || 0}] Attendees loaded`);
   }
@@ -633,21 +638,12 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     console.log(`[${data?.length || 0}] Usernames loaded`);
   }
 
-  get attendeesModified(): number {
-    return this._attendeesModified;
-  }
-
   get rollcallInProgress(): boolean {
     if (!this.currentRollCallEvent) {
       return false;
     }
 
     return this.currentRollCallEvent.closed_by == null;
-  }
-
-  set attendeesModified(date: number) {
-    console.log(`Attendees modified`, date);
-    this._attendeesModified = date;
   }
 
   async loadRollCalls() {
@@ -677,7 +673,10 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     data?.forEach((rollCall: RollCallEntry) => {
       if (attendeesById[rollCall.attendee_id]) {
-        attendeesById[rollCall.attendee_id].pushRollCall(rollCall);
+        attendeesById[rollCall.attendee_id].pushRollCall(
+          rollCall,
+          rollCall.roll_call_event_id === this.currentRollCallEvent?.id
+        );
         return;
       }
     });
@@ -720,6 +719,10 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     this.currentRollCallEvent = this.rollCallEvents[0];
     this.fireUpdate((cb) => cb[SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]?.());
+
+    this.attendees.forEach((attendee: Attendee) =>
+      attendee.checkCurrentRollCall(this.currentRollCallEvent)
+    );
   }
 
   async deleteAttendee(attendee: Attendee) {
@@ -1034,14 +1037,20 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     await this.updateUserDetails(options.name, options.surname, true);
   }
 
-  getUserName(id: string): string {
+  getUserName(id: string, options: { nameOnly?: boolean } = {}): string {
     const user = this.userNameMap.get(id);
 
     if (!user) {
       return "Unknown";
     }
 
-    return user;
+    const { nameOnly = false } = options;
+
+    if (!nameOnly) {
+      return user;
+    }
+
+    return user.split(" ")[0];
   }
 
   async firePing() {

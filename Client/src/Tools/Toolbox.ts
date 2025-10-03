@@ -118,6 +118,7 @@ export function formatCurrency(
   amount: number,
   options: FormatCurrencyOptions = {}
 ): string {
+  const { padding, includeCents = true, symbol } = options ?? {};
   amount = amount || 0;
 
   const amountStr: string = `${amount}`;
@@ -138,17 +139,17 @@ export function formatCurrency(
     arr.push(bigPart[i]);
   }
 
-  if (options.padding) {
-    while (arr.length < options.padding) {
+  if (padding) {
+    while (arr.length < padding) {
       arr.push(" ");
     }
   }
 
-  if (options.includeCents) {
+  if (includeCents) {
     arr.unshift(`.${("00" + (cents ?? 0)).slice(-2)}`);
   }
 
-  return `${options.symbol ?? ""}${arr.reverse().join("")}`;
+  return `${symbol ?? ""}${arr.reverse().join("")}`;
 }
 
 export function currencyToLength(amount: number): number {
@@ -164,19 +165,25 @@ export function currencyToLength(amount: number): number {
 }
 
 export interface EpochToDateOptions {
+  includeDate?: boolean;
   includeTime?: boolean;
   includeSeconds?: boolean;
   includeMS?: boolean;
+  useUTC?: boolean;
 }
 
-function _epochToDate(
-  epoch: number,
-  options: EpochToDateOptions,
-  useUTC: boolean
-): string {
+function _epochToDate(epoch: number, options: EpochToDateOptions): string {
   if (epoch == null) {
     return "N/A";
   }
+
+  const {
+    includeDate = true,
+    includeTime,
+    includeMS,
+    includeSeconds,
+    useUTC = false,
+  } = options;
 
   const date: Date = new Date(epoch);
 
@@ -190,10 +197,10 @@ function _epochToDate(
     "00" + (useUTC ? date.getUTCDate() : date.getDate())
   ).slice(-2);
 
-  let str: string = `${year}-${month}-${day}`;
+  let str: string = includeDate ? `${year}-${month}-${day}` : "";
 
-  if (!options?.includeTime) {
-    return str;
+  if (!includeTime) {
+    return str.trim();
   }
 
   const hour: string = (
@@ -205,8 +212,8 @@ function _epochToDate(
 
   str += ` ${hour}:${minute}`;
 
-  if (!options?.includeSeconds) {
-    return str;
+  if (!includeSeconds) {
+    return str.trim();
   }
 
   const seconds =
@@ -214,20 +221,20 @@ function _epochToDate(
 
   str += seconds;
 
-  if (!options?.includeMS) {
-    return str;
+  if (!includeMS) {
+    return str.trim();
   }
 
   const ms = `.` + `000${date.getUTCMilliseconds()}`.slice(-3);
 
   str += ms;
 
-  return str;
+  return str.trim();
 }
 
 export function epochToDate(
   epoch: number,
   options?: EpochToDateOptions
 ): string {
-  return _epochToDate(epoch, options ?? {}, false);
+  return _epochToDate(epoch, options ?? {});
 }

@@ -152,31 +152,35 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
                   <td>Is:</td>
                   <S.StyledCell color={statusCol}>{status}</S.StyledCell>
                 </tr>
-                {!!attendee.currentRollCall && (
-                  <tr>
-                    <td>By:</td>
-                    <td>
-                      <Username
-                        id={attendee.currentRollCall.created_by}
-                        supabase={supabase}
-                      />
-                    </td>
-                  </tr>
-                )}
-                {!!attendee.currentRollCall && (
-                  <tr>
-                    <td>On:</td>
-                    <td>
-                      {epochToDate(
-                        new Date(attendee.currentRollCall.created_at).getTime(),
-                        {
-                          includeTime: true,
-                          includeSeconds: true,
-                        }
-                      )}
-                    </td>
-                  </tr>
-                )}
+                {!!attendee.currentRollCall &&
+                  status === AttendeeStatus.PRESENT && (
+                    <tr>
+                      <td>By:</td>
+                      <td>
+                        <Username
+                          id={attendee.currentRollCall.created_by}
+                          supabase={supabase}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                {!!attendee.currentRollCall &&
+                  status === AttendeeStatus.PRESENT && (
+                    <tr>
+                      <td>On:</td>
+                      <td>
+                        {epochToDate(
+                          new Date(
+                            attendee.currentRollCall.created_at
+                          ).getTime(),
+                          {
+                            includeTime: true,
+                            includeSeconds: true,
+                          }
+                        )}
+                      </td>
+                    </tr>
+                  )}
               </tbody>
             </S.StyledTable>
           </S.StatusMetaContainer>
