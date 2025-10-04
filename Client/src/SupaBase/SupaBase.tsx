@@ -113,6 +113,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   realtimeChannelMonitor: RealtimeChannelMonitor;
   realtimeChannel: RealtimeChannel | null;
 
+  lastVisibilityState: boolean;
+
   constructor() {
     super();
 
@@ -204,7 +206,14 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
   registerVisibilityChecker() {
     const visChanged = () => {
-      const isVis: boolean = !document.hidden && document.hasFocus();
+      const isVis: boolean = !document.hidden;
+
+      if (isVis === this.lastVisibilityState) {
+        return;
+      }
+
+      this.lastVisibilityState = isVis;
+
       console.log(isVis ? "Page is visible" : "Page is hidden");
 
       this.fireUpdate((cb) => cb[SupaBaseEventKey.VISIBILITY_CHANGED]?.(isVis));

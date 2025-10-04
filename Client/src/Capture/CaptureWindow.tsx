@@ -117,8 +117,11 @@ const EmoteIcon: React.FC<EmoteData> = (props: EmoteData) => {
     el.style.height = `${size}px`;
   }, [size]);
 
+  const startX = useMemo(() => x, []);
+  const startY = useMemo(() => y, []);
+
   return (
-    <S.IconContainer ref={containerRef}>
+    <S.IconContainer ref={containerRef} startX={startX} startY={startY}>
       <S.StyledIcon icon={icon} size={size} color={color} />
     </S.IconContainer>
   );
@@ -133,19 +136,19 @@ namespace S {
 
   export const StyledIcon = styled(Icon)``;
 
-  export const IconContainer = styled.div`
+  export const IconContainer = styled.div<{ startX: number; startY: number }>`
     background-color: ${DefaultColors.Text_Color};
     border-radius: 8px;
     position: absolute;
+
+    top: ${(p) => p.startY}px;
+    left: ${(p) => p.startX}px;
 
     display: flex;
     justify-content: center;
     align-items: center;
     transform: translate(-50%, -50%);
     transform-origin: 0 0;
-
-    top: 50%;
-    left: 50%;
 
     transition: transform 0.25s linear, width 0.25s linear, height 0.25s linear,
       top 0.1s linear, left 0.1s linear;
