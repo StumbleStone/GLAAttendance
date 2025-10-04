@@ -1,7 +1,7 @@
 import {
-  faCamera,
   faCheckSquare,
   faMinusSquare,
+  faQrcode,
   faQuestionCircle,
   faWarning,
   IconDefinition,
@@ -134,7 +134,7 @@ export class QRScanner extends EventClass<QRScannerEvents> {
       : result.state === BarcodeProcessState.PRESENT
       ? faCheckSquare
       : result.state === BarcodeProcessState.PROCESSING
-      ? faCamera
+      ? faQrcode
       : result.state === BarcodeProcessState.ERROR
       ? faWarning
       : faQuestionCircle;
