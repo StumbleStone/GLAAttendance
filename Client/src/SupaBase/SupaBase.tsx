@@ -220,6 +220,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
       if (isVis) {
         if (this._isLoggedIn) {
+          this.loadData();
           this.listenToAttendeesChanges();
         }
       } else {
@@ -617,6 +618,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       debugger;
     }
 
+    this.attendees.clear();
     (data || []).forEach((entry: AttendeesEntry) => {
       const att = new Attendee(entry);
       this.attendees.set(att.hash, att);
@@ -635,6 +637,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       debugger;
     }
 
+    this.userNameMap.clear();
     (data || []).forEach((userProfile: ProfileEventEntry) => {
       this.userNameMap.set(
         userProfile.uid,
@@ -709,6 +712,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       debugger;
     }
 
+    this.rollCallEvents = [];
     this.rollCallEvents = (data ?? []).sort(this.sortRollCallEvent);
     this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]?.());
     this.rollcallEventsLoaded = true;

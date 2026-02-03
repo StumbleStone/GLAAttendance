@@ -6,6 +6,8 @@ import {
   faArrowUp,
   faArrowUp19,
   faArrowUpAZ,
+  faBusSimple,
+  faCar,
   faCheckSquare,
   faMinusSquare,
   faXmarkSquare,
@@ -38,6 +40,7 @@ enum SortColumns {
   STATUS = "status",
   BY = "by",
   ON = "on",
+  TP = "tp",
 }
 
 function sortStatus(
@@ -68,6 +71,26 @@ function sortStatus(
       : 0;
 
   return bWeight - aWeight;
+}
+
+function sortTransport(a: Attendee, b: Attendee, sortAsc: boolean) {
+  const aTransport: boolean = a.isUsingOwnTransport;
+  const bTransport: boolean = b.isUsingOwnTransport;
+
+  if (aTransport === bTransport) {
+    // Cancel out the sortAsc
+    return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
+  }
+
+  if (aTransport == true) {
+    return -1;
+  }
+
+  if (bTransport == true) {
+    return 1;
+  }
+
+  return 0;
 }
 
 function sortBy(
@@ -217,6 +240,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 
         case SortColumns.ON:
           return sortOn(a, b, sortAsc) * (sortAsc ? 1 : -1);
+        case SortColumns.TP:
+          return sortTransport(a, b, sortAsc) * (sortAsc ? 1 : -1);
 
         case SortColumns.STATUS:
         default:
@@ -246,6 +271,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       const newCols: SortColumns[] = [
         SortColumns.NAME,
         SortColumns.SURNAME,
+        SortColumns.TP,
         SortColumns.STATUS,
       ];
 
@@ -295,6 +321,16 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             />
             {/* Spacer */}
             <TableHeading />
+            <Heading
+              isIncluded={colsToInclude.includes(SortColumns.TP)}
+              colName={SortColumns.TP}
+              label={"TP"}
+              centerLabel={true}
+              sortAsc={sortAsc}
+              sortCol={sortCol}
+              addArrowSpacer={true}
+              onClick={handleClickCol}
+            />
             <Heading
               isIncluded={colsToInclude.includes(SortColumns.STATUS)}
               colName={SortColumns.STATUS}
@@ -346,6 +382,19 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
                 )}
                 {/* Spacer */}
                 <TableCell />
+                {colsToInclude.includes(SortColumns.TP) && (
+                  <S.RCCell>
+                    <Icon
+                      size={22}
+                      color={
+                        att.isUsingOwnTransport
+                          ? DefaultColors.BrightPurple
+                          : DefaultColors.BrightOrange
+                      }
+                      icon={att.isUsingOwnTransport ? faCar : faBusSimple}
+                    />
+                  </S.RCCell>
+                )}
                 {colsToInclude.includes(SortColumns.STATUS) && (
                   <S.RCCell>
                     <Icon

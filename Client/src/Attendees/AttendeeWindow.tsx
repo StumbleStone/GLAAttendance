@@ -8,7 +8,13 @@ import {
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { useCallback, useEffect, useReducer, useState } from "react";
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useReducer,
+  useState,
+} from "react";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Button } from "../Components/Button/Button";
 import { DownloadButton } from "../Components/Button/DownloadButton";
@@ -110,6 +116,16 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
       : DefaultColors.BrightGrey;
   const rollCallInProgress = supabase.rollcallInProgress;
 
+  let allergies: string[] = attendee.allergies;
+  if (allergies.length == 0) {
+    allergies = ["None"];
+  }
+
+  let emergencyContacts: string[] = attendee.emergencyContacts;
+  if (emergencyContacts.length == 0) {
+    emergencyContacts = ["None"];
+  }
+
   const handlePresent = useCallback(() => {
     supabase.createNewRollCall(attendee, RollCallMethod.MANUAL);
   }, [status]);
@@ -181,6 +197,38 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
                       </td>
                     </tr>
                   )}
+                <tr>
+                  <td>
+                    <S.CellHeading>Allergies:</S.CellHeading>
+                  </td>
+                  <S.StyledCell>{allergies.join(", ")}</S.StyledCell>
+                </tr>
+                <tr>
+                  <td>
+                    <S.CellHeading>ICE:</S.CellHeading>
+                  </td>
+                  <S.StyledCell>
+                    {emergencyContacts.map((c, idx) => (
+                      // TODO: Ugly, fix this
+                      <Fragment key={c}>
+                        {idx > 0 && <span key={idx}>{", "}</span>}
+                        <PhoneNumber number={c} key={c} />
+                      </Fragment>
+                    ))}
+                  </S.StyledCell>
+                </tr>
+                <tr>
+                  <td>Transport:</td>
+                  <S.StyledCell
+                    color={
+                      attendee.isUsingOwnTransport
+                        ? DefaultColors.BrightPurple
+                        : DefaultColors.BrightOrange
+                    }
+                  >
+                    {attendee.isUsingOwnTransport ? "Own Transport" : "Bus"}
+                  </S.StyledCell>
+                </tr>
               </tbody>
             </S.StyledTable>
           </S.StatusMetaContainer>
@@ -219,6 +267,18 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
         </S.ButtonContainer>
       </S.AttendeeWindowEl>
     </S.StyledBackdrop>
+  );
+};
+
+const PhoneNumber: React.FC<{ number: string }> = ({ number }) => {
+  if (number == "None") {
+    return <span>{number}</span>;
+  }
+
+  return (
+    <S.PhoneNumber href={`tel:${number.trim().replaceAll(/[() ]/g, "")}`}>
+      {number}
+    </S.PhoneNumber>
   );
 };
 
@@ -297,11 +357,22 @@ namespace S {
   export const StyledTable = styled.table``;
 
   export const StyledCell = styled.td<{ color?: string }>`
+    max-width: 200px;
     color: ${(p) => p.color};
+  `;
+
+  export const CellHeading = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   `;
 
   export const QRCodeContainer = styled.div`
     display: flex;
     justify-content: center;
+  `;
+
+  export const PhoneNumber = styled.a`
+    color: ${DefaultColors.BrightCyan};
   `;
 }
