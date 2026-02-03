@@ -41,27 +41,36 @@ export type Database = {
     Tables: {
       Attendees: {
         Row: {
+          allergies: string | null
           deleted: boolean
           deleted_by: string | null
           deleted_on: string | null
+          emergency_contact: string | null
           id: number
           name: string
+          own_transport: boolean | null
           surname: string
         }
         Insert: {
+          allergies?: string | null
           deleted?: boolean
           deleted_by?: string | null
           deleted_on?: string | null
+          emergency_contact?: string | null
           id?: number
           name: string
+          own_transport?: boolean | null
           surname: string
         }
         Update: {
+          allergies?: string | null
           deleted?: boolean
           deleted_by?: string | null
           deleted_on?: string | null
+          emergency_contact?: string | null
           id?: number
           name?: string
+          own_transport?: boolean | null
           surname?: string
         }
         Relationships: [

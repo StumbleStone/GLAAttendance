@@ -89,6 +89,22 @@ export class Attendee extends EventClass<AttendeeEvents> {
     return this.fullName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
   }
 
+  get isUsingOwnTransport(): boolean {
+    return this.entry.own_transport;
+  }
+
+  get allergies(): string[] {
+    return (this.entry.allergies ?? "")
+      .split(",")
+      .filter((v) => v.trim() !== "");
+  }
+
+  get emergencyContacts(): string[] {
+    return (this.entry.emergency_contact ?? "")
+      .split(",")
+      .filter((v) => v.trim() !== "");
+  }
+
   removeRollCall(rollCall: RollCallEntry): void {
     if (!this.rollCalls.find((r) => r.id === rollCall.id)) {
       return;

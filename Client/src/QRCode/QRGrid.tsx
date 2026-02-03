@@ -205,7 +205,7 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
           <Controller heading={"Page"} onChange={onPageChange} value={page} />
         </S.Header>
         <S.Content>
-          <S.StyledImage src={dataUrl ?? ""} />
+          <S.StyledImage src={dataUrl ?? null} />
         </S.Content>
         <S.Footer>
           <DownloadButton data={dataUrl} filename={`Attendee_QR_${page}.png`} />
