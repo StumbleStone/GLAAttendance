@@ -5,40 +5,36 @@
   "main": "index.js",
   "workspaces": {
     "packages": [
-      "Server",
-      "Types",
       "Client"
     ]
   },
   "scripts": {
     "build": "pnpm --recursive build",
-    "start:server": "pnpm --recursive --filter gla-attendance-server start",
-    "build:server": "pnpm --recursive --filter gla-attendance-server build",
-    "watch:server": "pnpm --recursive --filter gla-attendance-server watch",
-    "build:client:prod": "pnpm --recursive --filter gla-attendance-client build:prod",
-    "build:client": "pnpm --recursive --filter gla-attendance-client build",
-    "watch:client": "pnpm --recursive --filter gla-attendance-client watch"
+    "build:prod": "pnpm --recursive --filter gla-attendance-client build:prod",
+    "serve": "pnpm --recursive --filter gla-attendance-client serve",
+    "ncu": "ncu -u && pnpm recursive exec -- ncu -u"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/express": "^4.17.13",
-    "@types/node": "^18.0.0",
-    "@types/react": "^18.0.15",
-    "@types/react-dom": "^18.0.6",
-    "npm": "^8.13.1",
-    "ts-loader": "^9.3.1",
-    "typescript": "^4.7.4",
-    "webpack-cli": "^4.10.0"
+    "npm-check-updates": "19.3.2",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.2.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "npm": "^11.8.0",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3",
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "@babel/core": "7",
-    "@emotion/react": "^11.9.3",
-    "@emotion/styled": "^11.9.3",
-    "express": "^4.17.13",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "webpack": "^5.73.0"
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "express": "^5.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "webpack": "^5.105.0"
   }
 }

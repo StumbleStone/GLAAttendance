@@ -14,12 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const domContainer: HTMLElement = document.getElementById("Container")!;
   const root = ReactDom.createRoot(domContainer);
   root.render(
-    <HashRouter
-      future={{
-        v7_relativeSplatPath: true,
-        v7_startTransition: true,
-      }}
-    >
+    <HashRouter>
       <Routes>
         <Route
           path={""}

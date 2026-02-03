@@ -5,37 +5,40 @@
   "scripts": {
     "watch": "pnpm build --watch",
     "build": "node ./node_modules/webpack/bin/webpack --config webpack.dev.js",
-    "build:prod": "node ./node_modules/webpack/bin/webpack --config webpack.prod.js"
+    "build:prod": "node ./node_modules/webpack/bin/webpack --config webpack.prod.ts",
+    "serve": "webpack-dev-server --open --config webpack.dev.ts"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.5.2",
-    "@fortawesome/free-solid-svg-icons": "^6.5.2",
-    "@fortawesome/free-brands-svg-icons": "6.7.2",
-    "@fortawesome/react-fontawesome": "^0.2.2",
-    "@supabase/supabase-js": "^2.50.0",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/free-brands-svg-icons": "7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.1",
+    "@supabase/supabase-js": "^2.94.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "qrcode": "1.5.4",
     "qr-scanner": "1.4.2",
-    "react-router-dom": "^6.30.0"
+    "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
-    "@babel/core": "7.0.0",
-    "@emotion/react": "^11.7.1",
-    "@emotion/styled": "^11.6.0",
-    "@types/react": "^18.0.9",
-    "@types/react-dom": "^18.0.5",
-    "@types/qrcode": "1.5.5",
-    "prettier": "^2.6.2",
-    "ts-loader": "^9.2.6",
+    "@babel/core": "7.29.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "@types/qrcode": "1.5.6",
+    "prettier": "^3.8.1",
+    "ts-loader": "9.5.4",
+    "ts-node": "10.9.2",
     "worker-loader": "3.0.8",
     "copy-webpack-plugin": "13.0.1",
-    "html-webpack-plugin": "5.6.4",
-    "typescript": "4.9.4",
-    "webpack": "^5.65.0",
+    "html-webpack-plugin": "5.6.6",
+    "typescript": "5.9.3",
+    "webpack": "^5.105.0",
     "webpack-merge": "6.0.1",
-    "webpack-cli": "^4.9.2"
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "5.2.3"
   }
 }
