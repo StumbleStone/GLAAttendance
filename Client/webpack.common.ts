@@ -1,8 +1,9 @@
-const path = require("path");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
+import CopyWebpackPlugin from "copy-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import path from "path";
+import webpack from "webpack";
 
-module.exports = {
+const config: webpack.Configuration = {
   entry: "./src/Main.tsx",
   watchOptions: {
     ignored: ["**/node_modules", "**/Legacy", "./src/Legacy/*"],
@@ -66,3 +67,5 @@ module.exports = {
     },
   },
 };
+
+export default config;

@@ -42,7 +42,7 @@ jobs:
       - name: Build
         run: |
           pnpm install
-          pnpm build:client:prod
+          pnpm build:prod
 
       - name: Upload static files as artifact
         id: deployment

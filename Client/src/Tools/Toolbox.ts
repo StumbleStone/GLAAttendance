@@ -190,8 +190,7 @@ function _epochToDate(epoch: number, options: EpochToDateOptions): string {
   const year: number = useUTC ? date.getUTCFullYear() : date.getFullYear();
   const month: string = (
     "00" +
-    (useUTC ? date.getUTCMonth() : date.getMonth()) +
-    1
+    ((useUTC ? date.getUTCMonth() : date.getMonth()) + 1)
   ).slice(-2);
   const day: string = (
     "00" + (useUTC ? date.getUTCDate() : date.getDate())

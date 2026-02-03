@@ -4,6 +4,7 @@ import {
   faHashtag,
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
+import { AuthApiError } from "@supabase/supabase-js";
 import * as React from "react";
 import { useOutletContext } from "react-router-dom";
 import { SupaBase } from "../../SupaBase/SupaBase";
@@ -45,6 +46,8 @@ export const Login: React.FC = (props) => {
   const [otpLockDisable, setOtpLockDisable] = React.useState(false);
   const [useOTP, setUseOTP] = React.useState(false);
   const [otpSent, setOtpSent] = React.useState(false);
+
+  const [error, setError] = React.useState<string | null>(null);
 
   // Uses access code in URL which I don't like
   // const handleReset = React.useCallback(async () => {
@@ -91,6 +94,7 @@ export const Login: React.FC = (props) => {
   }, [otpLock, username, validEmail]);
 
   const toggleOTP = React.useCallback(() => {
+    setError(() => null);
     setUseOTP((prev) => !prev);
   }, [useOTP]);
 
@@ -115,8 +119,16 @@ export const Login: React.FC = (props) => {
       return;
     }
 
-    await supabase.userSignIn(username, pwd);
-  }, [username, validEmail, pwd]);
+    setError(() => null);
+
+    try {
+      await supabase.userSignIn(username, pwd);
+    } catch (e) {
+      if (e instanceof AuthApiError) {
+        setError(() => e.message);
+      }
+    }
+  }, [username, validEmail, pwd, setError]);
 
   const handleUsernameChange = React.useCallback(
     (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,7 +203,7 @@ export const Login: React.FC = (props) => {
             onChange={(ev) => setOtp(ev.target.value)}
           />
         </S.InputContainer>
-
+        {!!error && <S.ErrorText>{error}</S.ErrorText>}
         <ButtonContainer>
           <Button
             onClick={useOTP ? handleOtpLogin : handleLogin}
@@ -234,6 +246,10 @@ namespace S {
   export const LoginMethodContainer = styled(ButtonContainer)`
     justify-content: flex-start;
     flex-wrap: wrap;
+  `;
+
+  export const ErrorText = styled("div")`
+    color: ${DefaultColors.BrightRed};
   `;
 
   export const LoginMethod = styled(Button)``;

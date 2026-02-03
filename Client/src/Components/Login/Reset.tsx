@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import * as React from "react";
+import { RefObject } from "react";
 import { useOutletContext } from "react-router-dom";
 import { SupaBase } from "../../SupaBase/SupaBase";
 import { Button, ButtonContainer } from "../Button/Button";
@@ -18,7 +19,8 @@ export const Reset: React.FC = (props) => {
   const [pwd, setPwd] = React.useState("");
   const [pwd2, setPwd2] = React.useState("");
 
-  const passwordRef = React.useRef<HTMLInputElement>(null);
+  const passwordRef: RefObject<HTMLInputElement> =
+    React.useRef<HTMLInputElement>(null);
 
   const handlePasswordSet = React.useCallback(async () => {
     debugger;

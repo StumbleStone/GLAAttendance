@@ -32,8 +32,15 @@ export const ShareButton: React.FC<ShareButtonProps> = (
       text: text,
     };
 
-    if (navigator.canShare?.(shareData)) {
-      await navigator.share(shareData);
+    try {
+      if (navigator.canShare?.(shareData)) {
+        await navigator.share(shareData);
+      }
+    } catch (e) {
+      if (`${e}` === "AbortError: Share canceled") {
+        return;
+      }
+      throw e;
     }
   }, [canShare, data, title, text, filename]);
 
