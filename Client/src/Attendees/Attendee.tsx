@@ -218,12 +218,26 @@ export class Attendee extends EventClass<AttendeeEvents> {
         // const len = Math.ceil(
         //   Math.abs(actualBoundingBoxLeft) + Math.abs(actualBoundingBoxRight)
         // );
+
+        let name = this.fullName;
+        if (this.isUsingOwnTransport == false) {
+          name += " ";
+        }
+
         ctx.fillText(
-          this.fullName,
+          name,
           QR_SIZE / 2,
           QR_SIZE * 0.08,
           QR_SIZE - QR_SIZE * 0.3
         );
+
+        ctx.fillText(
+          this.isUsingOwnTransport ? "🚙 Car" : "🚌 Bus",
+          QR_SIZE / 2,
+          QR_SIZE * (1 - 0.08),
+          QR_SIZE - QR_SIZE * 0.3
+        );
+
         this.qrCodeString = canvas.toDataURL("image/png");
         this.qrCode = canvas;
 
