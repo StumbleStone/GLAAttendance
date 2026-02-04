@@ -1,5 +1,10 @@
 import styled from "@emotion/styled";
-import { faCaretLeft, faCaretRight } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBusSimple,
+  faCar,
+  faCaretLeft,
+  faCaretRight,
+} from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
 import { Attendee, QR_SIZE } from "../Attendees/Attendee";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
@@ -23,12 +28,16 @@ interface DrawQRGridOptions {
   cols: number;
   page: number;
   supabase: SupaBase;
+  transport: Transport[];
 }
 
 async function drawQRGrid(options: DrawQRGridOptions): Promise<string> {
-  const { cols, page, rows, supabase } = options;
-  const arr = Array.from(supabase.attendees.values()).sort((a, b) =>
-    Attendee.SortByField(a, b, "name")
+  const { cols, page, rows, supabase, transport } = options;
+  const arr = filter(
+    Array.from(supabase.attendees.values()).sort((a, b) =>
+      Attendee.SortByField(a, b, "name")
+    ),
+    transport
   );
 
   const canvas = document.createElement("canvas");
@@ -78,13 +87,22 @@ async function drawQRGrid(options: DrawQRGridOptions): Promise<string> {
   return canvas.toDataURL("image/png");
 }
 
+enum Transport {
+  BUS = "bus",
+  CAR = "car",
+}
+
 function checkPageLimit(
   rows: number,
   cols: number,
   attendees: number,
   newPage: number
 ): number {
-  if (newPage <= 0) {
+  if (attendees === 0) {
+    return 0;
+  }
+
+  if (newPage <= 0 && attendees !== 0) {
     return 1;
   }
 
@@ -96,6 +114,20 @@ function checkPageLimit(
   return newPage;
 }
 
+function filter(arr: Attendee[], transport: Transport[]): Attendee[] {
+  return arr.filter((attendee) => {
+    if (transport.includes(Transport.CAR) && attendee.isUsingOwnTransport) {
+      return true;
+    }
+
+    if (transport.includes(Transport.BUS) && !attendee.isUsingOwnTransport) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
 export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
   const { layerItem, supabase } = props;
 
@@ -105,6 +137,32 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
   const [cols, setCols] = React.useState<number>(3);
   const [page, setPage] = React.useState<number>(1);
   const [busy, setBusy] = React.useState<boolean>(false);
+
+  const [transport, setTransport] = React.useState<Transport[]>([
+    Transport.CAR,
+    Transport.BUS,
+  ]);
+
+  const attendeeCount = filter(
+    Array.from(supabase.attendees.values()),
+    transport
+  ).length;
+
+  const toggleCar = React.useCallback(() => {
+    if (transport.includes(Transport.CAR)) {
+      setTransport((prev) => prev.filter((t) => t !== Transport.CAR));
+    } else {
+      setTransport((prev) => [...prev, Transport.CAR]);
+    }
+  }, [transport]);
+
+  const toggleBus = React.useCallback(() => {
+    if (transport.includes(Transport.BUS)) {
+      setTransport((prev) => prev.filter((t) => t !== Transport.BUS));
+    } else {
+      setTransport((prev) => [...prev, Transport.BUS]);
+    }
+  }, [transport]);
 
   const onRowChange = React.useCallback(
     (newVal: number) => {
@@ -142,17 +200,17 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
         return;
       }
 
-      setPage(checkPageLimit(rows, cols, supabase.attendees.size, newVal));
+      setPage(checkPageLimit(rows, cols, attendeeCount, newVal));
     },
-    [rows, cols, busy]
+    [rows, cols, busy, attendeeCount]
   );
 
   React.useEffect(() => {
-    const lim = checkPageLimit(rows, cols, supabase.attendees.size, page);
+    const lim = checkPageLimit(rows, cols, attendeeCount, page);
     if (lim !== page) {
       setPage(lim);
     }
-  }, [rows, cols, page]);
+  }, [rows, cols, page, attendeeCount]);
 
   const [dataUrl, setDataUrl] = React.useState<string | null>(null);
 
@@ -168,12 +226,13 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
       cols,
       page: page - 1,
       supabase,
+      transport,
     }).then((dataUrl: string) => {
       console.log(`Grid draw completed`);
       setDataUrl(() => dataUrl);
       setBusy(() => false);
     });
-  }, [rows, cols, page, generatingQRs]);
+  }, [rows, cols, page, generatingQRs, transport]);
 
   const bdClick = React.useCallback(() => {
     layerItem.close();
@@ -202,19 +261,55 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
         <S.Header>
           <Controller heading={"Columns"} onChange={onColChange} value={cols} />
           <Controller heading={"Rows"} onChange={onRowChange} value={rows} />
-          <Controller heading={"Page"} onChange={onPageChange} value={page} />
+          <Controller
+            heading={`Page (${page} of ${checkPageLimit(
+              rows,
+              cols,
+              attendeeCount,
+              10000
+            )})`}
+            onChange={onPageChange}
+            value={page}
+          />
         </S.Header>
         <S.Content>
           <S.StyledImage src={dataUrl ?? null} />
         </S.Content>
         <S.Footer>
-          <DownloadButton data={dataUrl} filename={`Attendee_QR_${page}.png`} />
-          <ShareButton
-            data={dataUrl}
-            filename={`Attendee_QR_${page}.png`}
-            text={`Page ${page} of Attendee QR codes`}
-            title={`Attendee QR List`}
-          />
+          <S.ButtonContainer>
+            <DownloadButton
+              data={dataUrl}
+              filename={`Attendee_QR_${page}.png`}
+            />
+            <ShareButton
+              data={dataUrl}
+              filename={`Attendee_QR_${page}.png`}
+              text={`Page ${page} of Attendee QR codes`}
+              title={`Attendee QR List`}
+            />
+          </S.ButtonContainer>
+          <S.IconContainer>
+            <S.StyledIcon
+              onClick={toggleBus}
+              icon={faBusSimple}
+              size={26}
+              color={
+                transport.includes(Transport.BUS)
+                  ? DefaultColors.BrightCyan
+                  : DefaultColors.Grey
+              }
+            />
+            <S.StyledIcon
+              onClick={toggleCar}
+              icon={faCar}
+              size={26}
+              color={
+                transport.includes(Transport.CAR)
+                  ? DefaultColors.BrightCyan
+                  : DefaultColors.Grey
+              }
+            />
+          </S.IconContainer>
         </S.Footer>
       </S.QRGridEl>
     </S.StyledBackdrop>
@@ -315,14 +410,15 @@ namespace S {
   `;
 
   export const Header = styled.div`
+    label: Header;
     border-bottom: 2px solid ${DefaultColors.OffWhite};
     display: flex;
-    justify-content: flex-start;
     width: 100%;
     box-sizing: border-box;
     padding: 5px;
     gap: 5px;
     max-width: 100%;
+    justify-content: space-around;
   `;
 
   export const Footer = styled.div`
@@ -332,6 +428,27 @@ namespace S {
     box-sizing: border-box;
     padding: 10px;
     gap: 10px;
+  `;
+
+  export const ButtonContainer = styled.div`
+    display: flex;
+    gap: 10px;
+    box-sizing: border-box;
+    flex: 1;
+    justify-content: flex-start;
+  `;
+
+  export const IconContainer = styled.div`
+    display: flex;
+    gap: 10px;
+    box-sizing: border-box;
+    flex: 1;
+    justify-content: flex-end;
+  `;
+
+  export const StyledIcon = styled(Icon)`
+    padding: 2px 5px;
+    cursor: pointer;
   `;
 
   export const ControllerContainer = styled.div`
