@@ -1,8 +1,14 @@
 import styled from "@emotion/styled";
-import { faArrowLeft, faClock } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowLeft,
+  faClock,
+  faSave,
+  faUserPlus,
+} from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { Button } from "../Components/Button/Button";
+import { LabelTextInput } from "../Components/Inputs/label/LabelTextInput";
 import { LayerHandler, LayerItem } from "../Components/Layer";
 import { Tile } from "../Components/Tile";
 import { DashboardProps } from "../MainMenu/Dashboard";
@@ -45,9 +51,26 @@ export const AttendeesAdd: React.FC = () => {
       </S.ButtonContainer>
       <S.Panel>
         <S.Heading>Add New</S.Heading>
+        <S.StyledButton
+          onClick={handleQuickAdd}
+          id={"add-new"}
+          icon={faUserPlus}
+          label={"Add All"}
+          color={DefaultColors.BrightCyan}
+        />
       </S.Panel>
       <S.Panel>
         <S.Heading>Edit existing</S.Heading>
+        <S.Panel>
+          <LabelTextInput label={"Name"} />
+        </S.Panel>
+        <S.StyledButton
+          onClick={handleQuickAdd}
+          id={"save-all"}
+          icon={faSave}
+          label={"Save All"}
+          color={DefaultColors.BrightCyan}
+        />
       </S.Panel>
     </S.Container>
   );
