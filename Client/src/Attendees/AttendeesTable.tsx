@@ -167,13 +167,9 @@ function filterData(supabase: SupaBase, filter: string) {
           att.surname?.toLowerCase().includes(part)
         ) {
           outArr.push(att);
-        }
-
-        if (filter === "CAR" && att.isUsingOwnTransport) {
+        } else if (filter === "CAR" && att.isUsingOwnTransport) {
           outArr.push(att);
-        }
-
-        if (filter === "BUS" && !att.isUsingOwnTransport) {
+        } else if (filter === "BUS" && !att.isUsingOwnTransport) {
           outArr.push(att);
         }
       });
@@ -368,85 +364,98 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               onClick={handleClickCol}
             />
           </TableRow>
-          {sorted.map((att) => {
-            const status: AttendeeStatus = att.status(
-              supabase.currentRollCallEvent
-            );
-
-            const color =
-              status === AttendeeStatus.PRESENT
-                ? DefaultColors.BrightGreen
-                : status === AttendeeStatus.ABSENT
-                ? DefaultColors.BrightRed
-                : DefaultColors.Grey;
-
-            return (
-              <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
-                {colsToInclude.includes(SortColumns.NAME) && (
-                  <S.NameCell>{att.name}</S.NameCell>
-                )}
-                {colsToInclude.includes(SortColumns.SURNAME) && (
-                  <S.NameCell>{att.surname}</S.NameCell>
-                )}
-                {/* Spacer */}
-                <TableCell />
-                {colsToInclude.includes(SortColumns.TP) && (
-                  <S.RCCell>
-                    <Icon
-                      size={22}
-                      color={
-                        att.isUsingOwnTransport
-                          ? DefaultColors.BrightPurple
-                          : DefaultColors.BrightOrange
-                      }
-                      icon={att.isUsingOwnTransport ? faCar : faBusSimple}
-                    />
-                  </S.RCCell>
-                )}
-                {colsToInclude.includes(SortColumns.STATUS) && (
-                  <S.RCCell>
-                    <Icon
-                      size={26}
-                      color={color}
-                      icon={
-                        status === AttendeeStatus.PRESENT
-                          ? faCheckSquare
-                          : status === AttendeeStatus.ABSENT
-                          ? faXmarkSquare
-                          : faMinusSquare
-                      }
-                    />
-                  </S.RCCell>
-                )}
-                {colsToInclude.includes(SortColumns.ON) && (
-                  <S.NameCell>
-                    {status !== AttendeeStatus.NOT_SCANNED
-                      ? epochToDate(
-                          new Date(att.currentRollCall!.created_at).getTime(),
-                          {
-                            includeDate: false,
-                            includeTime: true,
-                            includeSeconds: true,
-                          }
-                        )
-                      : "--"}
-                  </S.NameCell>
-                )}
-                {colsToInclude.includes(SortColumns.BY) && (
-                  <S.NameCell>
-                    {status === AttendeeStatus.PRESENT
-                      ? supabase.getUserName(att.currentRollCall!.created_by, {
-                          nameOnly: true,
-                        })
-                      : "--"}
-                  </S.NameCell>
-                )}
-              </TableRow>
-            );
-          })}
+          {sorted.map((att) => (
+            <AttendeeRow
+              att={att}
+              supabase={supabase}
+              key={att.id}
+              onClickedAttendee={onClickedAttendee}
+              colsToInclude={colsToInclude}
+            />
+          ))}
         </tbody>
       </S.PrimaryTable>
     </S.TableContainer>
+  );
+};
+
+interface AttendeeRowProps {
+  att: Attendee;
+  supabase: SupaBase;
+  onClickedAttendee: (attendee: Attendee) => void;
+  colsToInclude: SortColumns[];
+}
+
+const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
+  const { att, supabase, colsToInclude, onClickedAttendee } = props;
+  const status: AttendeeStatus = att.status(supabase.currentRollCallEvent);
+
+  const color =
+    status === AttendeeStatus.PRESENT
+      ? DefaultColors.BrightGreen
+      : status === AttendeeStatus.ABSENT
+      ? DefaultColors.BrightRed
+      : DefaultColors.Grey;
+
+  return (
+    <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
+      {colsToInclude.includes(SortColumns.NAME) && (
+                  <S.NameCell>{att.name}</S.NameCell>
+      )}
+      {colsToInclude.includes(SortColumns.SURNAME) && (
+                  <S.NameCell>{att.surname}</S.NameCell>
+      )}
+      {/* Spacer */}
+      <TableCell />
+      {colsToInclude.includes(SortColumns.TP) && (
+        <S.RCCell>
+          <Icon
+            size={22}
+            color={
+              att.isUsingOwnTransport
+                ? DefaultColors.BrightPurple
+                : DefaultColors.BrightOrange
+            }
+            icon={att.isUsingOwnTransport ? faCar : faBusSimple}
+          />
+        </S.RCCell>
+      )}
+      {colsToInclude.includes(SortColumns.STATUS) && (
+        <S.RCCell>
+          <Icon
+            size={26}
+            color={color}
+            icon={
+              status === AttendeeStatus.PRESENT
+                ? faCheckSquare
+                : status === AttendeeStatus.ABSENT
+                ? faXmarkSquare
+                : faMinusSquare
+            }
+          />
+        </S.RCCell>
+      )}
+      {colsToInclude.includes(SortColumns.ON) && (
+        <S.NameCell>
+          {status !== AttendeeStatus.NOT_SCANNED
+            ? epochToDate(new Date(att.currentRollCall!.created_at).getTime(), {
+                includeDate: false,
+                includeTime: true,
+                includeSeconds: true,
+              })
+            : "--"}
+        </S.NameCell>
+      )}
+      {colsToInclude.includes(SortColumns.BY) && (
+        <S.NameCell>
+          {status === AttendeeStatus.PRESENT
+            ? supabase.getUserName(att.currentRollCall!.created_by, {
+                nameOnly: true,
+              })
+            : "--"}
+        </S.NameCell>
+      )}
+    </TableRow>
   );
 };
 
