@@ -189,8 +189,6 @@ namespace S {
     justify-content: flex-start;
   `;
 
-  export const BackIcon = styled("div")``;
-
   export const Content = styled("div")`
     label: Content;
     position: relative;

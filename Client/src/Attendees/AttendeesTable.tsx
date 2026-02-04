@@ -168,6 +168,14 @@ function filterData(supabase: SupaBase, filter: string) {
         ) {
           outArr.push(att);
         }
+
+        if (filter === "CAR" && att.isUsingOwnTransport) {
+          outArr.push(att);
+        }
+
+        if (filter === "BUS" && !att.isUsingOwnTransport) {
+          outArr.push(att);
+        }
       });
     });
 
@@ -554,12 +562,12 @@ namespace S {
   export const StyledTableHeading = styled(TableHeading)<{ center?: boolean }>`
     text-align: ${(p) => (p.center ? "center" : null)};
     font-size: 16px;
-    padding: 4px 8px;
+    padding: 2px 4px;
   `;
 
   export const NameCell = styled(TableCell)`
     width: 0;
-    padding: 0 8px;
+    padding: 0 4px;
   `;
 
   export const HeadingText = styled.span``;

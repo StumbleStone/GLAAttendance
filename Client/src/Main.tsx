@@ -1,6 +1,7 @@
 import * as React from "react";
 import ReactDom from "react-dom/client";
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AttendeesAdd } from "./Attendees/AttendeesAdd";
 import { LoadingSpinner } from "./Components/LoadingSpinner";
 import { Login } from "./Components/Login/Login";
 import { Reset } from "./Components/Login/Reset";
@@ -31,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <Route path={"reset"} element={<Reset />} />
             <Route path={"onboard"} element={<Onboard />} />
             <Route path={"dashboard"} element={<Dashboard />} />
+            <Route path={"add"} element={<AttendeesAdd />} />
             {/* TODO add NOT FOUND page here */}
             <Route path={"*"} element={<LoadingSpinner size={100} />} />
           </Route>

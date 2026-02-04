@@ -110,6 +110,7 @@ export const Dashboard: React.FC = (props) => {
 
 namespace S {
   export const Container = styled.div`
+    label: DashboardContainer;
     padding: 0 20px 20px;
     display: flex;
     flex-direction: column;
@@ -123,6 +124,7 @@ namespace S {
   `;
 
   export const ButtonContainer = styled.div`
+    label: DashboardButtonContainer;
     display: flex;
     flex-direction: column;
     align-items: stretch;
