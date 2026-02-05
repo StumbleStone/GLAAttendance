@@ -93,10 +93,11 @@ export const Login: React.FC = (props) => {
     setOtpSent(() => true);
   }, [otpLock, username, validEmail]);
 
-  const toggleOTP = React.useCallback(() => {
-    setError(() => null);
-    setUseOTP((prev) => !prev);
-  }, [useOTP]);
+  // Disabling this until we have a SMTP since supabase has a limit of 2 OTP per hour on free plan
+  // const toggleOTP = React.useCallback(() => {
+  //   setError(() => null);
+  //   setUseOTP((prev) => !prev);
+  // }, [useOTP]);
 
   const handleOtpLogin = React.useCallback(async () => {
     if (!validEmail) {
@@ -146,24 +147,24 @@ export const Login: React.FC = (props) => {
       <S.LoginEl>
         <SubHeading text="Login" />
         <S.InputContainer>
-          <S.LoginMethodContainer>
-            <S.LoginMethod
-              onClick={toggleOTP}
-              color={
-                useOTP ? DefaultColors.BrightCyan : DefaultColors.BrightOrange
-              }
-            >
-              {useOTP ? "Login with OTP" : "Login with Password"}
-            </S.LoginMethod>
-            {useOTP && (
-              <Button
-                onClick={handleSendOTP}
-                disabled={otpLockDisable || !validEmail}
-              >
-                Send OTP
-              </Button>
-            )}
-          </S.LoginMethodContainer>
+          {/*<S.LoginMethodContainer>*/}
+          {/*<S.LoginMethod*/}
+          {/*  onClick={toggleOTP}*/}
+          {/*  color={*/}
+          {/*    useOTP ? DefaultColors.BrightCyan : DefaultColors.BrightOrange*/}
+          {/*  }*/}
+          {/*>*/}
+          {/*  {useOTP ? "Login with OTP" : "Login with Password"}*/}
+          {/*</S.LoginMethod>*/}
+          {/*{useOTP && (*/}
+          {/*  <Button*/}
+          {/*    onClick={handleSendOTP}*/}
+          {/*    disabled={otpLockDisable || !validEmail}*/}
+          {/*  >*/}
+          {/*    Send OTP*/}
+          {/*  </Button>*/}
+          {/*)}*/}
+          {/*</S.LoginMethodContainer>*/}
         </S.InputContainer>
         <S.InputContainer>
           <Label>Email</Label>

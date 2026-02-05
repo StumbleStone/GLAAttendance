@@ -1,5 +1,9 @@
 import styled from "@emotion/styled";
-import { faAsterisk, faSignature } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowRightToBracket,
+  faAsterisk,
+  faSignature,
+} from "@fortawesome/free-solid-svg-icons";
 import React, { ChangeEvent, useCallback, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Button } from "../Components/Button/Button";
@@ -113,156 +117,172 @@ export const Onboard: React.FC = () => {
     });
   }, [pwd, name, surname]);
 
+  const onLogoutClicked = useCallback(() => {
+    supabase.logOut();
+  }, []);
+
   return (
     <S.Container>
-      <Heading>Onboarding</Heading>
-      <S.StyledSubHeading>User Details</S.StyledSubHeading>
-      <S.Section>
-        <S.InputContainer>
-          <Label color={validName ? DefaultColors.BrightGreen : null}>
-            Name
-          </Label>
-          <InputWithIcon
-            icon={faSignature}
-            key={"name"}
-            autoComplete={"name"}
-            name="supabase-name"
-            aria-label="supabase-name"
-            value={name}
-            onChange={onChangeName}
-          />
-        </S.InputContainer>
-        <S.InputContainer>
-          <Label color={validSurname ? DefaultColors.BrightGreen : null}>
-            Surname
-          </Label>
-          <InputWithIcon
-            icon={faSignature}
-            key={"surname"}
-            autoComplete={"surname"}
-            name="supabase-surname"
-            aria-label="supabase-surname"
-            value={surname}
-            onChange={onChangeSurname}
-          />
-        </S.InputContainer>
-      </S.Section>
-      <S.Section>
-        <S.InputContainer>
-          <Label
-            color={
-              passwordIsValid(passwordValid) ? DefaultColors.BrightGreen : null
-            }
-          >
-            Password
-          </Label>
-          <PasswordInput
-            icon={faAsterisk}
-            key={"password"}
-            autoComplete={"new-password"}
-            name="supabase-new-password"
-            aria-label="supabase-new-password"
-            value={pwd}
-            onChange={onChangePass}
-          />
-          <S.PasswordContainer>
-            <S.PasswordCheck
-              tColor={
-                passwordValid.hasLowerCase ? DefaultColors.BrightGreen : null
+      <S.Panel>
+        <Heading>Onboarding</Heading>
+        <S.StyledSubHeading>User Details</S.StyledSubHeading>
+        <S.Section>
+          <S.InputContainer>
+            <Label color={validName ? DefaultColors.BrightGreen : null}>
+              Name
+            </Label>
+            <InputWithIcon
+              icon={faSignature}
+              key={"name"}
+              autoComplete={"name"}
+              name="supabase-name"
+              aria-label="supabase-name"
+              value={name}
+              onChange={onChangeName}
+            />
+          </S.InputContainer>
+          <S.InputContainer>
+            <Label color={validSurname ? DefaultColors.BrightGreen : null}>
+              Surname
+            </Label>
+            <InputWithIcon
+              icon={faSignature}
+              key={"surname"}
+              autoComplete={"surname"}
+              name="supabase-surname"
+              aria-label="supabase-surname"
+              value={surname}
+              onChange={onChangeSurname}
+            />
+          </S.InputContainer>
+        </S.Section>
+        <S.Section>
+          <S.InputContainer>
+            <Label
+              color={
+                passwordIsValid(passwordValid)
+                  ? DefaultColors.BrightGreen
+                  : null
               }
             >
-              {"a-z"}
-            </S.PasswordCheck>
-            <S.PasswordCheck
-              tColor={
-                passwordValid.hasUpperCase ? DefaultColors.BrightGreen : null
+              Password
+            </Label>
+            <PasswordInput
+              icon={faAsterisk}
+              key={"password"}
+              autoComplete={"new-password"}
+              name="supabase-new-password"
+              aria-label="supabase-new-password"
+              value={pwd}
+              onChange={onChangePass}
+            />
+            <S.PasswordContainer>
+              <S.PasswordCheck
+                tColor={
+                  passwordValid.hasLowerCase ? DefaultColors.BrightGreen : null
+                }
+              >
+                {"a-z"}
+              </S.PasswordCheck>
+              <S.PasswordCheck
+                tColor={
+                  passwordValid.hasUpperCase ? DefaultColors.BrightGreen : null
+                }
+              >
+                {"A-Z"}
+              </S.PasswordCheck>
+              <S.PasswordCheck
+                tColor={
+                  passwordValid.hasNumber ? DefaultColors.BrightGreen : null
+                }
+              >
+                {"0-9"}
+              </S.PasswordCheck>
+              <S.PasswordCheck
+                tColor={
+                  passwordValid.hasSpecial ? DefaultColors.BrightGreen : null
+                }
+              >
+                {"!@#"}
+              </S.PasswordCheck>
+              <S.PasswordCheck
+                tColor={
+                  passwordValid.minLength ? DefaultColors.BrightGreen : null
+                }
+              >{`${pwdMinLength}+`}</S.PasswordCheck>
+            </S.PasswordContainer>
+          </S.InputContainer>
+          <S.InputContainer>
+            <Label
+              color={
+                !pwd
+                  ? null
+                  : passwordValid.passwordsMatch
+                  ? DefaultColors.BrightGreen
+                  : DefaultColors.BrightRed
               }
             >
-              {"A-Z"}
-            </S.PasswordCheck>
-            <S.PasswordCheck
-              tColor={
-                passwordValid.hasNumber ? DefaultColors.BrightGreen : null
-              }
-            >
-              {"0-9"}
-            </S.PasswordCheck>
-            <S.PasswordCheck
-              tColor={
-                passwordValid.hasSpecial ? DefaultColors.BrightGreen : null
-              }
-            >
-              {"!@#"}
-            </S.PasswordCheck>
-            <S.PasswordCheck
-              tColor={
-                passwordValid.minLength ? DefaultColors.BrightGreen : null
-              }
-            >{`${pwdMinLength}+`}</S.PasswordCheck>
-          </S.PasswordContainer>
-        </S.InputContainer>
-        <S.InputContainer>
-          <Label
-            color={
-              !pwd
-                ? null
-                : passwordValid.passwordsMatch
-                ? DefaultColors.BrightGreen
-                : DefaultColors.BrightRed
-            }
-          >
-            Confirm Password
-          </Label>
-          <PasswordInput
-            icon={faAsterisk}
-            key={"password"}
-            autoComplete={"new-password-confirm"}
-            name="supabase-new-password-confirm"
-            aria-label="supabase-new-password-confirm"
-            value={pwd2}
-            onChange={onChangePass2}
-          />
-        </S.InputContainer>
-      </S.Section>
+              Confirm Password
+            </Label>
+            <PasswordInput
+              icon={faAsterisk}
+              key={"password"}
+              autoComplete={"new-password-confirm"}
+              name="supabase-new-password-confirm"
+              aria-label="supabase-new-password-confirm"
+              value={pwd2}
+              onChange={onChangePass2}
+            />
+          </S.InputContainer>
+        </S.Section>
 
-      <S.StyledSubHeading>Disclaimer</S.StyledSubHeading>
-      <S.Section>
-        <S.Disclaimer>
-          <span>{`This website and its attendance tracking service are provided "as is" and "as available" without any guarantees or warranties of any kind, whether express or implied. We do not guarantee that the service will be error-free or uninterrupted, or that any information provided will be completely accurate.\n\nTo perform the roll call function, we collect and use attendee names and user names and emails. We are committed to protecting your privacy and use `}</span>
-          <S.RefLink target="_blank" href="https://supabase.com/">
-            {"Supabase"}
-          </S.RefLink>
-          <span>{` to securely store user information and handle authentication. We do not share your personal data with third parties.\n\nThis website requires an online connection in order to function.`}</span>
-        </S.Disclaimer>
-        <S.AcceptContainer>
-          <CheckboxBool onChange={onChangeAccept} value={accepted} />
-          <S.AcceptLabel>I Accept</S.AcceptLabel>
-        </S.AcceptContainer>
-      </S.Section>
-      {/* <ButtonContainer> */}
-      <S.CompleteButton
-        onClick={onComplete}
-        disabled={
-          accepted !== true ||
-          !validName ||
-          !validSurname ||
-          !passwordIsValid(passwordValid)
-        }
-      >
-        Complete
-      </S.CompleteButton>
-      {/* </ButtonContainer> */}
+        <S.StyledSubHeading>Disclaimer</S.StyledSubHeading>
+        <S.Section>
+          <S.Disclaimer>
+            <span>{`This website and its attendance tracking service are provided "as is" and "as available" without any guarantees or warranties of any kind, whether express or implied. We do not guarantee that the service will be error-free or uninterrupted, or that any information provided will be completely accurate.\n\nTo perform the roll call function, we collect and use attendee names and user names and emails. We are committed to protecting your privacy and use `}</span>
+            <S.RefLink target="_blank" href="https://supabase.com/">
+              {"Supabase"}
+            </S.RefLink>
+            <span>{` to securely store user information and handle authentication. We do not share your personal data with third parties.\n\nThis website requires an online connection in order to function.`}</span>
+          </S.Disclaimer>
+          <S.AcceptContainer>
+            <CheckboxBool onChange={onChangeAccept} value={accepted} />
+            <S.AcceptLabel>I Accept</S.AcceptLabel>
+          </S.AcceptContainer>
+        </S.Section>
+        <S.StyledButton
+          onClick={onComplete}
+          disabled={
+            accepted !== true ||
+            !validName ||
+            !validSurname ||
+            !passwordIsValid(passwordValid)
+          }
+        >
+          Complete
+        </S.StyledButton>
+      </S.Panel>
+      <S.StyledButton
+        onClick={onLogoutClicked}
+        color={DefaultColors.BrightGrey}
+        icon={faArrowRightToBracket}
+        label={"Logout"}
+      />
     </S.Container>
   );
 };
 
 namespace S {
-  export const Container = styled(Tile)`
-    margin-top: 0;
+  export const Container = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
     margin: 30px;
   `;
 
-  export const CompleteButton = styled(Button)`
+  export const Panel = styled(Tile)``;
+
+  export const StyledButton = styled(Button)`
     justify-content: center;
   `;
 
