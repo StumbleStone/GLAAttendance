@@ -393,6 +393,13 @@ interface AttendeeRowProps {
 const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
   const { att, supabase, colsToInclude, onClickedAttendee } = props;
   const status: AttendeeStatus = att.status(supabase.currentRollCallEvent);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+
+  useEffect(() => {
+    return att.addListener({
+      updated: forceUpdate,
+    });
+  }, []);
 
   const color =
     status === AttendeeStatus.PRESENT
@@ -407,6 +414,11 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
       : status === AttendeeStatus.ABSENT
       ? DefaultColors.BrightRed
       : DefaultColors.Text_Color;
+
+  // TODO Need to solve this further up
+  if (att.isDeleted) {
+    return null;
+  }
 
   return (
     <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
@@ -586,7 +598,7 @@ namespace S {
 
   export const NameCell = styled(TableCell)`
     width: 0;
-    padding: 0 4px;
+    padding: 4px 4px;
   `;
 
   export const HeadingText = styled.span`

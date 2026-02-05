@@ -1,4 +1,4 @@
-import { faSave } from "@fortawesome/free-solid-svg-icons";
+import { faFileDownload } from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback } from "react";
 import { Button } from "./Button";
 
@@ -36,7 +36,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = (
     document.body.removeChild(link);
   }, [data, filename]);
 
-  return <Button onClick={handleSave} icon={faSave} disabled={!data} />;
+  return <Button onClick={handleSave} icon={faFileDownload} disabled={!data} />;
 };
 
 namespace S {}

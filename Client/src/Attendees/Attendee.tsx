@@ -163,6 +163,11 @@ export class Attendee extends EventClass<AttendeeEvents> {
     }
   }
 
+  updateAttendee(entry: AttendeesEntry): void {
+    this.entry = entry;
+    this.fireUpdate((cb) => cb.updated?.());
+  }
+
   status(rollCallEvent: RollCallEventEntry): AttendeeStatus {
     if (!rollCallEvent) {
       return AttendeeStatus.NOT_SCANNED;

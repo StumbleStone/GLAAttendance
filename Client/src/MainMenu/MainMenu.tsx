@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import React, { useEffect, useMemo, useReducer, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Heading as iHeading } from "../Components/Heading";
+import { Heading } from "../Components/Heading";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
@@ -143,8 +143,15 @@ export const MainMenu: React.FC<{}> = () => {
     <S.ContainerEl>
       <S.TitleTile>
         <S.StyledHeading>
-          <S.TitlePart color={DefaultColors.BrightGreen}>{"GLA "}</S.TitlePart>
-          <S.TitlePart>{"Attendance"}</S.TitlePart>
+          <S.SideBySide>
+            <S.TitlePart color={DefaultColors.BrightGreen}>
+              {"GLA "}
+            </S.TitlePart>
+            <S.TitlePart>{"Attendance"}</S.TitlePart>
+          </S.SideBySide>
+          <S.StyledSubHeading color={DefaultColors.BrightMagenta}>
+            Madri Is A Legend!
+          </S.StyledSubHeading>
         </S.StyledHeading>
         <HeadingIcons />
       </S.TitleTile>
@@ -189,6 +196,12 @@ namespace S {
     justify-content: flex-start;
   `;
 
+  export const SideBySide = styled("div")`
+    label: SideBySide;
+    display: flex;
+    gap: 10px;
+  `;
+
   export const Content = styled("div")`
     label: Content;
     position: relative;
@@ -204,10 +217,17 @@ namespace S {
     padding-bottom: 100px;
   `;
 
-  export const StyledHeading = styled(iHeading)`
+  export const StyledHeading = styled(Heading)`
     font-size: 26px;
     @media (min-width: 700px) {
       font-size: 32px;
+    }
+  `;
+
+  export const StyledSubHeading = styled(Heading)`
+    font-size: 18px;
+    @media (min-width: 700px) {
+      font-size: 20px;
     }
   `;
 }

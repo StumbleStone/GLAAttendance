@@ -62,6 +62,8 @@ export enum DefaultColors {
   Red = "#962240",
   BrightRed = "#ff0015",
   Purple = "#8a2296",
+  Magenta = "#962296",
+  BrightMagenta = "#d300ff",
   BrightPurple = "#c231d3",
   Cyan = "#227b96",
   BrightCyan = "#31acd2",

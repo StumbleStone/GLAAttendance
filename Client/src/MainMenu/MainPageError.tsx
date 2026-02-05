@@ -11,7 +11,7 @@ export const MainPageError: React.FC = () => {
   console.error("Error: ", error);
   return (
     <S.Container>
-      <S.Heading>An Error has occurred</S.Heading>
+      <S.ErrorHeading>An Error has occurred</S.ErrorHeading>
       <S.ErrorMessage>
         {typeof error === "string" ? error : error?.message}
       </S.ErrorMessage>
@@ -29,7 +29,7 @@ namespace S {
     flex-direction: column;
   `;
 
-  export const Heading = styled("h1")``;
+  export const ErrorHeading = styled("h1")``;
 
   export const ErrorMessage = styled("span")`
     margin: 10px;
