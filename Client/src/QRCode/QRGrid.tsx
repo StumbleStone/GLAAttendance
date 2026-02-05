@@ -1,22 +1,17 @@
 import styled from "@emotion/styled";
-import {
-  faBusSimple,
-  faCar,
-  faCaretLeft,
-  faCaretRight,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBusSimple, faCar } from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
 import { Attendee, QR_SIZE } from "../Attendees/Attendee";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { DownloadButton } from "../Components/Button/DownloadButton";
 import { ShareButton } from "../Components/Button/ShareButton";
 import { Icon } from "../Components/Icon";
-import { Input as iInput } from "../Components/Inputs/BaseInput";
 import { LayerItem } from "../Components/Layer";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
+import { QRGridController } from "./QRGridController";
 
 export interface QRGridProps {
   supabase: SupaBase;
@@ -221,6 +216,7 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
 
     console.log(`Starting Grid drawing`);
     setBusy(() => true);
+
     drawQRGrid({
       rows,
       cols,
@@ -239,10 +235,19 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
   }, [layerItem]);
 
   React.useEffect(() => {
-    (async () => {
+    let mounted = true;
+    // TODO Move drawing to worker, this timeout is just to allow UI to update
+    setTimeout(async () => {
       await supabase.generateAllQRCodes();
+      if (!mounted) {
+        return;
+      }
       setGeneratingQRs(() => false);
-    })();
+    }, 500);
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   if (generatingQRs) {
@@ -259,10 +264,18 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
     <S.StyledBackdrop onClose={bdClick}>
       <S.QRGridEl>
         <S.Header>
-          <Controller heading={"Columns"} onChange={onColChange} value={cols} />
-          <Controller heading={"Rows"} onChange={onRowChange} value={rows} />
-          <Controller
-            heading={`Page (${page} of ${checkPageLimit(
+          <QRGridController
+            heading={"Columns"}
+            onChange={onColChange}
+            value={cols}
+          />
+          <QRGridController
+            heading={"Rows"}
+            onChange={onRowChange}
+            value={rows}
+          />
+          <QRGridController
+            heading={`Page (${page}/${checkPageLimit(
               rows,
               cols,
               attendeeCount,
@@ -273,7 +286,11 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
           />
         </S.Header>
         <S.Content>
-          <S.StyledImage src={dataUrl ?? null} />
+          {busy ? (
+            <LoadingSpinner size={40} />
+          ) : (
+            <S.StyledImage src={dataUrl ?? null} />
+          )}
         </S.Content>
         <S.Footer>
           <S.ButtonContainer>
@@ -313,56 +330,6 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
         </S.Footer>
       </S.QRGridEl>
     </S.StyledBackdrop>
-  );
-};
-
-interface ControllerProps {
-  onChange: (val: number) => void;
-  value: number;
-  heading: string;
-}
-
-const Controller: React.FC<ControllerProps> = (props: ControllerProps) => {
-  const { onChange, value, heading } = props;
-
-  const handleInputChange = React.useCallback(
-    (ev: React.ChangeEvent<HTMLInputElement>) => {
-      onChange(parseInt(ev.target.value));
-    },
-    [onChange]
-  );
-
-  const handleInc = React.useCallback(() => {
-    onChange(value + 1);
-  }, [onChange, value]);
-
-  const handleDec = React.useCallback(() => {
-    onChange(value - 1);
-  }, [onChange, value]);
-
-  return (
-    <S.ControllerContainer>
-      <S.ControllerHeading>{heading}</S.ControllerHeading>
-      <S.ControllerInputContainer>
-        <S.ControllerDec
-          icon={faCaretLeft}
-          size={15}
-          color={DefaultColors.Black}
-          onClick={handleDec}
-        />
-        <S.ControllerInput
-          type="number"
-          value={value}
-          onChange={handleInputChange}
-        />
-        <S.ControllerInc
-          icon={faCaretRight}
-          size={15}
-          color={DefaultColors.Black}
-          onClick={handleInc}
-        />
-      </S.ControllerInputContainer>
-    </S.ControllerContainer>
   );
 };
 
@@ -449,55 +416,5 @@ namespace S {
   export const StyledIcon = styled(Icon)`
     padding: 2px 5px;
     cursor: pointer;
-  `;
-
-  export const ControllerContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    user-select: none;
-  `;
-
-  export const ControllerHeading = styled.div`
-    font-size: 18px;
-  `;
-
-  export const ControllerInputContainer = styled.div`
-    display: flex;
-    gap: 0;
-    border-radius: 10px;
-    align-items: center;
-    border: 2px solid ${DefaultColors.Black};
-    background-color: ${DefaultColors.OffWhite};
-  `;
-
-  export const ControllerInc = styled(Icon)`
-    cursor: pointer;
-    width: 30px;
-  `;
-
-  export const ControllerDec = styled(Icon)`
-    cursor: pointer;
-    width: 30px;
-  `;
-
-  export const ControllerInput = styled(iInput)`
-    border-radius: 0;
-    width: 30px;
-    font-size: 15px;
-    text-align: center;
-
-    padding-left: 0;
-    padding-right: 0;
-
-    -moz-appearance: textfield;
-    ::-webkit-outer-spin-button,
-    ::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    border-top: 0px;
-    border-bottom: 0;
   `;
 }
