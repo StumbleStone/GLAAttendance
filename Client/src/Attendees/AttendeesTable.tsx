@@ -333,6 +333,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               sortAsc={sortAsc}
               sortCol={sortCol}
               addArrowSpacer={true}
+              hideSpacersWhenNotSelected={true}
               onClick={handleClickCol}
             />
             <Heading
@@ -343,6 +344,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               sortAsc={sortAsc}
               sortCol={sortCol}
               addArrowSpacer={true}
+              hideSpacersWhenNotSelected={true}
               onClick={handleClickCol}
             />
             <Heading
@@ -352,6 +354,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               sortAsc={sortAsc}
               sortCol={sortCol}
               useAZArrow={true}
+              hideSpacersWhenNotSelected={true}
               onClick={handleClickCol}
             />
             <Heading
@@ -361,6 +364,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               sortAsc={sortAsc}
               sortCol={sortCol}
               use19Arrow={true}
+              hideSpacersWhenNotSelected={true}
               onClick={handleClickCol}
             />
           </TableRow>
@@ -477,6 +481,7 @@ interface HeadingProps {
   use19Arrow?: boolean;
   addArrowSpacer?: boolean;
   isIncluded?: boolean;
+  hideSpacersWhenNotSelected?: boolean;
 }
 
 const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
@@ -491,6 +496,7 @@ const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
     use19Arrow,
     addArrowSpacer,
     isIncluded,
+    hideSpacersWhenNotSelected = false,
   } = props;
 
   if (!isIncluded) {
@@ -498,18 +504,22 @@ const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
   }
 
   const handleClick = useCallback(() => onClick(colName), [onClick, colName]);
-
+  const isSelected = sortCol === colName;
+  const showArrow = isSelected || !hideSpacersWhenNotSelected;
+  const showSpacer = showArrow && addArrowSpacer;
   return (
     <S.StyledTableHeading onClick={handleClick} center={centerLabel}>
       <S.HeadingContainer>
-        {addArrowSpacer && <SortArrow selected={false} ascending={false} />}
+        {showSpacer && <SortArrow selected={false} ascending={false} />}
         <S.HeadingText>{label}</S.HeadingText>
-        <SortArrow
-          selected={sortCol === colName}
-          ascending={sortAsc}
-          useAZ={useAZArrow}
-          use09={use19Arrow}
-        />
+        {showArrow && (
+          <SortArrow
+            selected={isSelected}
+            ascending={sortAsc}
+            useAZ={useAZArrow}
+            use09={use19Arrow}
+          />
+        )}
       </S.HeadingContainer>
     </S.StyledTableHeading>
   );
@@ -579,11 +589,14 @@ namespace S {
     padding: 0 4px;
   `;
 
-  export const HeadingText = styled.span``;
+  export const HeadingText = styled.span`
+    text-align: center;
+  `;
 
   export const HeadingContainer = styled.div`
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
   `;
 }
