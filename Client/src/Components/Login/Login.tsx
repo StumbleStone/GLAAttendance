@@ -115,7 +115,7 @@ export const Login: React.FC = (props) => {
       return;
     }
 
-    if (!pwd || pwd.length < 6) {
+    if (!pwd || pwd.length < 2) {
       return;
     }
 
@@ -209,7 +209,7 @@ export const Login: React.FC = (props) => {
             onClick={useOTP ? handleOtpLogin : handleLogin}
             disabled={
               !validEmail ||
-              !((useOTP && otp?.length === 6) || (!useOTP && pwd?.length > 6))
+              !((useOTP && otp?.length === 6) || (!useOTP && pwd?.length > 3))
             }
           >
             Login
