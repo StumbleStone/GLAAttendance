@@ -408,13 +408,6 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
       ? DefaultColors.BrightRed
       : DefaultColors.Grey;
 
-  const textColor =
-    status === AttendeeStatus.PRESENT
-      ? DefaultColors.BrightGreen
-      : status === AttendeeStatus.ABSENT
-      ? DefaultColors.BrightRed
-      : DefaultColors.Text_Color;
-
   // TODO Need to solve this further up
   if (att.isDeleted) {
     return null;
@@ -423,10 +416,10 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
   return (
     <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
       {colsToInclude.includes(SortColumns.NAME) && (
-        <S.NameCell color={textColor}>{att.name}</S.NameCell>
+        <S.NameCell>{att.name}</S.NameCell>
       )}
       {colsToInclude.includes(SortColumns.SURNAME) && (
-        <S.NameCell color={textColor}>{att.surname}</S.NameCell>
+        <S.NameCell>{att.surname}</S.NameCell>
       )}
       {/* Spacer */}
       <TableCell />
