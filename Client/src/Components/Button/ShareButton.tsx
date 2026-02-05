@@ -1,4 +1,4 @@
-import { faShare } from "@fortawesome/free-solid-svg-icons";
+import { faShareNodes } from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback, useMemo } from "react";
 import { Button } from "./Button";
 
@@ -47,7 +47,7 @@ export const ShareButton: React.FC<ShareButtonProps> = (
   return (
     <Button
       onClick={handleShare}
-      icon={faShare}
+      icon={faShareNodes}
       disabled={!data || !canShare}
     />
   );

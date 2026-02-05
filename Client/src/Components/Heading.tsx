@@ -6,12 +6,17 @@ export interface HeadingProps {
   text?: string;
   children?: React.ReactNode;
   className?: string;
+  color?: string;
 }
 
 export const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
-  const { text, children, className } = props;
+  const { text, children, className, color } = props;
 
-  return <S.HeadingEl className={className}>{text ?? children}</S.HeadingEl>;
+  return (
+    <S.HeadingEl className={className} color={color}>
+      {text ?? children}
+    </S.HeadingEl>
+  );
 };
 
 namespace S {

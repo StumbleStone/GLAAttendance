@@ -28,7 +28,7 @@ export const Input: React.FC<BaseInputProps> = (props: BaseInputProps) => {
   );
 
   return (
-    <S.Input
+    <S.StyledInput
       {...rest}
       ref={forwardRef}
       onChange={handleChange}
@@ -40,7 +40,7 @@ export const Input: React.FC<BaseInputProps> = (props: BaseInputProps) => {
 };
 
 namespace S {
-  export const Input = styled("input")<
+  export const StyledInput = styled("input")<
     BaseInputCustomProps & { isDisabled?: boolean }
   >`
     font-size: ${(p) => p.fontSize ?? 18}px;

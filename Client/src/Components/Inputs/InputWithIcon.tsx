@@ -10,14 +10,15 @@ export interface InputWithIconProps extends BaseInputProps {
   color?: string;
   icon?: IconDefinition;
   forwardRef?: React.RefObject<HTMLInputElement>;
+  className?: string;
 }
 
 export const InputWithIcon: React.FC<InputWithIconProps> = (
   props: InputWithIconProps
 ) => {
-  const { fontSize, color, icon, forwardRef, ...rest } = props;
+  const { className, fontSize, color, icon, forwardRef, ...rest } = props;
   return (
-    <S.InputContainer>
+    <S.InputContainer className={className}>
       <Input
         {...rest}
         forwardRef={forwardRef}

@@ -78,7 +78,7 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
   return (
     <S.StyledBackdrop onClose={bdClick}>
       <S.AttendeeAddWindowEl>
-        <S.Heading>Add New Attendees</S.Heading>
+        <S.WindowHeading>Add New Attendees</S.WindowHeading>
         {!preview && (
           <S.StyledTextArea
             placeholder={placeholder}
@@ -157,7 +157,7 @@ namespace S {
     justify-content: center;
   `;
 
-  export const Heading = styled.div`
+  export const WindowHeading = styled.div`
     font-size: 24px;
     padding-top: 10px;
   `;
@@ -172,7 +172,6 @@ namespace S {
     width: 80%;
     resize: none;
     flex: 1;
-    background-color: grey;
     inset: unset;
     outline: none;
     padding: 10px;

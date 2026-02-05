@@ -560,7 +560,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     console.log(`Attendee updated: ${entry.name} ${entry.surname}`);
-    record.entry = entry;
+    record.updateAttendee(entry);
   }
 
   async addAttendeeFromDB(entry: AttendeesEntry) {
@@ -738,6 +738,18 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     );
   }
 
+  async updateAttendee(attendee: Attendee, newData: UpdateAttendees) {
+    const { error, data } = await this.client
+      .from(Tables.ATTENDEES)
+      .update(newData)
+      .eq("id", attendee.id)
+      .select();
+
+    if (error) {
+      console.error(error);
+    }
+  }
+
   async deleteAttendee(attendee: Attendee) {
     const deleteUpdate: UpdateAttendees = {
       deleted_on: new Date().toISOString(),
@@ -753,7 +765,10 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     if (error) {
       console.error(error);
+      return;
     }
+
+    attendee.updateAttendee(data[0] as AttendeesEntry);
   }
 
   async createNewAttendees(

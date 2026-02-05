@@ -177,7 +177,7 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
               </td>
             </tr>
             <tr>
-              <td>By:</td>
+              <td>{"By:"}</td>
               <td>
                 <Username id={cur?.created_by} supabase={supabase} />
               </td>
@@ -196,7 +196,7 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
                 </tr>
 
                 <tr>
-                  <td>Ended By:</td>
+                  <td>{"Ended By:"}</td>
                   <td>
                     <Username id={cur.closed_by} supabase={supabase} />
                   </td>

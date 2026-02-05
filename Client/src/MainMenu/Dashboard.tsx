@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Attendee } from "../Attendees/Attendee";
 import { AttendeesTable } from "../Attendees/AttendeesTable";
-import { AttendeeWindow } from "../Attendees/AttendeeWindow";
+import { AttendeeWindow } from "../Attendees/AttendeeWindow/AttendeeWindow";
 import { FABAddAttendees } from "../Attendees/FABAddAttendees";
 import { CaptureButton } from "../Capture/CaptureButton";
 import { CaptureWindow } from "../Capture/CaptureWindow";
