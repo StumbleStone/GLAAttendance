@@ -471,7 +471,7 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
       )}
       {colsToInclude.includes(SortColumns.BY) && (
         <S.NameCell>
-          {status === AttendeeStatus.PRESENT
+          {status !== AttendeeStatus.NOT_SCANNED
             ? supabase.getUserName(att.currentRollCall!.created_by, {
                 nameOnly: true,
               })
