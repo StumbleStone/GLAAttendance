@@ -43,46 +43,48 @@ export const AttendeeWindowStatusContainer: React.FC<
             <td>Is:</td>
             <S.StyledCell color={statusCol}>{status}</S.StyledCell>
           </tr>
-          {!!attendee.currentRollCall && status === AttendeeStatus.PRESENT && (
-            <tr>
-              <td>{"By:"}</td>
-              <td>
-                <S.TextIconContainer>
-                  <Icon
-                    color={DefaultColors.BrightCyan}
-                    icon={
-                      attendee.currentRollCall.created_method ===
-                      RollCallMethod.MANUAL
-                        ? faHandPointUp
-                        : faBarcode
+          {!!attendee.currentRollCall &&
+            status !== AttendeeStatus.NOT_SCANNED && (
+              <tr>
+                <td>{"By:"}</td>
+                <td>
+                  <S.TextIconContainer>
+                    <Icon
+                      color={DefaultColors.BrightCyan}
+                      icon={
+                        attendee.currentRollCall.created_method ===
+                        RollCallMethod.MANUAL
+                          ? faHandPointUp
+                          : faBarcode
+                      }
+                      size={14}
+                    />
+                    <Username
+                      id={attendee.currentRollCall.created_by}
+                      supabase={supabase}
+                    />
+                  </S.TextIconContainer>
+                </td>
+              </tr>
+            )}
+          {!!attendee.currentRollCall &&
+            status !== AttendeeStatus.NOT_SCANNED && (
+              <tr>
+                <td>On:</td>
+                <td>
+                  {epochToDate(
+                    new Date(attendee.currentRollCall.created_at).getTime(),
+                    {
+                      includeTime: true,
+                      includeSeconds: true,
                     }
-                    size={14}
-                  />
-                  <Username
-                    id={attendee.currentRollCall.created_by}
-                    supabase={supabase}
-                  />
-                </S.TextIconContainer>
-              </td>
-            </tr>
-          )}
-          {!!attendee.currentRollCall && status === AttendeeStatus.PRESENT && (
-            <tr>
-              <td>On:</td>
-              <td>
-                {epochToDate(
-                  new Date(attendee.currentRollCall.created_at).getTime(),
-                  {
-                    includeTime: true,
-                    includeSeconds: true,
-                  }
-                )}
-              </td>
-            </tr>
-          )}
+                  )}
+                </td>
+              </tr>
+            )}
           <tr>
             <td>
-              <S.CellHeading>{"Allergy"}:</S.CellHeading>
+              <S.CellHeading>{"Allergy:"}</S.CellHeading>
             </td>
             <S.StyledCell>{allergies.join(", ")}</S.StyledCell>
           </tr>
