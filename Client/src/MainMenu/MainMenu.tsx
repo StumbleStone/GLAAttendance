@@ -21,6 +21,8 @@ enum RoutePath {
   DASHBOARD = "/dashboard",
 }
 
+// This comment is to make a difference to the main branch so that the PR is not automatically merged when the publish branch is updated.
+
 // Order here very important
 const ROUTES: RouteState[] = [
   {
