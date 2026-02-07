@@ -1,9 +1,15 @@
 import styled from "@emotion/styled";
+import {
+  faCheckSquare,
+  faMinusSquare,
+  faXmarkSquare,
+} from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
 import { ReactNode } from "react";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Button, ButtonContainer } from "../Components/Button/Button";
 import { Heading } from "../Components/Heading";
+import { Icon } from "../Components/Icon";
 import { LayerHandler, LayerItem } from "../Components/Layer";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import {
@@ -133,6 +139,9 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
       return <LoadingSpinner size={50} />;
     }
 
+    const absentCount = supabase.countAbsentAttendees();
+    const presentCount = supabase.countPresentAttendees();
+
     return (
       <>
         {!!cur?.description && <Span>{cur.description}</Span>}
@@ -153,18 +162,6 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
               >
                 {!cur ? "None" : !cur.closed_by ? "In Progress" : "Closed"}
               </S.StyledCell>
-            </tr>
-            <tr>
-              <td>Present:</td>
-              <td>{`${supabase.countPresentAttendees()} / ${
-                supabase.attendees.size
-              }`}</td>
-            </tr>
-            <tr>
-              <td>Absent:</td>
-              <td>{`${supabase.countAbsentAttendees()} / ${
-                supabase.attendees.size
-              }`}</td>
             </tr>
             <tr>
               <td>Since:</td>
@@ -205,6 +202,34 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
             )}
           </tbody>
         </table>
+        <S.CounterContainer>
+          <S.SideBySide>
+            <Icon
+              color={DefaultColors.BrightGrey}
+              icon={faMinusSquare}
+              size={20}
+            />
+            <S.Text>
+              {supabase.attendees.size - absentCount - presentCount}
+            </S.Text>
+          </S.SideBySide>
+          <S.SideBySide>
+            <Icon
+              color={DefaultColors.BrightGreen}
+              icon={faCheckSquare}
+              size={20}
+            />
+            <S.Text>{presentCount}</S.Text>
+          </S.SideBySide>
+          <S.SideBySide>
+            <Icon
+              color={DefaultColors.BrightRed}
+              icon={faXmarkSquare}
+              size={20}
+            />
+            <S.Text>{absentCount}</S.Text>
+          </S.SideBySide>
+        </S.CounterContainer>
         <ButtonContainer>
           {canStart && <Button onClick={handleNewRollCall}>Start New</Button>}
           {canStop && <Button onClick={handleEndRollCall}>End Rollcall</Button>}
@@ -228,6 +253,22 @@ namespace S {
     display: flex;
     align-items: center;
     justify-content: center;
+  `;
+
+  export const CounterContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-around;
+    border: 1px solid ${DefaultColors.Background};
+    border-radius: 15px;
+    padding: 4px 0px;
+  `;
+
+  export const SideBySide = styled.div`
+    display: flex;
+    gap: 5px;
   `;
 
   export const RollCallWindowEl = styled(Tile)`
@@ -255,4 +296,6 @@ namespace S {
   export const StyledCell = styled.td<{ color?: string }>`
     color: ${(p) => p.color};
   `;
+
+  export const Text = styled.div``;
 }

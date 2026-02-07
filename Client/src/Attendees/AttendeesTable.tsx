@@ -41,6 +41,9 @@ enum SortColumns {
   BY = "by",
   ON = "on",
   TP = "tp",
+
+  // Always included, cannot be sorted on since it's already sorted...
+  INDEX = "index",
 }
 
 function sortStatus(
@@ -146,6 +149,17 @@ function sortOn(a: Attendee, b: Attendee, sortAsc: boolean) {
   return aTime - bTime;
 }
 
+function normalizeString(str: string | null): string | null {
+  if (str == null) {
+    return null;
+  }
+
+  return str
+    .normalize("NFD")
+    .replaceAll(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 function filterData(supabase: SupaBase, filter: string) {
   if (!supabase.attendees || supabase.attendees.size == 0) {
     return [];
@@ -157,14 +171,14 @@ function filterData(supabase: SupaBase, filter: string) {
 
   let outArr: Attendee[] = [];
 
-  filter
+  normalizeString(filter)
     .toLowerCase()
     .split(/ +/)
     .forEach((part) => {
       supabase.attendees.forEach((att) => {
         if (
-          att.name?.toLowerCase().includes(part) ||
-          att.surname?.toLowerCase().includes(part)
+          normalizeString(att.name)?.includes(part) ||
+          normalizeString(att.surname)?.includes(part)
         ) {
           outArr.push(att);
         } else if (filter === "CAR" && att.isUsingOwnTransport) {
@@ -306,6 +320,12 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
         <tbody>
           <TableRow key="heading">
             <Heading
+              colName={SortColumns.INDEX}
+              hideSpacersWhenNotSelected={true}
+              isIncluded={true}
+              label={"#"}
+            />
+            <Heading
               isIncluded={colsToInclude.includes(SortColumns.NAME)}
               colName={SortColumns.NAME}
               label={"Name"}
@@ -323,8 +343,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               useAZArrow={true}
               onClick={handleClickCol}
             />
-            {/* Spacer */}
-            <TableHeading />
+            <S.SpacerHeading />
             <Heading
               isIncluded={colsToInclude.includes(SortColumns.TP)}
               colName={SortColumns.TP}
@@ -368,13 +387,14 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               onClick={handleClickCol}
             />
           </TableRow>
-          {sorted.map((att) => (
+          {sorted.map((att, index) => (
             <AttendeeRow
               att={att}
               supabase={supabase}
               key={att.id}
               onClickedAttendee={onClickedAttendee}
               colsToInclude={colsToInclude}
+              index={index}
             />
           ))}
         </tbody>
@@ -388,10 +408,11 @@ interface AttendeeRowProps {
   supabase: SupaBase;
   onClickedAttendee: (attendee: Attendee) => void;
   colsToInclude: SortColumns[];
+  index: number;
 }
 
 const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
-  const { att, supabase, colsToInclude, onClickedAttendee } = props;
+  const { att, supabase, colsToInclude, onClickedAttendee, index } = props;
   const status: AttendeeStatus = att.status(supabase.currentRollCallEvent);
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
@@ -415,14 +436,14 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
 
   return (
     <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
+      <S.IndexCell>{index + 1}</S.IndexCell>
       {colsToInclude.includes(SortColumns.NAME) && (
         <S.NameCell>{att.name}</S.NameCell>
       )}
       {colsToInclude.includes(SortColumns.SURNAME) && (
         <S.NameCell>{att.surname}</S.NameCell>
       )}
-      {/* Spacer */}
-      <TableCell />
+      <S.SpacerCell />
       {colsToInclude.includes(SortColumns.TP) && (
         <S.RCCell>
           <Icon
@@ -477,9 +498,9 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
 
 interface HeadingProps {
   colName: SortColumns;
-  sortCol: SortColumns;
-  sortAsc: boolean;
-  onClick: (colName: SortColumns) => void;
+  sortCol?: SortColumns;
+  sortAsc?: boolean;
+  onClick?: (colName: SortColumns) => void;
   label: string;
   centerLabel?: boolean;
   useAZArrow?: boolean;
@@ -513,7 +534,10 @@ const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
   const showArrow = isSelected || !hideSpacersWhenNotSelected;
   const showSpacer = showArrow && addArrowSpacer;
   return (
-    <S.StyledTableHeading onClick={handleClick} center={centerLabel}>
+    <S.StyledTableHeading
+      onClick={!!onClick ? handleClick : null}
+      center={centerLabel}
+    >
       <S.HeadingContainer>
         {showSpacer && <SortArrow selected={false} ascending={false} />}
         <S.HeadingText>{label}</S.HeadingText>
@@ -576,6 +600,11 @@ namespace S {
     width: 0;
   `;
 
+  export const IndexCell = styled(RCCell)`
+    text-align: right;
+    color: ${DefaultColors.BrightGrey};
+  `;
+
   export const MeasureWidth = styled.div``;
 
   export const PrimaryTable = styled(Table)`
@@ -587,6 +616,7 @@ namespace S {
     text-align: ${(p) => (p.center ? "center" : null)};
     font-size: 16px;
     padding: 2px 4px;
+    cursor: auto;
   `;
 
   export const NameCell = styled(TableCell)`
@@ -603,5 +633,15 @@ namespace S {
     align-items: center;
     justify-content: center;
     gap: 5px;
+  `;
+
+  export const SpacerHeading = styled(TableHeading)`
+    min-width: 0;
+    padding: 0;
+  `;
+
+  export const SpacerCell = styled(TableCell)`
+    min-width: 0;
+    padding: 0;
   `;
 }
