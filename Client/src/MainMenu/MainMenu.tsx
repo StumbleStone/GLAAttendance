@@ -149,9 +149,6 @@ export const MainMenu: React.FC<{}> = () => {
             </S.TitlePart>
             <S.TitlePart>{"Attendance"}</S.TitlePart>
           </S.SideBySide>
-          <S.StyledSubHeading color={DefaultColors.BrightMagenta}>
-            Madri Is A Legend!
-          </S.StyledSubHeading>
         </S.StyledHeading>
         <HeadingIcons />
       </S.TitleTile>

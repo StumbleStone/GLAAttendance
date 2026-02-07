@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { faBarcode } from "@fortawesome/free-solid-svg-icons";
+import { faQrcode } from "@fortawesome/free-solid-svg-icons";
 import QrScanner from "qr-scanner";
 import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "../Components/Button/Button";
@@ -44,7 +44,7 @@ export const CaptureButton: React.FC<CaptureButtonProps> = (
       disabled={!supported}
       onClick={handleClick}
       color={DefaultColors.BrightCyan}
-      icon={faBarcode}
+      icon={faQrcode}
     >
       {message}
     </S.CaptureButton>

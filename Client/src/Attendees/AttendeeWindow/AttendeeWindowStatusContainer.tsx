@@ -1,9 +1,9 @@
 import styled from "@emotion/styled";
 import {
-  faBarcode,
   faBusSimple,
   faCar,
   faHandPointUp,
+  faQrcode,
 } from "@fortawesome/free-solid-svg-icons";
 import React, { Fragment } from "react";
 import { Icon } from "../../Components/Icon";
@@ -55,7 +55,7 @@ export const AttendeeWindowStatusContainer: React.FC<
                         attendee.currentRollCall.created_method ===
                         RollCallMethod.MANUAL
                           ? faHandPointUp
-                          : faBarcode
+                          : faQrcode
                       }
                       size={14}
                     />
