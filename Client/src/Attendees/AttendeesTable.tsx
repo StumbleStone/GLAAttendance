@@ -9,9 +9,6 @@ import {
   faArrowUpAZ,
   faBusSimple,
   faCar,
-  faCheckSquare,
-  faMinusSquare,
-  faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import React, {useCallback, useEffect, useMemo, useReducer, useState,} from "react";
 import {Icon} from "../Components/Icon";
@@ -353,7 +350,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             <Heading
               isIncluded={colsToInclude.includes(SortColumns.STATUS)}
               colName={SortColumns.STATUS}
-              label={"✓"}
+              label={"Status"}
               centerLabel={true}
               sortAsc={sortAsc}
               sortCol={sortCol}
@@ -364,7 +361,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             <Heading
               isIncluded={colsToInclude.includes(SortColumns.ON)}
               colName={SortColumns.ON}
-              label={"On"}
+              label={"Time"}
               sortAsc={sortAsc}
               sortCol={sortCol}
               useAZArrow={true}
@@ -374,7 +371,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             <Heading
               isIncluded={colsToInclude.includes(SortColumns.BY)}
               colName={SortColumns.BY}
-              label={"By"}
+              label={"Recorder"}
               sortAsc={sortAsc}
               sortCol={sortCol}
               use19Arrow={true}
@@ -454,19 +451,9 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
         </S.RCCell>
       )}
       {colsToInclude.includes(SortColumns.STATUS) && (
-        <S.RCCell>
-          <Icon
-            size={26}
-            color={color}
-            icon={
-              status === AttendeeStatus.PRESENT
-                ? faCheckSquare
-                : status === AttendeeStatus.ABSENT
-                ? faXmarkSquare
-                : faMinusSquare
-            }
-          />
-        </S.RCCell>
+        <S.StatusCell>
+          <StatusChip status={status} color={color} />
+        </S.StatusCell>
       )}
       {colsToInclude.includes(SortColumns.ON) && (
         <S.NameCell>
@@ -480,15 +467,28 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
         </S.NameCell>
       )}
       {colsToInclude.includes(SortColumns.BY) && (
-        <S.NameCell>
+        <S.RecorderCell>
           {status !== AttendeeStatus.NOT_SCANNED
             ? supabase.getUserName(att.currentRollCall!.created_by, {
                 nameOnly: true,
               })
             : "--"}
-        </S.NameCell>
+        </S.RecorderCell>
       )}
     </TableRow>
+  );
+};
+
+const StatusChip: React.FC<{ status: AttendeeStatus; color: string }> = (
+  props
+) => {
+  const { status, color } = props;
+
+  return (
+    <S.StatusChip color={color}>
+      <S.StatusDot color={color} />
+      <S.StatusChipLabel>{status}</S.StatusChipLabel>
+    </S.StatusChip>
   );
 };
 
@@ -597,6 +597,10 @@ namespace S {
     width: 0;
   `;
 
+  export const StatusCell = styled(RCCell)`
+    width: 1%;
+  `;
+
   export const IndexCell = styled(RCCell)`
     text-align: right;
     color: ${(p) => p.theme.colors.table.index};
@@ -620,6 +624,36 @@ namespace S {
     width: 0;
     padding: 4px 4px;
   `;
+
+  export const RecorderCell = styled(NameCell)`
+    color: ${(p) => p.theme.colors.textMuted};
+  `;
+
+  export const StatusChip = styled.span<{ color: string }>`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    border-radius: ${(p) => p.theme.radius.pill};
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    color: ${(p) => p.color};
+    border: 1px solid ${(p) => `${p.color}66`};
+    background-color: ${(p) => `${p.color}1a`};
+  `;
+
+  export const StatusDot = styled.span<{ color: string }>`
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-color: ${(p) => p.color};
+  `;
+
+  export const StatusChipLabel = styled.span``;
 
   export const HeadingText = styled.span`
     text-align: center;
