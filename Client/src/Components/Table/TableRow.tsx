@@ -1,15 +1,18 @@
 import styled from "@emotion/styled";
-import { DefaultColors } from "../../Tools/Toolbox";
 
 export const TableRow = styled.tr`
-  border: 1px solid ${DefaultColors.Black};
+  border: 1px solid ${(p) => p.theme.colors.borderSubtle};
   cursor: pointer;
 
   :nth-of-type(odd) {
-    background-color: ${DefaultColors.Black}22;
+    background-color: ${(p) => p.theme.colors.table.rowOdd};
   }
 
   :nth-of-type(even) {
-    background-color: ${"#3f3f3f"};
+    background-color: ${(p) => p.theme.colors.table.rowEven};
+  }
+
+  :hover {
+    background-color: ${(p) => p.theme.colors.table.rowHover};
   }
 `;

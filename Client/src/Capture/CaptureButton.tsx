@@ -1,9 +1,9 @@
+import {useTheme} from "@emotion/react";
 import styled from "@emotion/styled";
-import { faQrcode } from "@fortawesome/free-solid-svg-icons";
+import {faQrcode} from "@fortawesome/free-solid-svg-icons";
 import QrScanner from "qr-scanner";
-import React, { useEffect, useMemo, useState } from "react";
-import { Button } from "../Components/Button/Button";
-import { DefaultColors } from "../Tools/Toolbox";
+import React, {useEffect, useMemo, useState} from "react";
+import {Button} from "../Components/Button/Button";
 
 export interface CaptureButtonProps {
   handleClick: () => void;
@@ -13,6 +13,7 @@ export interface CaptureButtonProps {
 export const CaptureButton: React.FC<CaptureButtonProps> = (
   props: CaptureButtonProps
 ) => {
+  const theme = useTheme();
   const { handleClick, isCapturing } = props;
   const [supported, setSupported] = useState<boolean>(false);
 
@@ -43,7 +44,7 @@ export const CaptureButton: React.FC<CaptureButtonProps> = (
     <S.CaptureButton
       disabled={!supported}
       onClick={handleClick}
-      color={DefaultColors.BrightCyan}
+      color={theme.colors.accent.primary}
       icon={faQrcode}
     >
       {message}

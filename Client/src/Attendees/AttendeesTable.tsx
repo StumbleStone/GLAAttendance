@@ -1,3 +1,4 @@
+import {useTheme} from "@emotion/react";
 import styled from "@emotion/styled";
 import {
   faArrowDown,
@@ -12,21 +13,15 @@ import {
   faMinusSquare,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useState,
-} from "react";
-import { Icon } from "../Components/Icon";
-import { Table } from "../Components/Table/Table";
-import { TableCell } from "../Components/Table/TableCell";
-import { TableHeading } from "../Components/Table/TableHeading";
-import { TableRow } from "../Components/Table/TableRow";
-import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { DefaultColors, epochToDate } from "../Tools/Toolbox";
-import { Attendee, AttendeeStatus } from "./Attendee";
+import React, {useCallback, useEffect, useMemo, useReducer, useState,} from "react";
+import {Icon} from "../Components/Icon";
+import {Table} from "../Components/Table/Table";
+import {TableCell} from "../Components/Table/TableCell";
+import {TableHeading} from "../Components/Table/TableHeading";
+import {TableRow} from "../Components/Table/TableRow";
+import {SupaBase, SupaBaseEventKey} from "../SupaBase/SupaBase";
+import {epochToDate} from "../Tools/Toolbox";
+import {Attendee, AttendeeStatus} from "./Attendee";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
@@ -412,6 +407,7 @@ interface AttendeeRowProps {
 }
 
 const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
+  const theme = useTheme();
   const { att, supabase, colsToInclude, onClickedAttendee, index } = props;
   const status: AttendeeStatus = att.status(supabase.currentRollCallEvent);
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
@@ -424,10 +420,10 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
 
   const color =
     status === AttendeeStatus.PRESENT
-      ? DefaultColors.BrightGreen
+      ? theme.colors.accent.success
       : status === AttendeeStatus.ABSENT
-      ? DefaultColors.BrightRed
-      : DefaultColors.Grey;
+      ? theme.colors.accent.danger
+      : theme.colors.state.disabled;
 
   // TODO Need to solve this further up
   if (att.isDeleted) {
@@ -450,8 +446,8 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
             size={22}
             color={
               att.isUsingOwnTransport
-                ? DefaultColors.BrightPurple
-                : DefaultColors.BrightOrange
+                ? theme.colors.accent.transportCar
+                : theme.colors.accent.transportBus
             }
             icon={att.isUsingOwnTransport ? faCar : faBusSimple}
           />
@@ -560,6 +556,7 @@ export const SortArrow: React.FC<{
   useAZ?: boolean;
   use09?: boolean;
 }> = (props) => {
+  const theme = useTheme();
   const { ascending, selected, useAZ, use09 } = props;
 
   const icon = ascending
@@ -578,7 +575,7 @@ export const SortArrow: React.FC<{
     <S.SortArrow
       icon={icon}
       size={14}
-      color={selected ? DefaultColors.BrightGrey : "transparent"}
+      color={selected ? theme.colors.table.sortActive : "transparent"}
     />
   );
 };
@@ -587,7 +584,7 @@ namespace S {
   export const SortArrow = styled(Icon)``;
 
   export const TableContainer = styled.div`
-    color: ${DefaultColors.Text_Color};
+    color: ${(p) => p.theme.colors.text};
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -602,7 +599,7 @@ namespace S {
 
   export const IndexCell = styled(RCCell)`
     text-align: right;
-    color: ${DefaultColors.BrightGrey};
+    color: ${(p) => p.theme.colors.table.index};
   `;
 
   export const MeasureWidth = styled.div``;

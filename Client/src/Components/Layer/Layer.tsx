@@ -1,7 +1,6 @@
 import styled from "@emotion/styled";
 import * as React from "react";
-import { DefaultColors } from "../../Tools/Toolbox";
-import { LayerHandler, LayerItem } from "./LayerHandler";
+import {LayerHandler, LayerItem} from "./LayerHandler";
 
 export interface LayerProps {}
 
@@ -36,7 +35,7 @@ namespace S {
     top: 0;
     left: 0;
 
-    color: ${DefaultColors.Text_Color};
+    color: ${(p) => p.theme.colors.text};
     font-size: 18px;
   `;
 }

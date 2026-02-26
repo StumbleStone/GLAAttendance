@@ -1,9 +1,9 @@
+import {useTheme} from "@emotion/react";
 import styled from "@emotion/styled";
-import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import {IconDefinition} from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
-import { DefaultColors } from "../../Tools/Toolbox";
-import { Icon } from "../Icon";
-import { BaseInputProps, Input } from "./BaseInput";
+import {Icon} from "../Icon";
+import {BaseInputProps, Input} from "./BaseInput";
 
 export interface InputWithIconProps extends BaseInputProps {
   fontSize?: number;
@@ -16,6 +16,7 @@ export interface InputWithIconProps extends BaseInputProps {
 export const InputWithIcon: React.FC<InputWithIconProps> = (
   props: InputWithIconProps
 ) => {
+  const theme = useTheme();
   const { className, fontSize, color, icon, forwardRef, ...rest } = props;
   return (
     <S.InputContainer className={className}>
@@ -29,7 +30,7 @@ export const InputWithIcon: React.FC<InputWithIconProps> = (
       {!!icon && (
         <S.StyledIcon
           icon={icon}
-          color={color ?? DefaultColors.Container}
+          color={color ?? theme.colors.input.foreground}
           size={fontSize || 18}
         />
       )}

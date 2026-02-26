@@ -1,8 +1,8 @@
+import {useTheme} from "@emotion/react";
 import styled from "@emotion/styled";
-import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
-import React, { HTMLAttributes, useCallback, useMemo } from "react";
-import { DefaultColors } from "../../Tools/Toolbox";
-import { Icon } from "../Icon";
+import {IconDefinition} from "@fortawesome/free-solid-svg-icons";
+import React, {HTMLAttributes, useCallback, useMemo} from "react";
+import {Icon} from "../Icon";
 
 export interface ButtonProps
   extends Omit<HTMLAttributes<HTMLDivElement>, "onClick"> {
@@ -15,6 +15,7 @@ export interface ButtonProps
 }
 
 export const Button: React.FC<ButtonProps> = (props) => {
+  const theme = useTheme();
   const {
     className,
     disabled,
@@ -35,8 +36,8 @@ export const Button: React.FC<ButtonProps> = (props) => {
   }, [onClick, disabled]);
 
   const resolvedColor = useMemo(() => {
-    return disabled ? DefaultColors.Grey : color || DefaultColors.BrightCyan;
-  }, [color, disabled]);
+    return disabled ? theme.colors.state.disabled : color || theme.colors.accent.primary;
+  }, [color, disabled, theme]);
 
   return (
     <ButtonDiv
@@ -53,10 +54,10 @@ export const Button: React.FC<ButtonProps> = (props) => {
 };
 
 const ButtonDiv = styled("div")<{ color?: string; disabled?: boolean }>`
-  border: 2px solid ${DefaultColors.OffWhite};
+  border: 2px solid ${(p) => p.theme.colors.textMuted};
   padding: 4px 16px;
-  border-radius: 25px;
-  background-color: ${DefaultColors.Container};
+  border-radius: ${(p) => p.theme.radius.pill};
+  background-color: ${(p) => p.theme.colors.surface};
 
   :hover {
     background-color: ${(p) => (p.disabled ? null : `${p.color}22`)};
@@ -74,7 +75,7 @@ const ButtonDiv = styled("div")<{ color?: string; disabled?: boolean }>`
   border-color: ${(p) => p.color};
 
   :active {
-    background-color: ${DefaultColors.Container_Active};
+    background-color: ${(p) => p.theme.colors.surfaceActive};
   }
 `;
 
