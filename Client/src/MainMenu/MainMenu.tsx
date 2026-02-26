@@ -163,14 +163,13 @@ namespace S {
     label: MainMenuContainer;
     touch-action: manipulation;
     width: 100%;
-    max-height: 100%;
     height: 100%;
+    min-height: 0;
     color: ${(p) => p.theme.colors.text};
     font-size: 18px;
-    /* This ensured that landscape mobile has some whitespace at the bottom */
-    padding-bottom: 100px;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   `;
 
   export const TitlePart = styled("span")<{ color?: string }>`
@@ -203,15 +202,18 @@ namespace S {
   export const Content = styled("div")`
     label: Content;
     position: relative;
-    flex-grow: 1;
-    max-height: 100%;
-    overflow: auto;
-    overscroll-behavior: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
   `;
 
   export const ContentScroll = styled("div")`
     label: ContentScroll;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: auto;
+    overscroll-behavior: auto;
     padding-bottom: 100px;
   `;
 
