@@ -1,17 +1,17 @@
-import { keyframes } from "@emotion/react";
+import {keyframes, useTheme} from "@emotion/react";
 import styled from "@emotion/styled";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import {faPlus} from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
-import { SupaBase } from "../../SupaBase/SupaBase";
-import { DefaultColors } from "../../Tools/Toolbox";
-import { Backdrop } from "../Backdrop/Backdrop";
-import { Icon } from "../Icon";
+import {SupaBase} from "../../SupaBase/SupaBase";
+import {Backdrop} from "../Backdrop/Backdrop";
+import {Icon} from "../Icon";
 
 export interface FABProps {
   items: (close: () => void) => React.ReactNode;
 }
 
 export const FAB: React.FC<FABProps> = (props: FABProps) => {
+  const theme = useTheme();
   const { items } = props;
 
   const [open, setOpen] = React.useState<boolean>(false);
@@ -68,7 +68,7 @@ export const FAB: React.FC<FABProps> = (props: FABProps) => {
       )}
       <S.ShadowContainer>
         <S.IconContainer isOpen={!!open} onClick={toggle}>
-          <Icon icon={faPlus} size={24} color={DefaultColors.Text_Color} />
+          <Icon icon={faPlus} size={24} color={theme.colors.text} />
         </S.IconContainer>
       </S.ShadowContainer>
     </S.FABEl>
@@ -162,7 +162,7 @@ namespace S {
     bottom: 0;
     margin: 20px;
     border-radius: 50%;
-    box-shadow: 0px 6px 5px 0px ${DefaultColors.Container};
+    box-shadow: ${(p) => `0px 6px 5px 0px ${p.theme.colors.surface}`};
   `;
 
   export const IconContainer = styled("div")<{ isOpen: boolean }>`
@@ -173,10 +173,10 @@ namespace S {
     width: 100%;
     height: 100%;
 
-    background-color: ${DefaultColors.Container};
+    background-color: ${(p) => p.theme.colors.surface};
     border-radius: 50%;
     box-sizing: border-box;
-    border: 2px solid ${DefaultColors.Background};
+    border: 2px solid ${(p) => p.theme.colors.border};
 
     transform: rotate(${(p) => (p.isOpen ? 45 : 0)}deg);
     transition: 0.25s ease-in-out transform;
@@ -185,6 +185,6 @@ namespace S {
   `;
 
   export const StyledBackdrop = styled(Backdrop)`
-    background-color: ${DefaultColors.TRANSPARENT};
+    background-color: transparent;
   `;
 }
