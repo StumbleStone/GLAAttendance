@@ -7,8 +7,6 @@ import {
   faArrowUp,
   faArrowUp19,
   faArrowUpAZ,
-  faBusSimple,
-  faCar,
 } from "@fortawesome/free-solid-svg-icons";
 import React, {useCallback, useEffect, useMemo, useReducer, useState,} from "react";
 import {Icon} from "../Components/Icon";
@@ -20,6 +18,7 @@ import {SupaBase, SupaBaseEventKey} from "../SupaBase/SupaBase";
 import {epochToDate} from "../Tools/Toolbox";
 import {Attendee, AttendeeStatus} from "./Attendee";
 import {AttendeesSummary} from "./AttendeesSummary";
+import {TransportChip} from "./TransportChip";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
@@ -344,7 +343,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             <Heading
               isIncluded={colsToInclude.includes(SortColumns.TP)}
               colName={SortColumns.TP}
-              label={"TP"}
+              label={"Transport"}
               centerLabel={true}
               sortAsc={sortAsc}
               sortCol={sortCol}
@@ -436,24 +435,18 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
     <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
       <S.IndexCell>{index + 1}</S.IndexCell>
       {colsToInclude.includes(SortColumns.NAME) && (
-        <S.NameCell>{att.name}</S.NameCell>
+        <S.PrimaryNameCell>{att.name}</S.PrimaryNameCell>
       )}
       {colsToInclude.includes(SortColumns.SURNAME) && (
-        <S.NameCell>{att.surname}</S.NameCell>
+        <S.SurnameCell>{att.surname}</S.SurnameCell>
       )}
       <S.SpacerCell />
       {colsToInclude.includes(SortColumns.TP) && (
-        <S.RCCell>
-          <Icon
-            size={22}
-            color={
-              att.isUsingOwnTransport
-                ? theme.colors.accent.transportCar
-                : theme.colors.accent.transportBus
-            }
-            icon={att.isUsingOwnTransport ? faCar : faBusSimple}
+        <S.TransportCell>
+          <TransportChip
+            usingOwnTransport={att.isUsingOwnTransport}
           />
-        </S.RCCell>
+        </S.TransportCell>
       )}
       {colsToInclude.includes(SortColumns.STATUS) && (
         <S.StatusCell>
@@ -606,9 +599,15 @@ namespace S {
     width: 1%;
   `;
 
+  export const TransportCell = styled(RCCell)`
+    width: 1%;
+  `;
+
   export const IndexCell = styled(RCCell)`
     text-align: right;
     color: ${(p) => p.theme.colors.table.index};
+    font-size: 0.9em;
+    font-weight: 500;
   `;
 
   export const MeasureWidth = styled.div``;
@@ -630,8 +629,18 @@ namespace S {
     padding: 4px 4px;
   `;
 
+  export const PrimaryNameCell = styled(NameCell)`
+    font-weight: 700;
+  `;
+
+  export const SurnameCell = styled(NameCell)`
+    font-weight: 400;
+  `;
+
   export const RecorderCell = styled(NameCell)`
     color: ${(p) => p.theme.colors.textMuted};
+    font-size: 0.92em;
+    font-weight: 500;
   `;
 
   export const StatusChip = styled.span<{ color: string }>`
