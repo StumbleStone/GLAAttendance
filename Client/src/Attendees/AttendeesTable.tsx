@@ -19,6 +19,7 @@ import {TableRow} from "../Components/Table/TableRow";
 import {SupaBase, SupaBaseEventKey} from "../SupaBase/SupaBase";
 import {epochToDate} from "../Tools/Toolbox";
 import {Attendee, AttendeeStatus} from "./Attendee";
+import {AttendeesSummary} from "./AttendeesSummary";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
@@ -308,6 +309,10 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   return (
     <S.TableContainer>
       <S.MeasureWidth ref={measureWidthRef} />
+      <AttendeesSummary
+        rows={sorted}
+        currentRollCallEvent={supabase.currentRollCallEvent}
+      />
       <S.PrimaryTable>
         <tbody>
           <TableRow key="heading">
