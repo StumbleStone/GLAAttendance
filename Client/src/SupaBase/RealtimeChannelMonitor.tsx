@@ -1,12 +1,9 @@
-import { faTowerBroadcast } from "@fortawesome/free-solid-svg-icons";
-import {
-  HeadingIcon,
-  HeadingIconHandler,
-} from "../MainMenu/HeadingIconHandler";
-import { EventClass, EventClassEvents } from "../Tools/EventClass";
-import { DefaultColors } from "../Tools/Toolbox";
-import { ShowRealtimeChannelWindow } from "./RealtimeChannelWindow";
-import { SupaBase } from "./SupaBase";
+import {faTowerBroadcast} from "@fortawesome/free-solid-svg-icons";
+import {HeadingIcon, HeadingIconHandler,} from "../MainMenu/HeadingIconHandler";
+import {EventClass, EventClassEvents} from "../Tools/EventClass";
+import {DefaultColors} from "../Tools/Toolbox";
+import {ShowRealtimeChannelWindow} from "./RealtimeChannelWindow";
+import {SupaBase} from "./SupaBase";
 
 const IS_ALIVE_TIMEOUT = 120000; // 2min
 const PING_DEBOUNCE = 5000; // 5s
@@ -60,6 +57,7 @@ export class RealtimeChannelMonitor extends EventClass<RealtimeChannelMonitorEve
       cb[RealtimeChannelMonitorEventKey.CONNECTION_CHANGED]?.()
     );
 
+    this.setupStaleChecker();
     this.pingChannel();
   }
 
@@ -94,6 +92,13 @@ export class RealtimeChannelMonitor extends EventClass<RealtimeChannelMonitorEve
 
     this.updateIcon();
 
+
+    this.fireUpdate((cb) =>
+      cb[RealtimeChannelMonitorEventKey.UPDATE_RECEIVED]?.()
+    );
+  }
+
+  setupStaleChecker() {
     if (this.timer) {
       clearTimeout(this.timer);
     }
@@ -101,10 +106,6 @@ export class RealtimeChannelMonitor extends EventClass<RealtimeChannelMonitorEve
     this.timer = setTimeout(() => {
       this.setConnectionStale();
     }, IS_ALIVE_TIMEOUT);
-
-    this.fireUpdate((cb) =>
-      cb[RealtimeChannelMonitorEventKey.UPDATE_RECEIVED]?.()
-    );
   }
 
   updateIcon() {
