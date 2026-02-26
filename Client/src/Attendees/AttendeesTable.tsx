@@ -191,6 +191,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 
   const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.STATUS);
   const [sortAsc, setSortAsc] = useState<boolean>(false);
+  const [selectedAttendeeId, setSelectedAttendeeId] = useState<number | null>(
+    null
+  );
 
   const measureWidthRef = React.useRef<HTMLDivElement>(null);
 
@@ -264,6 +267,14 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     return filtered.sort(sort);
   }, [filtered, sortCol, sortAsc, supabase.currentRollCallEvent?.id ?? 0]);
 
+  const handleClickAttendee = useCallback(
+    (attendee: Attendee) => {
+      setSelectedAttendeeId(attendee.id);
+      onClickedAttendee(attendee);
+    },
+    [onClickedAttendee]
+  );
+
   useEffect(() => {
     const el = measureWidthRef.current;
     if (!el) {
@@ -314,7 +325,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       />
       <S.PrimaryTable>
         <tbody>
-          <TableRow key="heading">
+          <S.HeaderRow key="heading">
             <Heading
               colName={SortColumns.INDEX}
               hideSpacersWhenNotSelected={true}
@@ -382,15 +393,16 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               hideSpacersWhenNotSelected={true}
               onClick={handleClickCol}
             />
-          </TableRow>
+          </S.HeaderRow>
           {sorted.map((att, index) => (
             <AttendeeRow
               att={att}
               supabase={supabase}
               key={att.id}
-              onClickedAttendee={onClickedAttendee}
+              onClickAttendee={handleClickAttendee}
               colsToInclude={colsToInclude}
               index={index}
+              selected={att.id === selectedAttendeeId}
             />
           ))}
         </tbody>
@@ -402,14 +414,22 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 interface AttendeeRowProps {
   att: Attendee;
   supabase: SupaBase;
-  onClickedAttendee: (attendee: Attendee) => void;
+  onClickAttendee: (attendee: Attendee) => void;
   colsToInclude: SortColumns[];
   index: number;
+  selected: boolean;
 }
 
 const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
   const theme = useTheme();
-  const { att, supabase, colsToInclude, onClickedAttendee, index } = props;
+  const {
+    att,
+    supabase,
+    colsToInclude,
+    onClickAttendee,
+    index,
+    selected,
+  } = props;
   const status: AttendeeStatus = att.status(supabase.currentRollCallEvent);
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
@@ -431,8 +451,12 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
     return null;
   }
 
+  const handleClickRow = useCallback(() => {
+    onClickAttendee(att);
+  }, [att, onClickAttendee]);
+
   return (
-    <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
+    <S.DataRow key={att.id} onClick={handleClickRow} selected={selected}>
       <S.IndexCell>{index + 1}</S.IndexCell>
       {colsToInclude.includes(SortColumns.NAME) && (
         <S.PrimaryNameCell>{att.name}</S.PrimaryNameCell>
@@ -473,7 +497,7 @@ const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
             : "--"}
         </S.RecorderCell>
       )}
-    </TableRow>
+    </S.DataRow>
   );
 };
 
@@ -595,6 +619,27 @@ namespace S {
     width: 0;
   `;
 
+  export const HeaderRow = styled(TableRow)`
+    position: relative;
+    z-index: 2;
+  `;
+
+  export const DataRow = styled(TableRow)<{ selected: boolean }>`
+    background-color: ${(p) =>
+      p.selected ? `${p.theme.colors.accent.primary}38` : null} !important;
+    box-shadow: ${(p) =>
+      p.selected
+        ? `inset 3px 0 0 0 ${p.theme.colors.accent.primary}, inset 0 0 0 1px ${p.theme.colors.accent.primary}66`
+        : "none"};
+
+    :hover {
+      background-color: ${(p) =>
+        p.selected
+          ? `${p.theme.colors.accent.primary}48`
+          : `${p.theme.colors.table.rowHover}`};
+    }
+  `;
+
   export const StatusCell = styled(RCCell)`
     width: 1%;
   `;
@@ -615,9 +660,17 @@ namespace S {
   export const PrimaryTable = styled(Table)`
     width: 100%;
     font-size: 12px;
+    border-collapse: separate;
+    border-spacing: 0;
   `;
 
   export const StyledTableHeading = styled(TableHeading)<{ center?: boolean }>`
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background-color: ${(p) => p.theme.colors.surfaceRaised};
+    box-shadow: ${(p) =>
+      `inset 0 -1px 0 ${p.theme.colors.border}, inset 0 1px 0 ${p.theme.colors.borderSubtle}`};
     text-align: ${(p) => (p.center ? "center" : null)};
     font-size: 16px;
     padding: 2px 4px;
@@ -681,6 +734,12 @@ namespace S {
   `;
 
   export const SpacerHeading = styled(TableHeading)`
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background-color: ${(p) => p.theme.colors.surfaceRaised};
+    box-shadow: ${(p) =>
+      `inset 0 -1px 0 ${p.theme.colors.border}, inset 0 1px 0 ${p.theme.colors.borderSubtle}`};
     min-width: 0;
     padding: 0;
   `;
