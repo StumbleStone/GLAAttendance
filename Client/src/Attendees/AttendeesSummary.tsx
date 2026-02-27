@@ -1,11 +1,17 @@
-import {useTheme} from "@emotion/react";
+import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
-import {IconDefinition} from "@fortawesome/fontawesome-svg-core";
-import {faBusSimple, faCar, faCheck, faMinusSquare, faXmark,} from "@fortawesome/free-solid-svg-icons";
-import React, {useMemo} from "react";
-import {Icon} from "../Components/Icon";
-import {RollCallEventEntry} from "../SupaBase/types";
-import {Attendee, AttendeeStatus} from "./Attendee";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import {
+  faBusSimple,
+  faCar,
+  faCheck,
+  faMinusSquare,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
+import React, { useMemo } from "react";
+import { Icon } from "../Components/Icon";
+import { RollCallEventEntry } from "../SupaBase/types";
+import { Attendee, AttendeeStatus } from "./Attendee";
 
 export interface AttendeesSummaryProps {
   rows: Attendee[];
@@ -13,7 +19,7 @@ export interface AttendeesSummaryProps {
 }
 
 export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
-  props: AttendeesSummaryProps
+  props: AttendeesSummaryProps,
 ) => {
   const theme = useTheme();
   const { rows, currentRollCallEvent } = props;
@@ -66,7 +72,7 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
         color={theme.colors.accent.danger}
       />
       <SummaryPill
-        label="Not Scanned"
+        label="No Scan"
         value={summary.notScanned}
         icon={faMinusSquare}
         color={theme.colors.state.disabled}

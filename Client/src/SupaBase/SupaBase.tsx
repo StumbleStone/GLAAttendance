@@ -193,10 +193,10 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
         if (!this._loadedAuthState) {
           this._loadedAuthState = true;
           this.fireUpdate((cb) =>
-            cb[SupaBaseEventKey.CLIENT_CONNECTED]?.(true)
+            cb[SupaBaseEventKey.CLIENT_CONNECTED]?.(true),
           );
         }
-      }
+      },
     );
 
     this._initDone = true;
@@ -336,7 +336,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.profile = data;
     this.userNameMap.set(
       this.profile.uid,
-      `${this.profile.first_name} ${this.profile.last_name}`
+      `${this.profile.first_name} ${this.profile.last_name}`,
     );
     this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_PROFILE]?.(data));
   }
@@ -398,7 +398,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
         }
 
         debugger;
-      }
+      },
     );
 
     this.realtimeChannel.subscribe((status: REALTIME_SUBSCRIBE_STATES) => {
@@ -432,7 +432,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   async handleAttendeesChanges(
-    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>
+    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
   ) {
     console.log(`${payload.table} Updated`, payload);
 
@@ -449,7 +449,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   async handleRollCallEventChanges(
-    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>
+    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
   ) {
     console.log(`${payload.table} Updated`, payload);
 
@@ -460,14 +460,14 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
         return this.removeRollCallEventFromDB(payload.old.id);
       case "UPDATE":
         return this.updateRollCallEventFromDB(
-          payload.new as RollCallEventEntry
+          payload.new as RollCallEventEntry,
         );
     }
     debugger;
   }
 
   async handleRollCallChanges(
-    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>
+    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
   ) {
     console.log(`${payload.table} Updated`, payload);
 
@@ -496,7 +496,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   async addRollCallFromDB(entry: RollCallEntry) {
     const attendee =
       Array.from(this.attendees.values()).find(
-        (att) => att.id == entry.attendee_id
+        (att) => att.id == entry.attendee_id,
       ) || null;
 
     if (!attendee) {
@@ -505,7 +505,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     attendee.pushRollCall(
       entry,
-      entry.roll_call_event_id === this.currentRollCallEvent?.id
+      entry.roll_call_event_id === this.currentRollCallEvent?.id,
     );
     this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALLS]?.());
   }
@@ -516,7 +516,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     this.rollCallEvents = this.rollCallEvents.filter(
-      (rce) => rce.id !== rollCallEventId
+      (rce) => rce.id !== rollCallEventId,
     );
     await this.calculateCurrentRollCallEvent();
   }
@@ -533,7 +533,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
   async updateRollCallEventFromDB(entry: RollCallEventEntry) {
     const indexOf: number = this.rollCallEvents.findIndex(
-      (rce) => rce.id === entry.id
+      (rce) => rce.id === entry.id,
     );
     if (indexOf < 0) {
       return;
@@ -595,7 +595,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     console.log(
-      `Attendee deleted, removing from list: ${record.name} ${record.surname}`
+      `Attendee deleted, removing from list: ${record.name} ${record.surname}`,
     );
 
     this.attendees.delete(hash);
@@ -641,7 +641,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     (data || []).forEach((userProfile: ProfileEventEntry) => {
       this.userNameMap.set(
         userProfile.uid,
-        `${userProfile.first_name} ${userProfile.last_name}`
+        `${userProfile.first_name} ${userProfile.last_name}`,
       );
     });
 
@@ -687,7 +687,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       if (attendeesById[rollCall.attendee_id]) {
         attendeesById[rollCall.attendee_id].pushRollCall(
           rollCall,
-          rollCall.roll_call_event_id === this.currentRollCallEvent?.id
+          rollCall.roll_call_event_id === this.currentRollCallEvent?.id,
         );
         return;
       }
@@ -734,7 +734,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.fireUpdate((cb) => cb[SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]?.());
 
     this.attendees.forEach((attendee: Attendee) =>
-      attendee.checkCurrentRollCall(this.currentRollCallEvent)
+      attendee.checkCurrentRollCall(this.currentRollCallEvent),
     );
   }
 
@@ -772,7 +772,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   async createNewAttendees(
-    newEntries: Pick<AttendeesEntry, "name" | "surname">[]
+    newEntries: Pick<AttendeesEntry, "name" | "surname">[],
   ) {
     const { error, data } = await this.client
       .from(Tables.ATTENDEES)
@@ -787,7 +787,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   async createNewRollCall(
     attendee: Attendee,
     method: RollCallMethod,
-    status: RollCallStatus = RollCallStatus.PRESENT
+    status: RollCallStatus = RollCallStatus.PRESENT,
   ): Promise<boolean> {
     if (!this.currentRollCallEvent) {
       return false;
@@ -976,14 +976,14 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   async closeCurrentRollCallEvent() {
     if (!this.currentRollCallEvent) {
       console.error(
-        `closeCurrentRollCallEvent: Attempted to close RollCallEvent but none active`
+        `closeCurrentRollCallEvent: Attempted to close RollCallEvent but none active`,
       );
       return;
     }
 
     if (this.currentRollCallEvent.closed_at != null) {
       console.error(
-        `closeCurrentRollCallEvent: Attempted to close RollCallEvent but it already has been closed`
+        `closeCurrentRollCallEvent: Attempted to close RollCallEvent but it already has been closed`,
       );
       return;
     }
@@ -1044,10 +1044,10 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       this.profile = data;
       this.userNameMap.set(
         this.profile.uid,
-        `${this.profile.first_name} ${this.profile.last_name}`
+        `${this.profile.first_name} ${this.profile.last_name}`,
       );
       this.fireUpdate((cb) =>
-        cb[SupaBaseEventKey.USER_PROFILE]?.(this.profile)
+        cb[SupaBaseEventKey.USER_PROFILE]?.(this.profile),
       );
     }
   }
@@ -1079,6 +1079,14 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     return user.split(" ")[0];
+  }
+
+  getUserInitials(id: string): string {
+    const user = this.getUserName(id, { nameOnly: false });
+    return user
+      .split(" ")
+      .map((part) => part[0].toUpperCase())
+      .join("");
   }
 
   async firePing() {
