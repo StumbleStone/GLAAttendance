@@ -21,6 +21,20 @@ export enum SummaryPillId {
   CAR = "car",
 }
 
+export type SummaryPillSelection = Record<SummaryPillId, boolean>;
+
+export function createSummaryPillSelection(
+  selectedByDefault: boolean,
+): SummaryPillSelection {
+  return {
+    [SummaryPillId.PRESENT]: selectedByDefault,
+    [SummaryPillId.ABSENT]: selectedByDefault,
+    [SummaryPillId.NOT_SCANNED]: selectedByDefault,
+    [SummaryPillId.BUS]: selectedByDefault,
+    [SummaryPillId.CAR]: selectedByDefault,
+  };
+}
+
 export const SummaryPill: React.FC<SummaryPillProps> = (
   props: SummaryPillProps,
 ) => {

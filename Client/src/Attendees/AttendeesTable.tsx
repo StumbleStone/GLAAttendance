@@ -26,7 +26,11 @@ import { AttendeeRow } from "./AttendeeRow";
 import { AttendeesSummary } from "./AttendeesSummary";
 import { SearchBarHeading } from "./SearchBarHeading";
 import { SortColumns, SortColumnSize, SortColumnsMap } from "./Shared";
-import { SummaryPillId } from "./SummaryPill";
+import {
+  createSummaryPillSelection,
+  SummaryPillId,
+  SummaryPillSelection,
+} from "./SummaryPill";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
@@ -175,6 +179,47 @@ function filterData(supabase: SupaBase, filter: string) {
   return outArr;
 }
 
+function isIncludedBySummaryPills(
+  attendee: Attendee,
+  currentRollCallEvent: SupaBase["currentRollCallEvent"],
+  selectedPills: SummaryPillSelection,
+): boolean {
+  const status = attendee.status(currentRollCallEvent);
+  const isCar = attendee.isUsingOwnTransport;
+
+  let statusMatches = false;
+
+  if (
+    selectedPills[SummaryPillId.PRESENT] &&
+    status === AttendeeStatus.PRESENT
+  ) {
+    statusMatches = true;
+  }
+
+  if (selectedPills[SummaryPillId.ABSENT] && status === AttendeeStatus.ABSENT) {
+    statusMatches = true;
+  }
+
+  if (
+    selectedPills[SummaryPillId.NOT_SCANNED] &&
+    status === AttendeeStatus.NOT_SCANNED
+  ) {
+    statusMatches = true;
+  }
+
+  let transportMatches = false;
+
+  if (selectedPills[SummaryPillId.BUS] && !isCar) {
+    transportMatches = true;
+  }
+
+  if (selectedPills[SummaryPillId.CAR] && isCar) {
+    transportMatches = true;
+  }
+
+  return statusMatches && transportMatches;
+}
+
 function calculateColumnsOnResize(width: number): SortColumnsMap {
   const newCols: SortColumnsMap = {
     [SortColumns.NAME]: SortColumnSize.NORMAL,
@@ -240,7 +285,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   const [selectedAttendeeId, setSelectedAttendeeId] = useState<number | null>(
     null,
   );
-  const [selectedPills, setSelectedPills] = useState<SummaryPillId[]>([]);
+  const [selectedPills, setSelectedPills] = useState<SummaryPillSelection>(() =>
+    createSummaryPillSelection(true),
+  );
 
   const measureWidthRef = React.useRef<HTMLDivElement>(null);
 
@@ -262,10 +309,19 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   }, []);
 
   const filtered: Attendee[] = useMemo(() => {
-    // console.log("%cFiltered rows", "color: lime");
-
-    return filterData(supabase, filter);
-  }, [filter, recalculateRows]);
+    return filterData(supabase, filter).filter((attendee) =>
+      isIncludedBySummaryPills(
+        attendee,
+        supabase.currentRollCallEvent,
+        selectedPills,
+      ),
+    );
+  }, [
+    filter,
+    recalculateRows,
+    selectedPills,
+    supabase.currentRollCallEvent?.id,
+  ]);
 
   useEffect(() => {
     if (!!colsToInclude[sortCol]) {
@@ -338,7 +394,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       <AttendeesSummary
         rows={sorted}
         currentRollCallEvent={supabase.currentRollCallEvent}
-        onPillSelectionChanged={setSelectedPills}
+        selectedPills={selectedPills}
+        setSelectedPills={setSelectedPills}
       />
       <S.PrimaryTable>
         <TableHeadings
