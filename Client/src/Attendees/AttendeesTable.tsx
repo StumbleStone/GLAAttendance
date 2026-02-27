@@ -19,10 +19,11 @@ import { Icon } from "../Components/Icon";
 import { Table } from "../Components/Table/Table";
 import { TableHeading } from "../Components/Table/TableHeading";
 import { TableRow } from "../Components/Table/TableRow";
+import { useObserveWidth } from "../hooks/useObserveWidth";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { Attendee, AttendeeStatus } from "./Attendee";
 import { AttendeeRow } from "./AttendeeRow";
-import { AttendeesSummary, SummaryPillSelection } from "./AttendeesSummary";
+import { AttendeesSummary } from "./AttendeesSummary";
 import { SearchBarHeading } from "./SearchBarHeading";
 import { SortColumns, SortColumnSize, SortColumnsMap } from "./Shared";
 import { SummaryPillId } from "./SummaryPill";
@@ -233,22 +234,14 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 ) => {
   const { supabase, onClickedAttendee } = props;
 
-  const [selectedSummaryPills, setSelectedSummaryPills] =
-    useState<SummaryPillSelection>({
-      [SummaryPillId.PRESENT]: false,
-      [SummaryPillId.ABSENT]: false,
-      [SummaryPillId.NOT_SCANNED]: false,
-      [SummaryPillId.BUS]: false,
-      [SummaryPillId.CAR]: false,
-    });
   const [filter, setFilter] = useState<string>("");
   const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.STATUS);
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   const [selectedAttendeeId, setSelectedAttendeeId] = useState<number | null>(
     null,
   );
+  const [selectedPills, setSelectedPills] = useState<SummaryPillId[]>([]);
 
-  const [searchRowHeight, setSearchRowHeight] = useState<number>(0);
   const measureWidthRef = React.useRef<HTMLDivElement>(null);
 
   const [colsToInclude, setColsToInclude] = useState<SortColumnsMap>(() => ({
@@ -257,7 +250,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     [SortColumns.STATUS]: SortColumnSize.NORMAL,
   }));
 
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  const [recalculateRows, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
     return supabase.addListener({
@@ -268,10 +261,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     });
   }, []);
 
-  const filtered = filterData(supabase, filter);
-  const visibleHeaderColSpan = useMemo(() => {
-    return 2 + Object.values(colsToInclude).length;
-  }, [colsToInclude]);
+  const filtered: Attendee[] = useMemo(() => {
+    // console.log("%cFiltered rows", "color: lime");
+
+    return filterData(supabase, filter);
+  }, [filter, recalculateRows]);
 
   useEffect(() => {
     if (!!colsToInclude[sortCol]) {
@@ -321,6 +315,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       return Attendee.SortByField(a, b, field) * (sortAsc ? 1 : -1);
     };
 
+    // console.log("%cSorted rows", "color: lime");
     return filtered.sort(sort);
   }, [filtered, sortCol, sortAsc, supabase.currentRollCallEvent?.id ?? 0]);
 
@@ -331,38 +326,11 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     },
     [onClickedAttendee],
   );
-  const handleToggleSummaryPill = useCallback((pillId: SummaryPillId) => {
-    setSelectedSummaryPills((prev) => ({
-      ...prev,
-      [pillId]: !prev[pillId],
-    }));
-  }, []);
 
+  const width = useObserveWidth(measureWidthRef);
   useEffect(() => {
-    const el = measureWidthRef.current;
-    if (!el) {
-      return;
-    }
-
-    const onResize = (entries: ResizeObserverEntry[]) => {
-      if (entries.length == 0) {
-        return;
-      }
-
-      const entry = entries[0];
-      const width = Math.floor(entry.contentRect.width);
-
-      setColsToInclude(() => calculateColumnsOnResize(width));
-    };
-
-    const obs = new ResizeObserver(onResize);
-    obs.observe(el);
-
-    return () => {
-      obs.unobserve(el);
-      obs.disconnect();
-    };
-  }, []);
+    setColsToInclude(() => calculateColumnsOnResize(width));
+  }, [width]);
 
   return (
     <S.TableContainer>
@@ -370,115 +338,172 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       <AttendeesSummary
         rows={sorted}
         currentRollCallEvent={supabase.currentRollCallEvent}
-        selectedPills={selectedSummaryPills}
-        onTogglePill={handleToggleSummaryPill}
-        clickable={true}
+        onPillSelectionChanged={setSelectedPills}
       />
       <S.PrimaryTable>
-        <tbody>
-          <S.StickyHeaderRow>
-            <SearchBarHeading
-              onHeightChange={setSearchRowHeight}
-              filter={filter}
-              onFilterChange={setFilter}
-              colSpan={visibleHeaderColSpan}
-            />
-          </S.StickyHeaderRow>
-          <S.StickyHeaderRow key="heading" stickyOffset={searchRowHeight}>
-            <Heading
-              colName={SortColumns.INDEX}
-              hideSpacersWhenNotSelected={true}
-              columnSize={SortColumnSize.NORMAL}
-              label={"#"}
-            />
-            <Heading
-              columnSize={colsToInclude[SortColumns.NAME]}
-              colName={SortColumns.NAME}
-              label={"Name"}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              useAZArrow={true}
-              onClick={handleClickCol}
-            />
-            <Heading
-              columnSize={colsToInclude[SortColumns.SURNAME]}
-              colName={SortColumns.SURNAME}
-              label={"Surname"}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              useAZArrow={true}
-              onClick={handleClickCol}
-            />
-            <S.SpacerHeading />
-            <Heading
-              columnSize={colsToInclude[SortColumns.TP]}
-              colName={SortColumns.TP}
-              label={
-                colsToInclude[SortColumns.TP] >= SortColumnSize.NORMAL
-                  ? "Travel"
-                  : "TR"
-              }
-              centerLabel={true}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              addArrowSpacer={true}
-              hideSpacersWhenNotSelected={true}
-              onClick={handleClickCol}
-            />
-            <Heading
-              columnSize={colsToInclude[SortColumns.STATUS]}
-              colName={SortColumns.STATUS}
-              label={
-                colsToInclude[SortColumns.STATUS] >= SortColumnSize.NORMAL
-                  ? "Status"
-                  : "Stat"
-              }
-              centerLabel={true}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              addArrowSpacer={true}
-              hideSpacersWhenNotSelected={true}
-              onClick={handleClickCol}
-            />
-            <Heading
-              columnSize={colsToInclude[SortColumns.ON]}
-              colName={SortColumns.ON}
-              label={
-                colsToInclude[SortColumns.ON] >= SortColumnSize.NORMAL
-                  ? "Time"
-                  : "On"
-              }
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              useAZArrow={true}
-              hideSpacersWhenNotSelected={true}
-              onClick={handleClickCol}
-            />
-            <Heading
-              columnSize={colsToInclude[SortColumns.BY]}
-              colName={SortColumns.BY}
-              label={"By"}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              use19Arrow={true}
-              hideSpacersWhenNotSelected={true}
-              onClick={handleClickCol}
-            />
-          </S.StickyHeaderRow>
-          {sorted.map((att, index) => (
-            <AttendeeRow
-              att={att}
-              supabase={supabase}
-              key={att.id}
-              onClickAttendee={handleClickAttendee}
-              index={index}
-              selected={att.id === selectedAttendeeId}
-              columnSizes={colsToInclude}
-            />
-          ))}
-        </tbody>
+        <TableHeadings
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          handleClickCol={handleClickCol}
+          filter={filter}
+          setFilter={setFilter}
+          colsToInclude={colsToInclude}
+        />
+        <ContentRows
+          rows={sorted}
+          selectedAttendeeId={selectedAttendeeId}
+          supabase={supabase}
+          colsToInclude={colsToInclude}
+          handleClickAttendee={handleClickAttendee}
+        />
       </S.PrimaryTable>
     </S.TableContainer>
+  );
+};
+
+interface ContentRowsProps {
+  rows: Attendee[];
+  supabase: SupaBase;
+  handleClickAttendee: (attendee: Attendee) => void;
+  selectedAttendeeId: number | null;
+  colsToInclude: SortColumnsMap;
+}
+
+const ContentRows: React.FC<ContentRowsProps> = (props: ContentRowsProps) => {
+  const {
+    rows,
+    supabase,
+    selectedAttendeeId,
+    handleClickAttendee,
+    colsToInclude,
+  } = props;
+  return (
+    <tbody>
+      {rows.map((att, index) => (
+        <AttendeeRow
+          att={att}
+          supabase={supabase}
+          key={att.id}
+          onClickAttendee={handleClickAttendee}
+          index={index}
+          selected={att.id === selectedAttendeeId}
+          columnSizes={colsToInclude}
+        />
+      ))}
+    </tbody>
+  );
+};
+
+interface TableHeadingsProps {
+  filter: string;
+  setFilter: (newFilter: string) => void;
+  colsToInclude: SortColumnsMap;
+  sortAsc: boolean;
+  sortCol: SortColumns;
+  handleClickCol: (colName: SortColumns) => void;
+}
+
+const TableHeadings: React.FC<TableHeadingsProps> = (
+  props: TableHeadingsProps,
+) => {
+  const { filter, setFilter, colsToInclude, sortAsc, sortCol, handleClickCol } =
+    props;
+
+  const visibleHeaderColSpan = useMemo(() => {
+    return 2 + Object.values(colsToInclude).length;
+  }, [colsToInclude]);
+
+  return (
+    <S.StickyTableHead>
+      <S.HeaderRow>
+        <SearchBarHeading
+          filter={filter}
+          onFilterChange={setFilter}
+          colSpan={visibleHeaderColSpan}
+        />
+      </S.HeaderRow>
+      <S.HeaderRow key="heading">
+        <Heading
+          colName={SortColumns.INDEX}
+          hideSpacersWhenNotSelected={true}
+          columnSize={SortColumnSize.NORMAL}
+          label={"#"}
+        />
+        <Heading
+          columnSize={colsToInclude[SortColumns.NAME]}
+          colName={SortColumns.NAME}
+          label={"Name"}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          useAZArrow={true}
+          onClick={handleClickCol}
+        />
+        <Heading
+          columnSize={colsToInclude[SortColumns.SURNAME]}
+          colName={SortColumns.SURNAME}
+          label={"Surname"}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          useAZArrow={true}
+          onClick={handleClickCol}
+        />
+        <S.SpacerHeading />
+        <Heading
+          columnSize={colsToInclude[SortColumns.TP]}
+          colName={SortColumns.TP}
+          label={
+            colsToInclude[SortColumns.TP] >= SortColumnSize.NORMAL
+              ? "Travel"
+              : "TR"
+          }
+          centerLabel={true}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          addArrowSpacer={true}
+          hideSpacersWhenNotSelected={true}
+          onClick={handleClickCol}
+        />
+        <Heading
+          columnSize={colsToInclude[SortColumns.STATUS]}
+          colName={SortColumns.STATUS}
+          label={
+            colsToInclude[SortColumns.STATUS] >= SortColumnSize.NORMAL
+              ? "Status"
+              : "Stat"
+          }
+          centerLabel={true}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          addArrowSpacer={true}
+          hideSpacersWhenNotSelected={true}
+          onClick={handleClickCol}
+        />
+        <Heading
+          columnSize={colsToInclude[SortColumns.ON]}
+          colName={SortColumns.ON}
+          label={
+            colsToInclude[SortColumns.ON] >= SortColumnSize.NORMAL
+              ? "Time"
+              : "On"
+          }
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          useAZArrow={true}
+          hideSpacersWhenNotSelected={true}
+          onClick={handleClickCol}
+        />
+        <Heading
+          columnSize={colsToInclude[SortColumns.BY]}
+          colName={SortColumns.BY}
+          label={"By"}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          use19Arrow={true}
+          hideSpacersWhenNotSelected={true}
+          onClick={handleClickCol}
+        />
+      </S.HeaderRow>
+    </S.StickyTableHead>
   );
 };
 
@@ -586,12 +611,10 @@ namespace S {
     z-index: 2;
   `;
 
-  export const StickyHeaderRow = styled(HeaderRow)<{
-    stickyOffset?: number;
-  }>`
+  export const StickyTableHead = styled.thead`
     position: sticky;
-    top: ${(p) => p.stickyOffset ?? 0}px;
-    z-index: 3;
+    top: 0;
+    z-index: 2;
   `;
 
   export const MeasureWidth = styled.div`
@@ -631,9 +654,6 @@ namespace S {
   `;
 
   export const SpacerHeading = styled(TableHeading)`
-    position: sticky;
-    top: 0;
-    z-index: 3;
     background-color: ${(p) => p.theme.colors.surfaceRaised};
     box-shadow: ${(p) =>
       `inset 0 -1px 0 ${p.theme.colors.border}, inset 0 1px 0 ${p.theme.colors.borderSubtle}`};

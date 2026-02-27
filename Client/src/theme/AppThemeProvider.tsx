@@ -1,6 +1,6 @@
-import {css, Global, ThemeProvider} from "@emotion/react";
-import React from "react";
-import {AppTheme, darkTheme, lightTheme, ThemeMode} from "./theme";
+import { css, Global, Theme, ThemeProvider } from "@emotion/react";
+import React, { useCallback } from "react";
+import { AppTheme, darkTheme, lightTheme, ThemeMode } from "./theme";
 
 const THEME_STORAGE_KEY = "gla-theme-mode";
 
@@ -50,37 +50,39 @@ export const AppThemeProvider: React.FC<AppThemeProviderProps> = ({
       setMode,
       toggleMode,
     }),
-    [mode, toggleMode]
+    [mode, toggleMode],
   );
+
+  const getStyles = useCallback((theme: Theme) => {
+    return css`
+      body {
+        background-color: ${theme.colors.background};
+        margin: 0px;
+        padding: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        overscroll-behavior: none;
+        font-family: ${theme.font.body};
+        color: ${theme.colors.text};
+      }
+
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      div#Container {
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+      }
+    `;
+  }, []);
 
   return (
     <AppThemeContext.Provider value={contextValue}>
       <ThemeProvider theme={theme}>
-        <Global
-          styles={(curTheme) => css`
-            body {
-              background-color: ${curTheme.colors.background};
-              margin: 0px;
-              padding: 0;
-              display: flex;
-              align-items: flex-start;
-              justify-content: center;
-              overscroll-behavior: none;
-              font-family: ${curTheme.font.body};
-              color: ${curTheme.colors.text};
-            }
-
-            * {
-              -webkit-tap-highlight-color: transparent;
-            }
-
-            div#Container {
-              width: 100%;
-              height: 100vh;
-              overflow: hidden;
-            }
-          `}
-        />
+        <Global styles={getStyles} />
         {children}
       </ThemeProvider>
     </AppThemeContext.Provider>

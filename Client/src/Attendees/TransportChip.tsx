@@ -41,8 +41,8 @@ export const TransportChip: React.FC<TransportChipProps> = (
 };
 
 namespace S {
-  export const TransportChip = styled.span<{ color: string; compact: boolean }>`
-    display: inline-flex;
+  export const TransportChip = styled.div<{ color: string; compact: boolean }>`
+    display: flex;
     align-items: center;
     gap: ${(p) => (p.compact ? "0px" : "4px")};
     white-space: nowrap;

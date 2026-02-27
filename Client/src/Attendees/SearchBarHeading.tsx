@@ -7,7 +7,7 @@ import { TableHeading } from "../Components/Table/TableHeading";
 export interface SearchBarProps {
   filter: string;
   onFilterChange: (newFilter: string) => void;
-  onHeightChange: (height: number) => void;
+  onHeightChange?: (height: number) => void;
   colSpan: number;
 }
 
@@ -19,6 +19,10 @@ export const SearchBarHeading: React.FC<SearchBarProps> = (
   const rowRef = React.useRef<HTMLTableHeaderCellElement>(null);
 
   useEffect(() => {
+    if (!onHeightChange) {
+      return;
+    }
+
     const el = rowRef.current;
     if (!el) {
       return;
@@ -42,10 +46,10 @@ export const SearchBarHeading: React.FC<SearchBarProps> = (
       obs.unobserve(el);
       obs.disconnect();
     };
-  }, []);
+  }, [onHeightChange]);
 
   useEffect(() => {
-    onHeightChange(rowHeight);
+    onHeightChange?.(rowHeight);
   }, [rowHeight, onHeightChange]);
 
   const onChange = React.useCallback(

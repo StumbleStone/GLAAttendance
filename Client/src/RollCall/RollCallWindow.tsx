@@ -190,14 +190,14 @@ const SummaryPills: React.FC<{
       />
       <SummaryPill
         id={SummaryPillId.PRESENT}
-        icon={faXmarkSquare}
+        icon={faCheckSquare}
         label={AttendeeStatus.PRESENT}
         value={presentCount}
         color={DefaultColors.BrightGreen}
       />
       <SummaryPill
         id={SummaryPillId.ABSENT}
-        icon={faCheckSquare}
+        icon={faXmarkSquare}
         label={AttendeeStatus.ABSENT}
         value={absentCount}
         color={DefaultColors.BrightRed}

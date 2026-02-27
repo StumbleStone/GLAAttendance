@@ -7,7 +7,7 @@ import {
   faMinusSquare,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RollCallEventEntry } from "../SupaBase/types";
 import { Attendee, AttendeeStatus } from "./Attendee";
 import { SummaryPill, SummaryPillId, SummaryPillProps } from "./SummaryPill";
@@ -15,12 +15,9 @@ import { SummaryPill, SummaryPillId, SummaryPillProps } from "./SummaryPill";
 export type SummaryPillSelection = Record<SummaryPillId, boolean>;
 
 export interface AttendeesSummaryProps {
-  className?: string;
   rows: Attendee[];
   currentRollCallEvent: RollCallEventEntry;
-  selectedPills?: SummaryPillSelection;
-  onTogglePill?: (pillId: SummaryPillId) => void;
-  clickable?: boolean;
+  onPillSelectionChanged?: (pills: SummaryPillId[]) => void;
   statusOnly?: boolean;
   compact?: boolean;
   showLabels?: boolean;
@@ -29,9 +26,9 @@ export interface AttendeesSummaryProps {
 export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
   props: AttendeesSummaryProps,
 ) => {
+  const { rows, currentRollCallEvent, onPillSelectionChanged } = props;
   const theme = useTheme();
-  const { className, rows, currentRollCallEvent, selectedPills, onTogglePill } =
-    props;
+  const [selectedPills, setSelectedPills] = useState<SummaryPillId[]>([]);
 
   const summary = useMemo(() => {
     let present = 0;
@@ -66,6 +63,24 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
     };
   }, [rows, currentRollCallEvent?.id ?? 0]);
 
+  const handleToggleSummaryPill = useCallback((pillId: SummaryPillId) => {
+    setSelectedPills((prev) => {
+      const newPills = [...prev];
+      const index = newPills.indexOf(pillId);
+      if (index >= 0) {
+        newPills.splice(index, 1);
+      } else {
+        newPills.push(pillId);
+      }
+
+      return newPills;
+    });
+  }, []);
+
+  useEffect(() => {
+    onPillSelectionChanged?.(Object.keys(selectedPills) as SummaryPillId[]);
+  }, [selectedPills, onPillSelectionChanged]);
+
   const pillData: SummaryPillProps[] = useMemo(
     () => [
       {
@@ -74,8 +89,8 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
         value: summary.present,
         icon: faCheckSquare,
         color: theme.colors.accent.success,
-        selected: selectedPills?.[SummaryPillId.PRESENT] ?? false,
-        onToggle: onTogglePill,
+        selected: selectedPills.includes(SummaryPillId.PRESENT),
+        onToggle: handleToggleSummaryPill,
       },
       {
         id: SummaryPillId.ABSENT,
@@ -83,8 +98,8 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
         value: summary.absent,
         icon: faXmarkSquare,
         color: theme.colors.accent.danger,
-        selected: selectedPills?.[SummaryPillId.ABSENT] ?? false,
-        onToggle: onTogglePill,
+        selected: selectedPills.includes(SummaryPillId.ABSENT),
+        onToggle: handleToggleSummaryPill,
       },
       {
         id: SummaryPillId.NOT_SCANNED,
@@ -92,8 +107,8 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
         value: summary.notScanned,
         icon: faMinusSquare,
         color: theme.colors.state.disabled,
-        selected: selectedPills?.[SummaryPillId.NOT_SCANNED] ?? false,
-        onToggle: onTogglePill,
+        selected: selectedPills.includes(SummaryPillId.NOT_SCANNED),
+        onToggle: handleToggleSummaryPill,
       },
       {
         id: SummaryPillId.BUS,
@@ -101,8 +116,8 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
         value: summary.bus,
         icon: faBusSimple,
         color: theme.colors.accent.transportBus,
-        selected: selectedPills?.[SummaryPillId.BUS] ?? false,
-        onToggle: onTogglePill,
+        selected: selectedPills.includes(SummaryPillId.BUS),
+        onToggle: handleToggleSummaryPill,
       },
       {
         id: SummaryPillId.CAR,
@@ -110,15 +125,15 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
         value: summary.car,
         icon: faCar,
         color: theme.colors.accent.transportCar,
-        selected: selectedPills?.[SummaryPillId.CAR] ?? false,
-        onToggle: onTogglePill,
+        selected: selectedPills.includes(SummaryPillId.CAR),
+        onToggle: handleToggleSummaryPill,
       },
     ],
-    [onTogglePill, selectedPills, summary],
+    [handleToggleSummaryPill, selectedPills, summary],
   );
 
   return (
-    <S.SummaryBar className={className}>
+    <S.SummaryBar>
       {pillData.map((pill) => (
         <SummaryPill key={pill.id} {...pill} />
       ))}
