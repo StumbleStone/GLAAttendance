@@ -22,9 +22,10 @@ import { TableRow } from "../Components/Table/TableRow";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { Attendee, AttendeeStatus } from "./Attendee";
 import { AttendeeRow } from "./AttendeeRow";
-import { AttendeesSummary } from "./AttendeesSummary";
+import { AttendeesSummary, SummaryPillSelection } from "./AttendeesSummary";
 import { SearchBarHeading } from "./SearchBarHeading";
 import { SortColumns, SortColumnSize, SortColumnsMap } from "./Shared";
+import { SummaryPillId } from "./SummaryPill";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
@@ -232,6 +233,14 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
 ) => {
   const { supabase, onClickedAttendee } = props;
 
+  const [selectedSummaryPills, setSelectedSummaryPills] =
+    useState<SummaryPillSelection>({
+      [SummaryPillId.PRESENT]: false,
+      [SummaryPillId.ABSENT]: false,
+      [SummaryPillId.NOT_SCANNED]: false,
+      [SummaryPillId.BUS]: false,
+      [SummaryPillId.CAR]: false,
+    });
   const [filter, setFilter] = useState<string>("");
   const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.STATUS);
   const [sortAsc, setSortAsc] = useState<boolean>(false);
@@ -322,6 +331,12 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     },
     [onClickedAttendee],
   );
+  const handleToggleSummaryPill = useCallback((pillId: SummaryPillId) => {
+    setSelectedSummaryPills((prev) => ({
+      ...prev,
+      [pillId]: !prev[pillId],
+    }));
+  }, []);
 
   useEffect(() => {
     const el = measureWidthRef.current;
@@ -355,6 +370,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       <AttendeesSummary
         rows={sorted}
         currentRollCallEvent={supabase.currentRollCallEvent}
+        selectedPills={selectedSummaryPills}
+        onTogglePill={handleToggleSummaryPill}
+        clickable={true}
       />
       <S.PrimaryTable>
         <tbody>
