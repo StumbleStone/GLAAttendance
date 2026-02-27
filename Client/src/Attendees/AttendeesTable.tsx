@@ -379,13 +379,13 @@ const ContentRows: React.FC<ContentRowsProps> = (props: ContentRowsProps) => {
   } = props;
   return (
     <tbody>
-      {rows.map((att, index) => (
+      {rows.map((att) => (
         <AttendeeRow
           att={att}
           supabase={supabase}
           key={att.id}
           onClickAttendee={handleClickAttendee}
-          index={index}
+          // index={index}
           selected={att.id === selectedAttendeeId}
           columnSizes={colsToInclude}
         />
@@ -410,7 +410,7 @@ const TableHeadings: React.FC<TableHeadingsProps> = (
     props;
 
   const visibleHeaderColSpan = useMemo(() => {
-    return 2 + Object.values(colsToInclude).length;
+    return 1 + Object.values(colsToInclude).length;
   }, [colsToInclude]);
 
   return (
@@ -423,12 +423,12 @@ const TableHeadings: React.FC<TableHeadingsProps> = (
         />
       </S.HeaderRow>
       <S.HeaderRow key="heading">
-        <Heading
-          colName={SortColumns.INDEX}
-          hideSpacersWhenNotSelected={true}
-          columnSize={SortColumnSize.NORMAL}
-          label={"#"}
-        />
+        {/*<Heading*/}
+        {/*  colName={SortColumns.INDEX}*/}
+        {/*  hideSpacersWhenNotSelected={true}*/}
+        {/*  columnSize={SortColumnSize.NORMAL}*/}
+        {/*  label={"#"}*/}
+        {/*/>*/}
         <Heading
           columnSize={colsToInclude[SortColumns.NAME]}
           colName={SortColumns.NAME}

@@ -13,7 +13,7 @@ export interface AttendeeRowProps {
   att: Attendee;
   supabase: SupaBase;
   onClickAttendee: (attendee: Attendee) => void;
-  index: number;
+  // index: number;
   selected: boolean;
   columnSizes: SortColumnsMap;
 }
@@ -47,8 +47,7 @@ function getRecorderName(
 const AttendeeRowComponent: React.FC<AttendeeRowProps> = (
   props: AttendeeRowProps,
 ) => {
-  const { att, supabase, onClickAttendee, index, selected, columnSizes } =
-    props;
+  const { att, supabase, onClickAttendee, selected, columnSizes } = props;
 
   const status: AttendeeStatus = att.status(supabase.currentRollCallEvent);
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
@@ -69,7 +68,7 @@ const AttendeeRowComponent: React.FC<AttendeeRowProps> = (
 
   return (
     <S.DataRow key={att.id} onClick={handleClickRow} selected={selected}>
-      <S.IndexCell>{index + 1}</S.IndexCell>
+      {/*<S.IndexCell>{index + 1}</S.IndexCell>*/}
       {columnSizes[SortColumns.NAME] && (
         <S.PrimaryNameCell>{att.name}</S.PrimaryNameCell>
       )}
