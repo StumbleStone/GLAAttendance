@@ -1,12 +1,12 @@
-import {useTheme} from "@emotion/react";
+import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
-import React, {useEffect, useMemo, useReducer, useState} from "react";
-import {Outlet, useLocation, useNavigate} from "react-router-dom";
-import {Heading} from "../Components/Heading";
-import {LoadingSpinner} from "../Components/LoadingSpinner";
-import {Tile} from "../Components/Tile";
-import {SupaBase, SupaBaseEventKey} from "../SupaBase/SupaBase";
-import {HeadingIcons} from "./HeadingIcons";
+import React, { useEffect, useMemo, useReducer, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Heading } from "../Components/Heading";
+import { LoadingSpinner } from "../Components/LoadingSpinner";
+import { Tile } from "../Components/Tile";
+import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
+import { HeadingIcons } from "./HeadingIcons";
 
 interface RouteState {
   path: RoutePath;
@@ -66,7 +66,7 @@ export const MainMenu: React.FC<{}> = () => {
   const supabase = useMemo(() => new SupaBase(), []);
 
   const [route, setRoute] = useState<RouteState | null>(
-    calculateNextRoute(supabase)
+    calculateNextRoute(supabase),
   );
 
   useEffect(() => {
@@ -117,7 +117,7 @@ export const MainMenu: React.FC<{}> = () => {
         "color: grey;",
         "color: cyan;",
         "color: grey;",
-        "color: cyan;"
+        "color: cyan;",
       );
       setRoute(nextRoute);
     }
@@ -135,7 +135,7 @@ export const MainMenu: React.FC<{}> = () => {
     console.log(
       `%cNavigating to: %c${route.path}`,
       "color: grey;",
-      "color: lime;"
+      "color: lime;",
     );
     nav(route.path);
   }, [route, location.hash]);
@@ -145,9 +145,7 @@ export const MainMenu: React.FC<{}> = () => {
       <S.TitleTile>
         <S.StyledHeading>
           <S.SideBySide>
-            <S.TitlePart color={theme.colors.brand}>
-              {"GLA "}
-            </S.TitlePart>
+            <S.TitlePart color={theme.colors.brand}>{"GLA "}</S.TitlePart>
             <S.TitlePart>{"Attendance"}</S.TitlePart>
           </S.SideBySide>
         </S.StyledHeading>
@@ -183,8 +181,7 @@ namespace S {
     border-right: transparent;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
-    box-shadow: ${(p) => p.theme.shadow.tile};
-    margin-bottom: 15px;
+    box-shadow: none;
     user-select: none;
 
     display: flex;

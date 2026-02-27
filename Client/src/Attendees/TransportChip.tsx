@@ -7,14 +7,14 @@ import { SortColumnSize } from "./Shared";
 
 export interface TransportChipProps {
   usingOwnTransport: boolean;
-  size: SortColumnSize;
+  size?: SortColumnSize;
 }
 
 export const TransportChip: React.FC<TransportChipProps> = (
   props: TransportChipProps,
 ) => {
   const theme = useTheme();
-  const { usingOwnTransport, size } = props;
+  const { usingOwnTransport, size = SortColumnSize.NORMAL } = props;
 
   const color = usingOwnTransport
     ? theme.colors.accent.transportCar

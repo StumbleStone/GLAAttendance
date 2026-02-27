@@ -14,6 +14,32 @@ export interface StatusChipProps {
   compact?: boolean;
 }
 
+function getCompactLabel(status: AttendeeStatus): string {
+  switch (status) {
+    case AttendeeStatus.PRESENT:
+      return "Pres";
+    case AttendeeStatus.ABSENT:
+      return "Abs";
+    case AttendeeStatus.NOT_SCANNED:
+      return "Pend";
+    default:
+      return status;
+  }
+}
+
+function getLabel(status: AttendeeStatus): string {
+  switch (status) {
+    case AttendeeStatus.PRESENT:
+      return "Present";
+    case AttendeeStatus.ABSENT:
+      return "Absent";
+    case AttendeeStatus.NOT_SCANNED:
+      return "Pending";
+    default:
+      return status;
+  }
+}
+
 export const StatusChip: React.FC<StatusChipProps> = (
   props: StatusChipProps,
 ) => {
@@ -34,19 +60,12 @@ export const StatusChip: React.FC<StatusChipProps> = (
         ? faXmarkSquare
         : faMinusSquare;
 
-  const label = compact
-    ? status === AttendeeStatus.PRESENT
-      ? "Pres"
-      : status === AttendeeStatus.ABSENT
-        ? "Abs"
-        : "Pend"
-    : status;
-
   return (
     <S.StatusChip color={color} compact={compact} title={status}>
-      <Icon color={color} size={12} icon={icon} />
-      {/*<S.StatusDot color={color} />*/}
-      <S.StatusChipLabel>{label}</S.StatusChipLabel>
+      <Icon color={color} size={14} icon={icon} />
+      <S.StatusChipLabel>
+        {compact ? getCompactLabel(status) : getLabel(status)}
+      </S.StatusChipLabel>
     </S.StatusChip>
   );
 };
@@ -66,14 +85,6 @@ namespace S {
     color: ${(p) => p.color};
     border: 1px solid ${(p) => `${p.color}66`};
     background-color: ${(p) => `${p.color}1a`};
-  `;
-
-  export const StatusDot = styled.span<{ color: string }>`
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background-color: ${(p) => p.color};
   `;
 
   export const StatusChipLabel = styled.span``;

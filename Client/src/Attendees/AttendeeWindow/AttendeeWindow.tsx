@@ -9,13 +9,7 @@ import {
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import React, {
-  Fragment,
-  useCallback,
-  useEffect,
-  useReducer,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useReducer, useState } from "react";
 import { Backdrop } from "../../Components/Backdrop/Backdrop";
 import { Button } from "../../Components/Button/Button";
 import { DownloadButton } from "../../Components/Button/DownloadButton";

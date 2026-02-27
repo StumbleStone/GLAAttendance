@@ -23,11 +23,11 @@ import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { Attendee, AttendeeStatus } from "./Attendee";
 import { AttendeeRow } from "./AttendeeRow";
 import { AttendeesSummary } from "./AttendeesSummary";
+import { SearchBarHeading } from "./SearchBarHeading";
 import { SortColumns, SortColumnSize, SortColumnsMap } from "./Shared";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
-  filter: string;
   onClickedAttendee: (attendee: Attendee) => void;
 }
 
@@ -166,10 +166,6 @@ function filterData(supabase: SupaBase, filter: string) {
           normalizeString(att.surname)?.includes(part)
         ) {
           outArr.push(att);
-        } else if (filter === "CAR" && att.isUsingOwnTransport) {
-          outArr.push(att);
-        } else if (filter === "BUS" && !att.isUsingOwnTransport) {
-          outArr.push(att);
         }
       });
     });
@@ -177,17 +173,73 @@ function filterData(supabase: SupaBase, filter: string) {
   return outArr;
 }
 
+function calculateColumnsOnResize(width: number): SortColumnsMap {
+  const newCols: SortColumnsMap = {
+    [SortColumns.NAME]: SortColumnSize.NORMAL,
+    [SortColumns.SURNAME]: SortColumnSize.NORMAL,
+    [SortColumns.STATUS]: SortColumnSize.COMPACTER,
+  };
+
+  if (width > 340) {
+    newCols[SortColumns.TP] = SortColumnSize.COMPACTER;
+  }
+
+  if (width > 380) {
+    newCols[SortColumns.TP] = SortColumnSize.COMPACT;
+  }
+
+  if (width > 430) {
+    newCols[SortColumns.ON] = SortColumnSize.COMPACTER;
+  }
+
+  if (width > 460) {
+    newCols[SortColumns.ON] = SortColumnSize.COMPACTER;
+  }
+
+  if (width > 500) {
+    newCols[SortColumns.BY] = SortColumnSize.COMPACTER;
+  }
+
+  if (width > 520) {
+    newCols[SortColumns.BY] = SortColumnSize.COMPACT;
+  }
+
+  if (width > 550) {
+    newCols[SortColumns.STATUS] = SortColumnSize.COMPACT;
+  }
+
+  if (width > 615) {
+    newCols[SortColumns.BY] = SortColumnSize.NORMAL;
+  }
+
+  if (width > 630) {
+    newCols[SortColumns.ON] = SortColumnSize.NORMAL;
+  }
+
+  if (width > 680) {
+    newCols[SortColumns.STATUS] = SortColumnSize.NORMAL;
+  }
+
+  if (width > 680) {
+    newCols[SortColumns.TP] = SortColumnSize.NORMAL;
+  }
+
+  return newCols;
+}
+
 export const AttendeesTable: React.FC<AttendeesTableProps> = (
   props: AttendeesTableProps,
 ) => {
-  const { supabase, filter, onClickedAttendee } = props;
+  const { supabase, onClickedAttendee } = props;
 
+  const [filter, setFilter] = useState<string>("");
   const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.STATUS);
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   const [selectedAttendeeId, setSelectedAttendeeId] = useState<number | null>(
     null,
   );
 
+  const [searchRowHeight, setSearchRowHeight] = useState<number>(0);
   const measureWidthRef = React.useRef<HTMLDivElement>(null);
 
   const [colsToInclude, setColsToInclude] = useState<SortColumnsMap>(() => ({
@@ -208,6 +260,9 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   }, []);
 
   const filtered = filterData(supabase, filter);
+  const visibleHeaderColSpan = useMemo(() => {
+    return 2 + Object.values(colsToInclude).length;
+  }, [colsToInclude]);
 
   useEffect(() => {
     if (!!colsToInclude[sortCol]) {
@@ -282,57 +337,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       const entry = entries[0];
       const width = Math.floor(entry.contentRect.width);
 
-      const newCols: SortColumnsMap = {
-        [SortColumns.NAME]: SortColumnSize.NORMAL,
-        [SortColumns.SURNAME]: SortColumnSize.NORMAL,
-        [SortColumns.STATUS]: SortColumnSize.COMPACTER,
-      };
-
-      if (width > 340) {
-        newCols[SortColumns.TP] = SortColumnSize.COMPACTER;
-      }
-
-      if (width > 380) {
-        newCols[SortColumns.TP] = SortColumnSize.COMPACT;
-      }
-
-      if (width > 430) {
-        newCols[SortColumns.ON] = SortColumnSize.COMPACTER;
-      }
-
-      if (width > 460) {
-        newCols[SortColumns.ON] = SortColumnSize.COMPACTER;
-      }
-
-      if (width > 500) {
-        newCols[SortColumns.BY] = SortColumnSize.COMPACTER;
-      }
-
-      if (width > 520) {
-        newCols[SortColumns.BY] = SortColumnSize.COMPACT;
-      }
-
-      if (width > 550) {
-        newCols[SortColumns.STATUS] = SortColumnSize.COMPACT;
-      }
-
-      if (width > 615) {
-        newCols[SortColumns.BY] = SortColumnSize.NORMAL;
-      }
-
-      if (width > 630) {
-        newCols[SortColumns.ON] = SortColumnSize.NORMAL;
-      }
-
-      if (width > 680) {
-        newCols[SortColumns.STATUS] = SortColumnSize.NORMAL;
-      }
-
-      if (width > 680) {
-        newCols[SortColumns.TP] = SortColumnSize.NORMAL;
-      }
-
-      setColsToInclude(() => newCols);
+      setColsToInclude(() => calculateColumnsOnResize(width));
     };
 
     const obs = new ResizeObserver(onResize);
@@ -353,7 +358,15 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       />
       <S.PrimaryTable>
         <tbody>
-          <S.HeaderRow key="heading">
+          <S.StickyHeaderRow>
+            <SearchBarHeading
+              onHeightChange={setSearchRowHeight}
+              filter={filter}
+              onFilterChange={setFilter}
+              colSpan={visibleHeaderColSpan}
+            />
+          </S.StickyHeaderRow>
+          <S.StickyHeaderRow key="heading" stickyOffset={searchRowHeight}>
             <Heading
               colName={SortColumns.INDEX}
               hideSpacersWhenNotSelected={true}
@@ -384,8 +397,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
               colName={SortColumns.TP}
               label={
                 colsToInclude[SortColumns.TP] >= SortColumnSize.NORMAL
-                  ? "Transport"
-                  : "TP"
+                  ? "Travel"
+                  : "TR"
               }
               centerLabel={true}
               sortAsc={sortAsc}
@@ -426,18 +439,14 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
             <Heading
               columnSize={colsToInclude[SortColumns.BY]}
               colName={SortColumns.BY}
-              label={
-                colsToInclude[SortColumns.BY] >= SortColumnSize.NORMAL
-                  ? "Recorder"
-                  : "Rec"
-              }
+              label={"By"}
               sortAsc={sortAsc}
               sortCol={sortCol}
               use19Arrow={true}
               hideSpacersWhenNotSelected={true}
               onClick={handleClickCol}
             />
-          </S.HeaderRow>
+          </S.StickyHeaderRow>
           {sorted.map((att, index) => (
             <AttendeeRow
               att={att}
@@ -559,6 +568,14 @@ namespace S {
     z-index: 2;
   `;
 
+  export const StickyHeaderRow = styled(HeaderRow)<{
+    stickyOffset?: number;
+  }>`
+    position: sticky;
+    top: ${(p) => p.stickyOffset ?? 0}px;
+    z-index: 3;
+  `;
+
   export const MeasureWidth = styled.div`
     label: MeasureWidth;
   `;
@@ -573,9 +590,6 @@ namespace S {
   export const StyledTableHeading = styled(TableHeading)<{
     center?: boolean;
   }>`
-    position: sticky;
-    top: 0;
-    z-index: 3;
     background-color: ${(p) => p.theme.colors.surfaceRaised};
     box-shadow: ${(p) =>
       `inset 0 -1px 0 ${p.theme.colors.border}, inset 0 1px 0 ${p.theme.colors.borderSubtle}`};
