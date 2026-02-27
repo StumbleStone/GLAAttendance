@@ -18,7 +18,7 @@ export const Layer: React.FC<LayerProps> = (props: LayerProps) => {
   return (
     <S.LayerEl>
       {layers
-        .map((l) =>
+        .map((l: LayerItem) =>
           l.destroyed ? null : (
             <React.Fragment key={l.id}>{l.render(l)}</React.Fragment>
           ),

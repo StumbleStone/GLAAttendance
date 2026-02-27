@@ -1,6 +1,12 @@
 import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
+import {
+  faCheckSquare,
+  faMinusSquare,
+  faXmarkSquare,
+} from "@fortawesome/free-solid-svg-icons";
 import React from "react";
+import { Icon } from "../Components/Icon";
 import { AttendeeStatus } from "./Attendee";
 
 export interface StatusChipProps {
@@ -21,6 +27,13 @@ export const StatusChip: React.FC<StatusChipProps> = (
         ? theme.colors.accent.danger
         : theme.colors.state.disabled;
 
+  const icon =
+    status === AttendeeStatus.PRESENT
+      ? faCheckSquare
+      : status === AttendeeStatus.ABSENT
+        ? faXmarkSquare
+        : faMinusSquare;
+
   const label = compact
     ? status === AttendeeStatus.PRESENT
       ? "Pres"
@@ -31,7 +44,8 @@ export const StatusChip: React.FC<StatusChipProps> = (
 
   return (
     <S.StatusChip color={color} compact={compact} title={status}>
-      <S.StatusDot color={color} />
+      <Icon color={color} size={12} icon={icon} />
+      {/*<S.StatusDot color={color} />*/}
       <S.StatusChipLabel>{label}</S.StatusChipLabel>
     </S.StatusChip>
   );

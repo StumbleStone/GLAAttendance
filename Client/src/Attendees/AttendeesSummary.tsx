@@ -4,9 +4,9 @@ import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBusSimple,
   faCar,
-  faCheck,
+  faCheckSquare,
   faMinusSquare,
-  faXmark,
+  faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import React, { useMemo } from "react";
 import { Icon } from "../Components/Icon";
@@ -62,13 +62,13 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
       <SummaryPill
         label="Present"
         value={summary.present}
-        icon={faCheck}
+        icon={faCheckSquare}
         color={theme.colors.accent.success}
       />
       <SummaryPill
         label="Absent"
         value={summary.absent}
-        icon={faXmark}
+        icon={faXmarkSquare}
         color={theme.colors.accent.danger}
       />
       <SummaryPill
@@ -116,11 +116,12 @@ const SummaryPill: React.FC<SummaryPillProps> = (props: SummaryPillProps) => {
 
 namespace S {
   export const SummaryBar = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    display: flex;
     gap: 6px;
     margin-bottom: 8px;
     width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
   `;
 
   export const SummaryItem = styled.span<{ color: string }>`
@@ -135,6 +136,7 @@ namespace S {
     font-size: 11px;
     line-height: 1;
     min-height: 24px;
+    gap: 6px;
   `;
 
   export const SummaryLead = styled.span`
@@ -149,6 +151,7 @@ namespace S {
   export const SummaryLabel = styled.span`
     color: ${(p) => p.theme.colors.textMuted};
     font-weight: 600;
+    white-space: nowrap;
   `;
 
   export const SummaryValue = styled.span`
