@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
 import { useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
@@ -11,7 +10,6 @@ import { FABAddAttendees } from "../Attendees/FABAddAttendees";
 import { CaptureButton } from "../Capture/CaptureButton";
 import { CaptureWindow } from "../Capture/CaptureWindow";
 import { FAB } from "../Components/FloatingActionButton/FAB";
-import { InputWithIcon } from "../Components/Inputs/InputWithIcon";
 import { LayerHandler, LayerItem } from "../Components/Layer";
 import { FABQRGrid } from "../QRCode/FABQRGrid";
 import { RollCallDisplay } from "../RollCall/RollCallDisplay";
@@ -28,15 +26,6 @@ export const Dashboard: React.FC = (props) => {
   const { supabase } = useOutletContext<DashboardProps>();
 
   const [captureCode, setCaptureCode] = React.useState<boolean>(false);
-
-  const [filter, setFilter] = React.useState<string>("");
-
-  const handleChange = React.useCallback(
-    (ev: React.ChangeEvent<HTMLInputElement>) => {
-      setFilter(ev.target.value);
-    },
-    []
-  );
 
   React.useEffect(() => {
     supabase.loadData();
@@ -92,17 +81,7 @@ export const Dashboard: React.FC = (props) => {
         <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
       </S.ButtonContainer>
       <CaptureWindow supabase={supabase} isCapturing={captureCode} />
-      <S.Search
-        icon={faMagnifyingGlass}
-        value={filter}
-        onChange={handleChange}
-        placeholder="Search..."
-      />
-      <AttendeesTable
-        supabase={supabase}
-        filter={filter}
-        onClickedAttendee={clickedAttendee}
-      />
+      <AttendeesTable supabase={supabase} onClickedAttendee={clickedAttendee} />
       <FAB items={fabItems} />
     </S.Container>
   );
@@ -115,6 +94,7 @@ namespace S {
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    margin-top: 15px;
     gap: 10px;
 
     @media (min-width: 700px) {
@@ -129,8 +109,5 @@ namespace S {
     flex-direction: column;
     align-items: stretch;
     gap: 5px;
-    /* justify-content: space-between; */
   `;
-
-  export const Search = styled(InputWithIcon)``;
 }

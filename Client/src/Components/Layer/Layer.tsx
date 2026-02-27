@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 import * as React from "react";
-import { DefaultColors } from "../../Tools/Toolbox";
 import { LayerHandler, LayerItem } from "./LayerHandler";
 
 export interface LayerProps {}
@@ -19,10 +18,10 @@ export const Layer: React.FC<LayerProps> = (props: LayerProps) => {
   return (
     <S.LayerEl>
       {layers
-        .map((l) =>
+        .map((l: LayerItem) =>
           l.destroyed ? null : (
             <React.Fragment key={l.id}>{l.render(l)}</React.Fragment>
-          )
+          ),
         )
         .filter((l) => l !== null)}
     </S.LayerEl>
@@ -30,13 +29,16 @@ export const Layer: React.FC<LayerProps> = (props: LayerProps) => {
 };
 
 namespace S {
-  export const LayerEl = styled("div")`
+  export const LayerEl = styled("div")<{ offset?: number }>`
     position: fixed;
     pointer-events: none;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
 
-    color: ${DefaultColors.Text_Color};
+    color: ${(p) => p.theme.colors.text};
     font-size: 18px;
   `;
 }

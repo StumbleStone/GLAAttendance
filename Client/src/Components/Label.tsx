@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 import * as React from "react";
-import { DefaultColors } from "../Tools/Toolbox";
 
 export interface LabelProps {
   text?: string;
@@ -21,7 +20,7 @@ export const Label: React.FC<LabelProps> = (props: LabelProps) => {
 
 namespace S {
   export const LabelEl = styled("div")<{ tColor: string | null }>`
-    color: ${(p) => p.tColor ?? DefaultColors.Text_Color};
+    color: ${(p) => p.tColor ?? p.theme.colors.text};
     margin: 0;
     white-space: nowrap;
   `;

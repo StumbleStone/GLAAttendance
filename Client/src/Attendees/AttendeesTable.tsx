@@ -1,3 +1,4 @@
+import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 import {
   faArrowDown,
@@ -6,11 +7,6 @@ import {
   faArrowUp,
   faArrowUp19,
   faArrowUpAZ,
-  faBusSimple,
-  faCar,
-  faCheckSquare,
-  faMinusSquare,
-  faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import React, {
   useCallback,
@@ -21,36 +17,31 @@ import React, {
 } from "react";
 import { Icon } from "../Components/Icon";
 import { Table } from "../Components/Table/Table";
-import { TableCell } from "../Components/Table/TableCell";
 import { TableHeading } from "../Components/Table/TableHeading";
 import { TableRow } from "../Components/Table/TableRow";
+import { useObserveWidth } from "../hooks/useObserveWidth";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { DefaultColors, epochToDate } from "../Tools/Toolbox";
 import { Attendee, AttendeeStatus } from "./Attendee";
+import { AttendeeRow } from "./AttendeeRow";
+import { AttendeesSummary } from "./AttendeesSummary";
+import { SearchBarHeading } from "./SearchBarHeading";
+import { SortColumns, SortColumnSize, SortColumnsMap } from "./Shared";
+import {
+  createSummaryPillSelection,
+  SummaryPillId,
+  SummaryPillSelection,
+} from "./SummaryPill";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
-  filter: string;
   onClickedAttendee: (attendee: Attendee) => void;
-}
-
-enum SortColumns {
-  NAME = "name",
-  SURNAME = "surname",
-  STATUS = "status",
-  BY = "by",
-  ON = "on",
-  TP = "tp",
-
-  // Always included, cannot be sorted on since it's already sorted...
-  INDEX = "index",
 }
 
 function sortStatus(
   a: Attendee,
   b: Attendee,
   supabase: SupaBase,
-  sortAsc: boolean
+  sortAsc: boolean,
 ) {
   const aPresent = a.status(supabase.currentRollCallEvent);
   const bPresent = b.status(supabase.currentRollCallEvent);
@@ -64,14 +55,14 @@ function sortStatus(
     bPresent === AttendeeStatus.PRESENT
       ? 2
       : bPresent === AttendeeStatus.ABSENT
-      ? 1
-      : 0;
+        ? 1
+        : 0;
   const aWeight =
     aPresent === AttendeeStatus.PRESENT
       ? 2
       : aPresent === AttendeeStatus.ABSENT
-      ? 1
-      : 0;
+        ? 1
+        : 0;
 
   return bWeight - aWeight;
 }
@@ -100,7 +91,7 @@ function sortBy(
   a: Attendee,
   b: Attendee,
   supabase: SupaBase,
-  sortAsc: boolean
+  sortAsc: boolean,
 ) {
   if (a.currentRollCall == null && b.currentRollCall == null) {
     return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
@@ -181,10 +172,6 @@ function filterData(supabase: SupaBase, filter: string) {
           normalizeString(att.surname)?.includes(part)
         ) {
           outArr.push(att);
-        } else if (filter === "CAR" && att.isUsingOwnTransport) {
-          outArr.push(att);
-        } else if (filter === "BUS" && !att.isUsingOwnTransport) {
-          outArr.push(att);
         }
       });
     });
@@ -192,23 +179,125 @@ function filterData(supabase: SupaBase, filter: string) {
   return outArr;
 }
 
-export const AttendeesTable: React.FC<AttendeesTableProps> = (
-  props: AttendeesTableProps
-) => {
-  const { supabase, filter, onClickedAttendee } = props;
+function isIncludedBySummaryPills(
+  attendee: Attendee,
+  currentRollCallEvent: SupaBase["currentRollCallEvent"],
+  selectedPills: SummaryPillSelection,
+): boolean {
+  const status = attendee.status(currentRollCallEvent);
+  const isCar = attendee.isUsingOwnTransport;
 
+  let statusMatches = false;
+
+  if (
+    selectedPills[SummaryPillId.PRESENT] &&
+    status === AttendeeStatus.PRESENT
+  ) {
+    statusMatches = true;
+  }
+
+  if (selectedPills[SummaryPillId.ABSENT] && status === AttendeeStatus.ABSENT) {
+    statusMatches = true;
+  }
+
+  if (
+    selectedPills[SummaryPillId.NOT_SCANNED] &&
+    status === AttendeeStatus.NOT_SCANNED
+  ) {
+    statusMatches = true;
+  }
+
+  let transportMatches = false;
+
+  if (selectedPills[SummaryPillId.BUS] && !isCar) {
+    transportMatches = true;
+  }
+
+  if (selectedPills[SummaryPillId.CAR] && isCar) {
+    transportMatches = true;
+  }
+
+  return statusMatches && transportMatches;
+}
+
+function calculateColumnsOnResize(width: number): SortColumnsMap {
+  const newCols: SortColumnsMap = {
+    [SortColumns.NAME]: SortColumnSize.NORMAL,
+    [SortColumns.SURNAME]: SortColumnSize.NORMAL,
+    [SortColumns.STATUS]: SortColumnSize.COMPACTER,
+  };
+
+  if (width > 340) {
+    newCols[SortColumns.TP] = SortColumnSize.COMPACTER;
+  }
+
+  if (width > 380) {
+    newCols[SortColumns.TP] = SortColumnSize.COMPACT;
+  }
+
+  if (width > 430) {
+    newCols[SortColumns.ON] = SortColumnSize.COMPACTER;
+  }
+
+  if (width > 460) {
+    newCols[SortColumns.ON] = SortColumnSize.COMPACTER;
+  }
+
+  if (width > 500) {
+    newCols[SortColumns.BY] = SortColumnSize.COMPACTER;
+  }
+
+  if (width > 520) {
+    newCols[SortColumns.BY] = SortColumnSize.COMPACT;
+  }
+
+  if (width > 550) {
+    newCols[SortColumns.STATUS] = SortColumnSize.COMPACT;
+  }
+
+  if (width > 615) {
+    newCols[SortColumns.BY] = SortColumnSize.NORMAL;
+  }
+
+  if (width > 630) {
+    newCols[SortColumns.ON] = SortColumnSize.NORMAL;
+  }
+
+  if (width > 680) {
+    newCols[SortColumns.STATUS] = SortColumnSize.NORMAL;
+  }
+
+  if (width > 680) {
+    newCols[SortColumns.TP] = SortColumnSize.NORMAL;
+  }
+
+  return newCols;
+}
+
+export const AttendeesTable: React.FC<AttendeesTableProps> = (
+  props: AttendeesTableProps,
+) => {
+  const { supabase, onClickedAttendee } = props;
+
+  const [filter, setFilter] = useState<string>("");
   const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.STATUS);
   const [sortAsc, setSortAsc] = useState<boolean>(false);
+  const [selectedAttendeeId, setSelectedAttendeeId] = useState<number | null>(
+    null,
+  );
+  const [selectedPills, setSelectedPills] = useState<SummaryPillSelection>(() =>
+    createSummaryPillSelection(true),
+  );
 
   const measureWidthRef = React.useRef<HTMLDivElement>(null);
 
-  const [colsToInclude, setColsToInclude] = useState<SortColumns[]>(() => [
-    SortColumns.NAME,
-    SortColumns.SURNAME,
-    SortColumns.STATUS,
-  ]);
+  const [colsToInclude, setColsToInclude] = useState<SortColumnsMap>(() => ({
+    [SortColumns.NAME]: SortColumnSize.NORMAL,
+    [SortColumns.SURNAME]: SortColumnSize.NORMAL,
+    [SortColumns.STATUS]: SortColumnSize.NORMAL,
+  }));
 
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  const [recalculateRows, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
     return supabase.addListener({
@@ -219,10 +308,23 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     });
   }, []);
 
-  const filtered = filterData(supabase, filter);
+  const filtered: Attendee[] = useMemo(() => {
+    return filterData(supabase, filter).filter((attendee) =>
+      isIncludedBySummaryPills(
+        attendee,
+        supabase.currentRollCallEvent,
+        selectedPills,
+      ),
+    );
+  }, [
+    filter,
+    recalculateRows,
+    selectedPills,
+    supabase.currentRollCallEvent?.id,
+  ]);
 
   useEffect(() => {
-    if (colsToInclude.includes(sortCol)) {
+    if (!!colsToInclude[sortCol]) {
       return;
     }
 
@@ -240,7 +342,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       setSortAsc(true);
       setSortCol(name);
     },
-    [sortCol]
+    [sortCol],
   );
 
   const sorted: Attendee[] = useMemo(() => {
@@ -269,230 +371,196 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       return Attendee.SortByField(a, b, field) * (sortAsc ? 1 : -1);
     };
 
+    // console.log("%cSorted rows", "color: lime");
     return filtered.sort(sort);
   }, [filtered, sortCol, sortAsc, supabase.currentRollCallEvent?.id ?? 0]);
 
+  const handleClickAttendee = useCallback(
+    (attendee: Attendee) => {
+      setSelectedAttendeeId(attendee.id);
+      onClickedAttendee(attendee);
+    },
+    [onClickedAttendee],
+  );
+
+  const width = useObserveWidth(measureWidthRef);
   useEffect(() => {
-    const el = measureWidthRef.current;
-    if (!el) {
-      return;
-    }
-
-    const onResize = (entries: ResizeObserverEntry[]) => {
-      if (entries.length == 0) {
-        return;
-      }
-
-      const entry = entries[0];
-      const width = Math.floor(entry.contentRect.width);
-
-      const newCols: SortColumns[] = [
-        SortColumns.NAME,
-        SortColumns.SURNAME,
-        SortColumns.TP,
-        SortColumns.STATUS,
-      ];
-
-      if (width > 420) {
-        newCols.push(SortColumns.ON);
-      }
-
-      if (width > 500) {
-        newCols.push(SortColumns.BY);
-      }
-
-      setColsToInclude(() => newCols);
-    };
-
-    const obs = new ResizeObserver(onResize);
-    obs.observe(el);
-
-    return () => {
-      obs.unobserve(el);
-      obs.disconnect();
-    };
-  }, []);
+    setColsToInclude(() => calculateColumnsOnResize(width));
+  }, [width]);
 
   return (
     <S.TableContainer>
       <S.MeasureWidth ref={measureWidthRef} />
+      <AttendeesSummary
+        rows={sorted}
+        currentRollCallEvent={supabase.currentRollCallEvent}
+        selectedPills={selectedPills}
+        setSelectedPills={setSelectedPills}
+      />
       <S.PrimaryTable>
-        <tbody>
-          <TableRow key="heading">
-            <Heading
-              colName={SortColumns.INDEX}
-              hideSpacersWhenNotSelected={true}
-              isIncluded={true}
-              label={"#"}
-            />
-            <Heading
-              isIncluded={colsToInclude.includes(SortColumns.NAME)}
-              colName={SortColumns.NAME}
-              label={"Name"}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              useAZArrow={true}
-              onClick={handleClickCol}
-            />
-            <Heading
-              isIncluded={colsToInclude.includes(SortColumns.SURNAME)}
-              colName={SortColumns.SURNAME}
-              label={"Surname"}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              useAZArrow={true}
-              onClick={handleClickCol}
-            />
-            <S.SpacerHeading />
-            <Heading
-              isIncluded={colsToInclude.includes(SortColumns.TP)}
-              colName={SortColumns.TP}
-              label={"TP"}
-              centerLabel={true}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              addArrowSpacer={true}
-              hideSpacersWhenNotSelected={true}
-              onClick={handleClickCol}
-            />
-            <Heading
-              isIncluded={colsToInclude.includes(SortColumns.STATUS)}
-              colName={SortColumns.STATUS}
-              label={"✓"}
-              centerLabel={true}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              addArrowSpacer={true}
-              hideSpacersWhenNotSelected={true}
-              onClick={handleClickCol}
-            />
-            <Heading
-              isIncluded={colsToInclude.includes(SortColumns.ON)}
-              colName={SortColumns.ON}
-              label={"On"}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              useAZArrow={true}
-              hideSpacersWhenNotSelected={true}
-              onClick={handleClickCol}
-            />
-            <Heading
-              isIncluded={colsToInclude.includes(SortColumns.BY)}
-              colName={SortColumns.BY}
-              label={"By"}
-              sortAsc={sortAsc}
-              sortCol={sortCol}
-              use19Arrow={true}
-              hideSpacersWhenNotSelected={true}
-              onClick={handleClickCol}
-            />
-          </TableRow>
-          {sorted.map((att, index) => (
-            <AttendeeRow
-              att={att}
-              supabase={supabase}
-              key={att.id}
-              onClickedAttendee={onClickedAttendee}
-              colsToInclude={colsToInclude}
-              index={index}
-            />
-          ))}
-        </tbody>
+        <TableHeadings
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          handleClickCol={handleClickCol}
+          filter={filter}
+          setFilter={setFilter}
+          colsToInclude={colsToInclude}
+        />
+        <ContentRows
+          rows={sorted}
+          selectedAttendeeId={selectedAttendeeId}
+          supabase={supabase}
+          colsToInclude={colsToInclude}
+          handleClickAttendee={handleClickAttendee}
+        />
       </S.PrimaryTable>
     </S.TableContainer>
   );
 };
 
-interface AttendeeRowProps {
-  att: Attendee;
+interface ContentRowsProps {
+  rows: Attendee[];
   supabase: SupaBase;
-  onClickedAttendee: (attendee: Attendee) => void;
-  colsToInclude: SortColumns[];
-  index: number;
+  handleClickAttendee: (attendee: Attendee) => void;
+  selectedAttendeeId: number | null;
+  colsToInclude: SortColumnsMap;
 }
 
-const AttendeeRow: React.FC<AttendeeRowProps> = (props) => {
-  const { att, supabase, colsToInclude, onClickedAttendee, index } = props;
-  const status: AttendeeStatus = att.status(supabase.currentRollCallEvent);
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+const ContentRows: React.FC<ContentRowsProps> = (props: ContentRowsProps) => {
+  const {
+    rows,
+    supabase,
+    selectedAttendeeId,
+    handleClickAttendee,
+    colsToInclude,
+  } = props;
+  return (
+    <tbody>
+      {rows.map((att) => (
+        <AttendeeRow
+          att={att}
+          supabase={supabase}
+          key={att.id}
+          onClickAttendee={handleClickAttendee}
+          // index={index}
+          selected={att.id === selectedAttendeeId}
+          columnSizes={colsToInclude}
+        />
+      ))}
+    </tbody>
+  );
+};
 
-  useEffect(() => {
-    return att.addListener({
-      updated: forceUpdate,
-    });
-  }, []);
+interface TableHeadingsProps {
+  filter: string;
+  setFilter: (newFilter: string) => void;
+  colsToInclude: SortColumnsMap;
+  sortAsc: boolean;
+  sortCol: SortColumns;
+  handleClickCol: (colName: SortColumns) => void;
+}
 
-  const color =
-    status === AttendeeStatus.PRESENT
-      ? DefaultColors.BrightGreen
-      : status === AttendeeStatus.ABSENT
-      ? DefaultColors.BrightRed
-      : DefaultColors.Grey;
+const TableHeadings: React.FC<TableHeadingsProps> = (
+  props: TableHeadingsProps,
+) => {
+  const { filter, setFilter, colsToInclude, sortAsc, sortCol, handleClickCol } =
+    props;
 
-  // TODO Need to solve this further up
-  if (att.isDeleted) {
-    return null;
-  }
+  const visibleHeaderColSpan = useMemo(() => {
+    return 1 + Object.values(colsToInclude).length;
+  }, [colsToInclude]);
 
   return (
-    <TableRow key={att.id} onClick={() => onClickedAttendee(att)}>
-      <S.IndexCell>{index + 1}</S.IndexCell>
-      {colsToInclude.includes(SortColumns.NAME) && (
-        <S.NameCell>{att.name}</S.NameCell>
-      )}
-      {colsToInclude.includes(SortColumns.SURNAME) && (
-        <S.NameCell>{att.surname}</S.NameCell>
-      )}
-      <S.SpacerCell />
-      {colsToInclude.includes(SortColumns.TP) && (
-        <S.RCCell>
-          <Icon
-            size={22}
-            color={
-              att.isUsingOwnTransport
-                ? DefaultColors.BrightPurple
-                : DefaultColors.BrightOrange
-            }
-            icon={att.isUsingOwnTransport ? faCar : faBusSimple}
-          />
-        </S.RCCell>
-      )}
-      {colsToInclude.includes(SortColumns.STATUS) && (
-        <S.RCCell>
-          <Icon
-            size={26}
-            color={color}
-            icon={
-              status === AttendeeStatus.PRESENT
-                ? faCheckSquare
-                : status === AttendeeStatus.ABSENT
-                ? faXmarkSquare
-                : faMinusSquare
-            }
-          />
-        </S.RCCell>
-      )}
-      {colsToInclude.includes(SortColumns.ON) && (
-        <S.NameCell>
-          {status !== AttendeeStatus.NOT_SCANNED
-            ? epochToDate(new Date(att.currentRollCall!.created_at).getTime(), {
-                includeDate: false,
-                includeTime: true,
-                includeSeconds: true,
-              })
-            : "--"}
-        </S.NameCell>
-      )}
-      {colsToInclude.includes(SortColumns.BY) && (
-        <S.NameCell>
-          {status !== AttendeeStatus.NOT_SCANNED
-            ? supabase.getUserName(att.currentRollCall!.created_by, {
-                nameOnly: true,
-              })
-            : "--"}
-        </S.NameCell>
-      )}
-    </TableRow>
+    <S.StickyTableHead>
+      <S.HeaderRow>
+        <SearchBarHeading
+          filter={filter}
+          onFilterChange={setFilter}
+          colSpan={visibleHeaderColSpan}
+        />
+      </S.HeaderRow>
+      <S.HeaderRow key="heading">
+        {/*<Heading*/}
+        {/*  colName={SortColumns.INDEX}*/}
+        {/*  hideSpacersWhenNotSelected={true}*/}
+        {/*  columnSize={SortColumnSize.NORMAL}*/}
+        {/*  label={"#"}*/}
+        {/*/>*/}
+        <Heading
+          columnSize={colsToInclude[SortColumns.NAME]}
+          colName={SortColumns.NAME}
+          label={"Name"}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          useAZArrow={true}
+          onClick={handleClickCol}
+        />
+        <Heading
+          columnSize={colsToInclude[SortColumns.SURNAME]}
+          colName={SortColumns.SURNAME}
+          label={"Surname"}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          useAZArrow={true}
+          onClick={handleClickCol}
+        />
+        <S.SpacerHeading />
+        <Heading
+          columnSize={colsToInclude[SortColumns.TP]}
+          colName={SortColumns.TP}
+          label={
+            colsToInclude[SortColumns.TP] >= SortColumnSize.NORMAL
+              ? "Travel"
+              : "TR"
+          }
+          centerLabel={true}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          addArrowSpacer={true}
+          hideSpacersWhenNotSelected={true}
+          onClick={handleClickCol}
+        />
+        <Heading
+          columnSize={colsToInclude[SortColumns.STATUS]}
+          colName={SortColumns.STATUS}
+          label={
+            colsToInclude[SortColumns.STATUS] >= SortColumnSize.NORMAL
+              ? "Status"
+              : "Stat"
+          }
+          centerLabel={true}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          addArrowSpacer={true}
+          hideSpacersWhenNotSelected={true}
+          onClick={handleClickCol}
+        />
+        <Heading
+          columnSize={colsToInclude[SortColumns.ON]}
+          colName={SortColumns.ON}
+          label={
+            colsToInclude[SortColumns.ON] >= SortColumnSize.NORMAL
+              ? "Time"
+              : "On"
+          }
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          useAZArrow={true}
+          hideSpacersWhenNotSelected={true}
+          onClick={handleClickCol}
+        />
+        <Heading
+          columnSize={colsToInclude[SortColumns.BY]}
+          colName={SortColumns.BY}
+          label={"By"}
+          sortAsc={sortAsc}
+          sortCol={sortCol}
+          use19Arrow={true}
+          hideSpacersWhenNotSelected={true}
+          onClick={handleClickCol}
+        />
+      </S.HeaderRow>
+    </S.StickyTableHead>
   );
 };
 
@@ -506,7 +574,7 @@ interface HeadingProps {
   useAZArrow?: boolean;
   use19Arrow?: boolean;
   addArrowSpacer?: boolean;
-  isIncluded?: boolean;
+  columnSize?: SortColumnSize;
   hideSpacersWhenNotSelected?: boolean;
 }
 
@@ -521,11 +589,11 @@ const Heading: React.FC<HeadingProps> = (props: HeadingProps) => {
     useAZArrow,
     use19Arrow,
     addArrowSpacer,
-    isIncluded,
+    columnSize,
     hideSpacersWhenNotSelected = false,
   } = props;
 
-  if (!isIncluded) {
+  if (!columnSize) {
     return null;
   }
 
@@ -560,25 +628,26 @@ export const SortArrow: React.FC<{
   useAZ?: boolean;
   use09?: boolean;
 }> = (props) => {
+  const theme = useTheme();
   const { ascending, selected, useAZ, use09 } = props;
 
   const icon = ascending
     ? useAZ
       ? faArrowDownAZ
       : use09
-      ? faArrowDown19
-      : faArrowDown
+        ? faArrowDown19
+        : faArrowDown
     : useAZ
-    ? faArrowUpAZ
-    : use09
-    ? faArrowUp19
-    : faArrowUp;
+      ? faArrowUpAZ
+      : use09
+        ? faArrowUp19
+        : faArrowUp;
 
   return (
     <S.SortArrow
       icon={icon}
       size={14}
-      color={selected ? DefaultColors.BrightGrey : "transparent"}
+      color={selected ? theme.colors.table.sortActive : "transparent"}
     />
   );
 };
@@ -587,41 +656,47 @@ namespace S {
   export const SortArrow = styled(Icon)``;
 
   export const TableContainer = styled.div`
-    color: ${DefaultColors.Text_Color};
+    color: ${(p) => p.theme.colors.text};
     display: flex;
     flex-direction: column;
     align-items: stretch;
     justify-content: center;
   `;
 
-  export const RCCell = styled(TableCell)`
-    padding: 2px;
-    text-align: center;
-    width: 0;
+  export const HeaderRow = styled(TableRow)`
+    position: relative;
+    z-index: 2;
   `;
 
-  export const IndexCell = styled(RCCell)`
-    text-align: right;
-    color: ${DefaultColors.BrightGrey};
+  export const StickyTableHead = styled.thead`
+    position: sticky;
+    top: 0;
+    z-index: 2;
   `;
 
-  export const MeasureWidth = styled.div``;
+  export const MeasureWidth = styled.div`
+    label: MeasureWidth;
+  `;
 
   export const PrimaryTable = styled(Table)`
     width: 100%;
     font-size: 12px;
+    border-collapse: separate;
+    border-spacing: 0;
   `;
 
-  export const StyledTableHeading = styled(TableHeading)<{ center?: boolean }>`
+  export const StyledTableHeading = styled(TableHeading)<{
+    center?: boolean;
+  }>`
+    background-color: ${(p) => p.theme.colors.surfaceRaised};
+    box-shadow: ${(p) =>
+      `inset 0 -1px 0 ${p.theme.colors.border}, inset 0 1px 0 ${p.theme.colors.borderSubtle}`};
     text-align: ${(p) => (p.center ? "center" : null)};
+
     font-size: 16px;
     padding: 2px 4px;
-    cursor: auto;
-  `;
 
-  export const NameCell = styled(TableCell)`
-    width: 0;
-    padding: 4px 4px;
+    cursor: auto;
   `;
 
   export const HeadingText = styled.span`
@@ -636,11 +711,9 @@ namespace S {
   `;
 
   export const SpacerHeading = styled(TableHeading)`
-    min-width: 0;
-    padding: 0;
-  `;
-
-  export const SpacerCell = styled(TableCell)`
+    background-color: ${(p) => p.theme.colors.surfaceRaised};
+    box-shadow: ${(p) =>
+      `inset 0 -1px 0 ${p.theme.colors.border}, inset 0 1px 0 ${p.theme.colors.borderSubtle}`};
     min-width: 0;
     padding: 0;
   `;

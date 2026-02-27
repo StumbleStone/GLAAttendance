@@ -1,3 +1,4 @@
+import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 import React, { useEffect, useMemo, useReducer, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -5,7 +6,6 @@ import { Heading } from "../Components/Heading";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { DefaultColors } from "../Tools/Toolbox";
 import { HeadingIcons } from "./HeadingIcons";
 
 interface RouteState {
@@ -59,6 +59,7 @@ function calculateNextRoute(supabase: SupaBase): RouteState | null {
 }
 
 export const MainMenu: React.FC<{}> = () => {
+  const theme = useTheme();
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   const location = useLocation();
@@ -67,7 +68,7 @@ export const MainMenu: React.FC<{}> = () => {
   const supabase = useMemo(() => new SupaBase(), []);
 
   const [route, setRoute] = useState<RouteState | null>(
-    calculateNextRoute(supabase)
+    calculateNextRoute(supabase),
   );
 
   useEffect(() => {
@@ -118,7 +119,7 @@ export const MainMenu: React.FC<{}> = () => {
         "color: grey;",
         "color: cyan;",
         "color: grey;",
-        "color: cyan;"
+        "color: cyan;",
       );
       setRoute(nextRoute);
     }
@@ -136,7 +137,7 @@ export const MainMenu: React.FC<{}> = () => {
     console.log(
       `%cNavigating to: %c${route.path}`,
       "color: grey;",
-      "color: lime;"
+      "color: lime;",
     );
     nav(route.path);
   }, [route, location.hash]);
@@ -146,9 +147,7 @@ export const MainMenu: React.FC<{}> = () => {
       <S.TitleTile>
         <S.StyledHeading>
           <S.SideBySide>
-            <S.TitlePart color={DefaultColors.BrightGreen}>
-              {"GLA "}
-            </S.TitlePart>
+            <S.TitlePart color={theme.colors.brand}>{"GLA "}</S.TitlePart>
             <S.TitlePart>{"Attendance"}</S.TitlePart>
           </S.SideBySide>
         </S.StyledHeading>
@@ -164,14 +163,13 @@ namespace S {
     label: MainMenuContainer;
     touch-action: manipulation;
     width: 100%;
-    max-height: 100%;
     height: 100%;
-    color: ${DefaultColors.Text_Color};
+    min-height: 0;
+    color: ${(p) => p.theme.colors.text};
     font-size: 18px;
-    /* This ensured that landscape mobile has some whitespace at the bottom */
-    padding-bottom: 100px;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   `;
 
   export const TitlePart = styled("span")<{ color?: string }>`
@@ -185,8 +183,7 @@ namespace S {
     border-right: transparent;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
-    box-shadow: 0 5px 10px 5px ${DefaultColors.Container};
-    margin-bottom: 15px;
+    box-shadow: none;
     user-select: none;
 
     display: flex;
@@ -204,15 +201,18 @@ namespace S {
   export const Content = styled("div")`
     label: Content;
     position: relative;
-    flex-grow: 1;
-    max-height: 100%;
-    overflow: auto;
-    overscroll-behavior: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
   `;
 
   export const ContentScroll = styled("div")`
     label: ContentScroll;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: auto;
+    overscroll-behavior: auto;
     padding-bottom: 100px;
   `;
 

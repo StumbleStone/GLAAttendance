@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 import * as React from "react";
-import { DefaultColors } from "../../Tools/Toolbox";
 
 export interface BaseInputCustomProps {
   forwardRef?: React.RefObject<HTMLInputElement>;
@@ -44,15 +43,15 @@ namespace S {
     BaseInputCustomProps & { isDisabled?: boolean }
   >`
     font-size: ${(p) => p.fontSize ?? 18}px;
-    background-color: ${(p) => (p.isDisabled ? null : DefaultColors.OffWhite)};
+    background-color: ${(p) => (p.isDisabled ? null : p.theme.colors.input.background)};
     cursor: ${(p) => (p.isDisabled ? "not-allowed" : null)};
 
     padding: 6px 16px;
     padding-left: ${(p) => (p.padLeft ? `${p.padLeft}px` : null)};
-    color: ${(p) => p.color || DefaultColors.Container};
+    color: ${(p) => p.color || p.theme.colors.input.foreground};
 
-    border: 2px solid ${DefaultColors.Black};
-    border-radius: 20px;
+    border: 2px solid ${(p) => p.theme.colors.input.border};
+    border-radius: ${(p) => p.theme.radius.lg};
 
     width: 100%;
 
@@ -61,13 +60,14 @@ namespace S {
     :-webkit-autofill:hover,
     :-webkit-autofill:focus {
       font-size: 18px;
-      background-color: ${DefaultColors.OffWhite} !important;
-      -webkit-text-fill-color: ${DefaultColors.Container};
-      -webkit-box-shadow: 0 0 0px 1000px ${DefaultColors.OffWhite} inset;
+      background-color: ${(p) => p.theme.colors.input.background} !important;
+      -webkit-text-fill-color: ${(p) => p.theme.colors.input.foreground};
+      -webkit-box-shadow: 0 0 0px 1000px ${(p) => p.theme.colors.input.background}
+        inset;
     }
 
     :focus {
-      outline: 2px solid ${DefaultColors.BrightYellow};
+      outline: 2px solid ${(p) => p.theme.colors.input.focus};
     }
   `;
 }

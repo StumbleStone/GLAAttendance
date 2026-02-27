@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 import * as React from "react";
-import { DefaultColors } from "../Tools/Toolbox";
 
 export interface TileProps {
   children?: React.ReactNode;
@@ -21,12 +20,12 @@ export const Tile: React.FC<TileProps> = (props: TileProps) => {
 
 namespace S {
   export const TileEl = styled("div")`
-    color: whitesmoke;
-    font-family: monospace;
-    border-radius: 15px;
-    border: 2px solid ${DefaultColors.Background};
-    background-color: ${DefaultColors.Container};
+    color: ${(p) => p.theme.colors.text};
+    font-family: ${(p) => p.theme.font.body};
+    border-radius: ${(p) => p.theme.radius.md};
+    border: 2px solid ${(p) => p.theme.colors.border};
+    background-color: ${(p) => p.theme.colors.surface};
     padding: 8px 16px;
-    box-shadow: 0px 5px 10px 5px ${DefaultColors.Container};
+    box-shadow: ${(p) => p.theme.shadow.tile};
   `;
 }

@@ -1,10 +1,10 @@
+import {useTheme} from "@emotion/react";
 import styled from "@emotion/styled";
-import { faListCheck } from "@fortawesome/free-solid-svg-icons";
-import React, { useCallback, useReducer } from "react";
-import { Button } from "../Components/Button/Button";
-import { SupaBase } from "../SupaBase/SupaBase";
-import { DefaultColors } from "../Tools/Toolbox";
-import { ShowRollCallWindow } from "./RollCallWindow";
+import {faListCheck} from "@fortawesome/free-solid-svg-icons";
+import React, {useCallback, useReducer} from "react";
+import {Button} from "../Components/Button/Button";
+import {SupaBase} from "../SupaBase/SupaBase";
+import {ShowRollCallWindow} from "./RollCallWindow";
 
 export interface RollCallDisplayProps {
   supabase: SupaBase;
@@ -13,6 +13,7 @@ export interface RollCallDisplayProps {
 export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
   props: RollCallDisplayProps
 ) => {
+  const theme = useTheme();
   const { supabase } = props;
 
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
@@ -49,8 +50,8 @@ export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
       icon={faListCheck}
       color={
         isInProgress === true
-          ? DefaultColors.BrightOrange
-          : DefaultColors.BrightGrey
+          ? theme.colors.accent.warning
+          : theme.colors.textMuted
       }
     >
       <S.RollCallText>{"RollCall:"}</S.RollCallText>

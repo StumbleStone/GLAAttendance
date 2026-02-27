@@ -1,10 +1,5 @@
 import styled from "@emotion/styled";
-import {
-  faBusSimple,
-  faCar,
-  faHandPointUp,
-  faQrcode,
-} from "@fortawesome/free-solid-svg-icons";
+import { faHandPointUp, faQrcode } from "@fortawesome/free-solid-svg-icons";
 import React, { Fragment } from "react";
 import { Icon } from "../../Components/Icon";
 import { SupaBase } from "../../SupaBase/SupaBase";
@@ -12,6 +7,8 @@ import { RollCallMethod } from "../../SupaBase/types";
 import { Username } from "../../SupaBase/Username";
 import { DefaultColors, epochToDate } from "../../Tools/Toolbox";
 import { Attendee, AttendeeStatus } from "../Attendee";
+import { StatusChip } from "../StatusChip";
+import { TransportChip } from "../TransportChip";
 
 export interface AttendeeWindowStatusContainerProps {
   attendee: Attendee;
@@ -40,13 +37,15 @@ export const AttendeeWindowStatusContainer: React.FC<
       <S.StyledTable>
         <tbody>
           <tr>
-            <td>Is:</td>
-            <S.StyledCell color={statusCol}>{status}</S.StyledCell>
+            <td>{"Status:"}</td>
+            <S.StyledCell color={statusCol}>
+              <StatusChip status={status} />
+            </S.StyledCell>
           </tr>
           {!!attendee.currentRollCall &&
             status !== AttendeeStatus.NOT_SCANNED && (
               <tr>
-                <td>{"By:"}</td>
+                <td>{"Recorder:"}</td>
                 <td>
                   <S.TextIconContainer>
                     <Icon
@@ -70,14 +69,14 @@ export const AttendeeWindowStatusContainer: React.FC<
           {!!attendee.currentRollCall &&
             status !== AttendeeStatus.NOT_SCANNED && (
               <tr>
-                <td>On:</td>
+                <td>{"Time:"}</td>
                 <td>
                   {epochToDate(
                     new Date(attendee.currentRollCall.created_at).getTime(),
                     {
                       includeTime: true,
                       includeSeconds: true,
-                    }
+                    },
                   )}
                 </td>
               </tr>
@@ -111,18 +110,7 @@ export const AttendeeWindowStatusContainer: React.FC<
                   : DefaultColors.BrightOrange
               }
             >
-              <S.TextIconContainer>
-                <Icon
-                  color={
-                    attendee.isUsingOwnTransport
-                      ? DefaultColors.BrightPurple
-                      : DefaultColors.BrightOrange
-                  }
-                  icon={attendee.isUsingOwnTransport ? faCar : faBusSimple}
-                  size={14}
-                />
-                {attendee.isUsingOwnTransport ? "Car" : "Bus"}
-              </S.TextIconContainer>
+              <TransportChip usingOwnTransport={attendee.isUsingOwnTransport} />
             </S.StyledCell>
           </tr>
         </tbody>

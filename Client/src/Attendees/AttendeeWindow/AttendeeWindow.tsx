@@ -9,13 +9,7 @@ import {
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import React, {
-  Fragment,
-  useCallback,
-  useEffect,
-  useReducer,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useReducer, useState } from "react";
 import { Backdrop } from "../../Components/Backdrop/Backdrop";
 import { Button } from "../../Components/Button/Button";
 import { DownloadButton } from "../../Components/Button/DownloadButton";
@@ -46,7 +40,7 @@ export interface AtendeeWindowProps {
 const ICON_SIZE = 16;
 
 export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
-  props: AtendeeWindowProps
+  props: AtendeeWindowProps,
 ) => {
   const { layerItem, attendee, supabase } = props;
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
@@ -123,8 +117,8 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
     status === AttendeeStatus.PRESENT
       ? DefaultColors.BrightGreen
       : status === AttendeeStatus.ABSENT
-      ? DefaultColors.BrightRed
-      : DefaultColors.BrightGrey;
+        ? DefaultColors.BrightRed
+        : DefaultColors.BrightGrey;
   const rollCallInProgress = supabase.rollcallInProgress;
 
   const handleEdit = useCallback(() => {
@@ -143,7 +137,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
     supabase.createNewRollCall(
       attendee,
       RollCallMethod.MANUAL,
-      RollCallStatus.ABSENT
+      RollCallStatus.ABSENT,
     );
   }, [status]);
 
@@ -162,8 +156,8 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
                     status === AttendeeStatus.PRESENT
                       ? faCheckSquare
                       : status === AttendeeStatus.ABSENT
-                      ? faXmarkSquare
-                      : faMinusSquare
+                        ? faXmarkSquare
+                        : faMinusSquare
                   }
                   size={ICON_SIZE}
                   color={statusCol}
@@ -302,6 +296,7 @@ namespace S {
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 20;
   `;
 
   export const QRCodeContainer = styled.div`

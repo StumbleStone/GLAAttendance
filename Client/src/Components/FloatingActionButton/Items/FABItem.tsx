@@ -1,10 +1,10 @@
+import {useTheme} from "@emotion/react";
 import styled from "@emotion/styled";
-import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import {IconDefinition} from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
-import { DefaultColors } from "../../../Tools/Toolbox";
-import { Icon } from "../../Icon";
-import { Label } from "../../Label";
-import { Tile } from "../../Tile";
+import {Icon} from "../../Icon";
+import {Label} from "../../Label";
+import {Tile} from "../../Tile";
 
 export interface FABItemProps {
   doClose: () => void;
@@ -16,6 +16,7 @@ export interface FABItemProps {
 }
 
 export const FABItem: React.FC<FABItemProps> = (props: FABItemProps) => {
+  const theme = useTheme();
   const { onClick, doClose, label, icon, disabled, color } = props;
 
   const onClickHandler = React.useCallback(() => {
@@ -24,8 +25,8 @@ export const FABItem: React.FC<FABItemProps> = (props: FABItemProps) => {
   }, []);
 
   const resolvedColor = React.useMemo(() => {
-    return disabled ? DefaultColors.Grey : color || DefaultColors.BrightCyan;
-  }, [color, disabled]);
+    return disabled ? theme.colors.state.disabled : color || theme.colors.accent.primary;
+  }, [color, disabled, theme]);
 
   return (
     <S.FABItemTile
@@ -34,7 +35,7 @@ export const FABItem: React.FC<FABItemProps> = (props: FABItemProps) => {
       disabled={disabled}
     >
       <S.Background color={resolvedColor} disabled={disabled}>
-        <Icon icon={icon} size={16} />
+        <Icon icon={icon} size={16} color={resolvedColor} />
         <Label text={label} />
       </S.Background>
     </S.FABItemTile>
@@ -50,8 +51,8 @@ namespace S {
     font-size: 16px;
     margin-bottom: 3px;
     margin-right: 3px;
-    background-color: ${DefaultColors.Container};
-    border: 2px solid ${DefaultColors.Background};
+    background-color: ${(p) => p.theme.colors.surface};
+    border: 2px solid ${(p) => p.theme.colors.border};
     cursor: ${(p) => (p.disabled ? "not-allowed" : "pointer")};
 
     box-shadow: none;
