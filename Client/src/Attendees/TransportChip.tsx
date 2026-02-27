@@ -10,7 +10,7 @@ export interface TransportChipProps {
   size?: SortColumnSize;
 }
 
-export const TransportChip: React.FC<TransportChipProps> = (
+const TransportChipComponent: React.FC<TransportChipProps> = (
   props: TransportChipProps,
 ) => {
   const theme = useTheme();
@@ -39,6 +39,9 @@ export const TransportChip: React.FC<TransportChipProps> = (
     </S.TransportChip>
   );
 };
+
+export const TransportChip = React.memo(TransportChipComponent);
+TransportChip.displayName = "TransportChip";
 
 namespace S {
   export const TransportChip = styled.div<{ color: string; compact: boolean }>`

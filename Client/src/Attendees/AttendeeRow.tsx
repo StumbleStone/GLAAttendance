@@ -44,7 +44,7 @@ function getRecorderName(
   return recorderName;
 }
 
-export const AttendeeRow: React.FC<AttendeeRowProps> = (
+const AttendeeRowComponent: React.FC<AttendeeRowProps> = (
   props: AttendeeRowProps,
 ) => {
   const { att, supabase, onClickAttendee, index, selected, columnSizes } =
@@ -115,6 +115,9 @@ export const AttendeeRow: React.FC<AttendeeRowProps> = (
     </S.DataRow>
   );
 };
+
+export const AttendeeRow = React.memo(AttendeeRowComponent);
+AttendeeRow.displayName = "AttendeeRow";
 
 namespace S {
   export const RCCell = styled(TableCell)`

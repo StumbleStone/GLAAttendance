@@ -40,7 +40,7 @@ function getLabel(status: AttendeeStatus): string {
   }
 }
 
-export const StatusChip: React.FC<StatusChipProps> = (
+const StatusChipComponent: React.FC<StatusChipProps> = (
   props: StatusChipProps,
 ) => {
   const theme = useTheme();
@@ -69,6 +69,9 @@ export const StatusChip: React.FC<StatusChipProps> = (
     </S.StatusChip>
   );
 };
+
+export const StatusChip = React.memo(StatusChipComponent);
+StatusChip.displayName = "StatusChip";
 
 namespace S {
   export const StatusChip = styled.span<{ color: string; compact?: boolean }>`
