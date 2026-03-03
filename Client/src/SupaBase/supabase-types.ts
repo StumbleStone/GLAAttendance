@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "14.1"
   }
   graphql_public: {
     Tables: {
@@ -82,6 +82,63 @@ export type Database = {
             referencedColumns: ["uid"]
           },
         ]
+      }
+      EventParticipants: {
+        Row: {
+          attendee_id: number
+          created_at: string
+          event_id: number
+          extra_fields: Json | null
+          id: number
+          removed: boolean | null
+        }
+        Insert: {
+          attendee_id: number
+          created_at?: string
+          event_id: number
+          extra_fields?: Json | null
+          id?: number
+          removed?: boolean | null
+        }
+        Update: {
+          attendee_id?: number
+          created_at?: string
+          event_id?: number
+          extra_fields?: Json | null
+          id?: number
+          removed?: boolean | null
+        }
+        Relationships: []
+      }
+      Events: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_time: string | null
+          extra_fields: Json | null
+          id: number
+          name: string | null
+          start_time: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          end_time?: string | null
+          extra_fields?: Json | null
+          id?: number
+          name?: string | null
+          start_time?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_time?: string | null
+          extra_fields?: Json | null
+          id?: number
+          name?: string | null
+          start_time?: string | null
+        }
+        Relationships: []
       }
       PingTable: {
         Row: {

@@ -298,9 +298,11 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
   async loadData() {
     if (this.loadPromise) {
+      console.log(`loadData: Already loading, returning existing promise`);
       return this.loadPromise;
     }
 
+    console.log(`loadData: Starting`);
     this.loadPromise = new Promise(async (res) => {
       // These don't depend on each other and can be run at the same time
       await Promise.all([
@@ -313,6 +315,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
       // Clear so that we can load again if needed
       this.loadPromise = null;
+      console.log(`loadData: Done`);
       res();
     });
 

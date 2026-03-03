@@ -1,60 +1,12 @@
 import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
-import React, { useEffect, useMemo, useReducer, useState } from "react";
+import React, { useEffect, useMemo, useReducer } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Heading } from "../Components/Heading";
-import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { HeadingIcons } from "./HeadingIcons";
-
-interface RouteState {
-  path: RoutePath;
-  canPassCheck: (s: SupaBase) => boolean;
-}
-
-enum RoutePath {
-  LOADING = "/loading",
-  LOADING_PROFILE = "/loading_profile",
-  LOGIN = "/login",
-  ONBOARDING = "/onboard",
-  DASHBOARD = "/dashboard",
-}
-
-// Order here very important
-const ROUTES: RouteState[] = [
-  {
-    path: RoutePath.LOADING,
-    canPassCheck: (s) => s.hasInit && s.supabaseConnected,
-  },
-  {
-    path: RoutePath.LOGIN,
-    canPassCheck: (s) => s.isLoggedIn,
-  },
-  {
-    path: RoutePath.LOADING_PROFILE,
-    canPassCheck: (s) => !!s.profile,
-  },
-  {
-    path: RoutePath.ONBOARDING,
-    canPassCheck: (s) => s.isOnboarded,
-  },
-  {
-    path: RoutePath.DASHBOARD,
-    // Last route, will never pass
-    canPassCheck: (s) => false,
-  },
-];
-
-function calculateNextRoute(supabase: SupaBase): RouteState | null {
-  for (let route of ROUTES) {
-    if (!route.canPassCheck(supabase)) {
-      return route;
-    }
-  }
-
-  return null;
-}
+import { resolveNextPath, setFinalRoute } from "./RouteFlow";
 
 export const MainMenu: React.FC<{}> = () => {
   const theme = useTheme();
@@ -64,9 +16,8 @@ export const MainMenu: React.FC<{}> = () => {
   const nav = useNavigate();
 
   const supabase = useMemo(() => new SupaBase(), []);
-
-  const [route, setRoute] = useState<RouteState | null>(
-    calculateNextRoute(supabase),
+  const [targetPath, setTargetPath] = React.useState<string | null>(
+    location.pathname,
   );
 
   useEffect(() => {
@@ -82,10 +33,6 @@ export const MainMenu: React.FC<{}> = () => {
   }, []);
 
   const content = useMemo(() => {
-    if (!supabase.hasInit) {
-      return <LoadingSpinner size={100} />;
-    }
-
     switch (location.pathname) {
       // Nothing much to do here yet, the useEffect responsible for nav will take care of it
       case "":
@@ -101,44 +48,37 @@ export const MainMenu: React.FC<{}> = () => {
         </S.ContentScroll>
       </S.Content>
     );
-  }, [location, supabase.hasInit]);
+  }, [location.pathname]);
 
-  // The navigator
   useEffect(() => {
-    const nextRoute: RouteState | null = calculateNextRoute(supabase);
+    // On boot, the current route (If it exists) can be set as the final destination once the user passes all the checks.
+    setFinalRoute(location.pathname);
+  }, []);
 
-    if (nextRoute == null) {
+  // Run on each render to check if the user should be redirected to a different route based on their current state.
+  useEffect(() => {
+    const nextPath = resolveNextPath(supabase, location.pathname);
+    if (!nextPath) {
       return;
     }
 
-    if (!route || nextRoute.path != route.path) {
-      console.log(
-        `%cRoute sequence: %c${route?.path ?? "/"} %c-> %c${nextRoute.path}`,
-        "color: grey;",
-        "color: cyan;",
-        "color: grey;",
-        "color: cyan;",
-      );
-      setRoute(nextRoute);
-    }
+    setTargetPath(nextPath);
   });
 
   useEffect(() => {
-    if (!route) {
-      return;
-    }
-
-    if (location.hash == route.path) {
+    if (targetPath === location.pathname) {
       return;
     }
 
     console.log(
-      `%cNavigating to: %c${route.path}`,
+      `%cRoute gate: %c${location.pathname || "/"} %c-> %c${targetPath}`,
+      "color: grey;",
+      "color: cyan;",
       "color: grey;",
       "color: lime;",
     );
-    nav(route.path);
-  }, [route, location.hash]);
+    nav(targetPath, { replace: true });
+  }, [targetPath, location.pathname]);
 
   return (
     <S.ContainerEl>
