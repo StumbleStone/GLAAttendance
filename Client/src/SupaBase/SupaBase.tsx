@@ -371,7 +371,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
   async listenToAttendeesChanges() {
     if (this.realtimeChannel) {
-      console.error(`Realtime channel already exists!`);
+      console.debug(`Realtime channel already exists!`);
       return;
     }
 

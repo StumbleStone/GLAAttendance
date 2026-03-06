@@ -4,6 +4,8 @@ import { Login } from "../Components/Login/Login";
 import { Onboard } from "../Onboard/Onboard";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { Dashboard } from "./Dashboard";
+import { Debug } from "./Debug";
+import { Events } from "./Events";
 import { RouteItem } from "./RouteItem";
 
 export enum RoutePath {
@@ -12,6 +14,8 @@ export enum RoutePath {
   LOGIN = "/login",
   ONBOARDING = "/onboard",
   DASHBOARD = "/dashboard",
+  EVENTS = "/events",
+  DEBUG = "/debug",
 }
 
 export const LoadingRouteItem: RouteItem = new RouteItem({
@@ -51,6 +55,22 @@ export const DashboardRouteItem: RouteItem = new RouteItem({
   prerequisite: OnboardingRouteItem,
 });
 
+export const EventsRouteItem: RouteItem = new RouteItem({
+  path: RoutePath.EVENTS,
+  render: () => <Events />,
+  check: (s) => true,
+  isEndpoint: true,
+  prerequisite: OnboardingRouteItem,
+});
+
+export const DebugRouteItem: RouteItem = new RouteItem({
+  path: RoutePath.DEBUG,
+  render: () => <Debug />,
+  check: (s) => true,
+  isEndpoint: true,
+  prerequisite: OnboardingRouteItem,
+});
+
 // Order is still important for route declaration order.
 export const ROUTES: RouteItem[] = [
   LoadingRouteItem,
@@ -58,6 +78,8 @@ export const ROUTES: RouteItem[] = [
   LoadingProfileRouteItem,
   OnboardingRouteItem,
   DashboardRouteItem,
+  EventsRouteItem,
+  DebugRouteItem,
 ];
 
 export function getRouteByPath(pathname: string): RouteItem | null {
@@ -71,6 +93,7 @@ export function getRouteByPath(pathname: string): RouteItem | null {
 }
 
 let finalRoute: RouteItem = DashboardRouteItem;
+const warnedMissingPaths = new Set<string>();
 
 export function setFinalRoute(path: string): void {
   const route: RouteItem = getRouteByPath(path);
@@ -95,9 +118,12 @@ export function resolveNextPath(
   const currentRoute: RouteItem = getRouteByPath(currentPathname);
 
   if (!currentRoute) {
-    console.warn(
-      `No route found for path ${currentPathname}, redirecting to default route.`,
-    );
+    if (!warnedMissingPaths.has(currentPathname)) {
+      warnedMissingPaths.add(currentPathname);
+      console.warn(
+        `No route found for path ${currentPathname}, redirecting to default route.`,
+      );
+    }
     return DashboardRouteItem.path;
   }
 

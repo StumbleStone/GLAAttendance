@@ -1,88 +1,53 @@
 import styled from "@emotion/styled";
-import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import * as React from "react";
-import { useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
-import { Attendee } from "../Attendees/Attendee";
-import { AttendeesTable } from "../Attendees/AttendeesTable";
-import { AttendeeWindow } from "../Attendees/AttendeeWindow/AttendeeWindow";
-import { FABAddAttendees } from "../Attendees/FABAddAttendees";
-import { CaptureButton } from "../Capture/CaptureButton";
-import { CaptureWindow } from "../Capture/CaptureWindow";
-import { FAB } from "../Components/FloatingActionButton/FAB";
-import { LayerHandler, LayerItem } from "../Components/Layer";
-import { FABQRGrid } from "../QRCode/FABQRGrid";
-import { RollCallDisplay } from "../RollCall/RollCallDisplay";
-import { FABLogout } from "../SupaBase/FABLogout";
-import { FABRefresh } from "../SupaBase/FABRefresh";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { Chip } from "../Components/Chip/Chip";
+import { Heading } from "../Components/Heading";
+import { SubHeading } from "../Components/SubHeading";
+import { Tile } from "../Components/Tile";
 import { SupaBase } from "../SupaBase/SupaBase";
-import { HeadingIconHandler } from "./HeadingIconHandler";
+import { RoutePath } from "./RouteFlow";
 
 export interface DashboardProps {
   supabase: SupaBase;
 }
 
-export const Dashboard: React.FC = (props) => {
-  const { supabase } = useOutletContext<DashboardProps>();
+export const Dashboard: React.FC = () => {
+  useOutletContext<DashboardProps>();
+  const nav = useNavigate();
 
-  const [captureCode, setCaptureCode] = React.useState<boolean>(false);
-
-  React.useEffect(() => {
-    supabase.loadData();
-    return supabase.addListener({
-      visibility_changed: (isVisible: boolean) =>
-        !isVisible ? setCaptureCode(() => false) : null,
-    });
-  }, []);
-
-  const captureClick = React.useCallback(() => {
-    setCaptureCode((prev) => !prev);
-  }, []);
-
-  const fabItems = React.useCallback((close: () => void) => {
-    return [
-      <FABAddAttendees
-        doClose={close}
-        key="FABAddAttendees"
-        supabase={supabase}
-      />,
-      <FABQRGrid doClose={close} key="FABQRGrid" supabase={supabase} />,
-      <FABLogout doClose={close} key="FABLogout" supabase={supabase} />,
-      <FABRefresh doClose={close} key="FABRefresh" supabase={supabase} />,
-    ];
-  }, []);
-
-  const clickedAttendee = React.useCallback((attendee: Attendee) => {
-    LayerHandler.AddLayer((layerItem: LayerItem) => {
-      return (
-        <AttendeeWindow
-          layerItem={layerItem}
-          attendee={attendee}
-          supabase={supabase}
-        />
-      );
-    });
-  }, []);
-
-  useEffect(() => {
-    const icon = HeadingIconHandler.AddIcon({
-      icon: faGithub,
-      onClick: () =>
-        window.open("https://github.com/StumbleStone/GLAAttendance", "_blank"),
-    });
-
-    return icon.remove;
-  }, []);
+  const onClickEvents = React.useCallback(() => {
+    nav(RoutePath.EVENTS);
+  }, [nav]);
 
   return (
     <S.Container>
-      <S.ButtonContainer>
-        <RollCallDisplay supabase={supabase} />
-        <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
-      </S.ButtonContainer>
-      <CaptureWindow supabase={supabase} isCapturing={captureCode} />
-      <AttendeesTable supabase={supabase} onClickedAttendee={clickedAttendee} />
-      <FAB items={fabItems} />
+      <S.Panel>
+        <Heading>Dashboard</Heading>
+        <S.PanelDescription>
+          Quick access modules. Functional behavior can be added later.
+        </S.PanelDescription>
+
+        <S.PanelGrid>
+          <S.PanelItem onClick={onClickEvents} clickable={true}>
+            <S.ItemTitle>Events</S.ItemTitle>
+            <S.ItemCopy>Manage event setup and scheduling.</S.ItemCopy>
+            <S.Badge label="Surface" />
+          </S.PanelItem>
+
+          <S.PanelItem>
+            <S.ItemTitle>Attendees</S.ItemTitle>
+            <S.ItemCopy>View and manage attendee records.</S.ItemCopy>
+            <S.Badge label="Surface" />
+          </S.PanelItem>
+
+          <S.PanelItem>
+            <S.ItemTitle>Profile</S.ItemTitle>
+            <S.ItemCopy>Review account details and preferences.</S.ItemCopy>
+            <S.Badge label="Surface" />
+          </S.PanelItem>
+        </S.PanelGrid>
+      </S.Panel>
     </S.Container>
   );
 };
@@ -103,11 +68,60 @@ namespace S {
     }
   `;
 
-  export const ButtonContainer = styled.div`
-    label: DashboardButtonContainer;
+  export const Panel = styled(Tile)`
     display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: 5px;
+    gap: 12px;
+    padding: 14px;
+  `;
+
+  export const PanelDescription = styled(SubHeading)`
+    color: ${(p) => p.theme.colors.textMuted};
+    font-size: 16px;
+  `;
+
+  export const PanelGrid = styled.div`
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+
+    @media (min-width: 700px) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  `;
+
+  export const PanelItem = styled(Tile)<{ clickable?: boolean }>`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: ${(p) => p.theme.colors.surfaceRaised};
+    border-color: ${(p) => p.theme.colors.borderSubtle};
+    cursor: ${(p) => (p.clickable ? "pointer" : "default")};
+
+    &:hover {
+      background-color: ${(p) =>
+        p.clickable
+          ? p.theme.colors.surfaceActive
+          : p.theme.colors.surfaceRaised};
+    }
+  `;
+
+  export const ItemTitle = styled.div`
+    font-size: 20px;
+    color: ${(p) => p.theme.colors.text};
+  `;
+
+  export const ItemCopy = styled.div`
+    font-size: 15px;
+    color: ${(p) => p.theme.colors.textMuted};
+  `;
+
+  export const Badge = styled(Chip)`
+    align-self: flex-start;
+    color: ${(p) => p.theme.colors.accent.primary};
+    border-color: ${(p) => p.theme.colors.border};
+    background-color: ${(p) => p.theme.colors.surfaceActive};
+    padding: 4px 10px;
+    font-size: 13px;
   `;
 }

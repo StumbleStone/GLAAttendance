@@ -6,7 +6,7 @@ import {
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import React from "react";
-import { Icon } from "../Components/Icon";
+import { Chip } from "../Components/Chip/Chip";
 import { AttendeeStatus } from "./Attendee";
 
 export interface StatusChipProps {
@@ -61,12 +61,14 @@ const StatusChipComponent: React.FC<StatusChipProps> = (
         : faMinusSquare;
 
   return (
-    <S.StatusChip color={color} compact={compact} title={status}>
-      <Icon color={color} size={14} icon={icon} />
-      <S.StatusChipLabel>
-        {compact ? getCompactLabel(status) : getLabel(status)}
-      </S.StatusChipLabel>
-    </S.StatusChip>
+    <S.StatusChip
+      tone={color}
+      compact={compact}
+      title={status}
+      icon={icon}
+      iconSize={14}
+      label={compact ? getCompactLabel(status) : getLabel(status)}
+    />
   );
 };
 
@@ -74,21 +76,11 @@ export const StatusChip = React.memo(StatusChipComponent);
 StatusChip.displayName = "StatusChip";
 
 namespace S {
-  export const StatusChip = styled.span<{ color: string; compact?: boolean }>`
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: ${(p) => (p.compact ? "4px" : "6px")};
-    white-space: nowrap;
-    border-radius: ${(p) => p.theme.radius.pill};
+  export const StatusChip = styled(Chip)<{ tone: string; compact: boolean }>`
+    color: ${(p) => p.tone};
+    border-color: ${(p) => `${p.tone}66`};
+    background-color: ${(p) => `${p.tone}1a`};
     padding: ${(p) => (p.compact ? "2px 6px" : "3px 10px")};
     font-size: ${(p) => (p.compact ? "10px" : "11px")};
-    font-weight: 700;
-    line-height: 1;
-    color: ${(p) => p.color};
-    border: 1px solid ${(p) => `${p.color}66`};
-    background-color: ${(p) => `${p.color}1a`};
   `;
-
-  export const StatusChipLabel = styled.span``;
 }

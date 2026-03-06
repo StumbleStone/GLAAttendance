@@ -6,19 +6,17 @@ import { Heading } from "../Components/Heading";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { HeadingIcons } from "./HeadingIcons";
-import { resolveNextPath, setFinalRoute } from "./RouteFlow";
+import { getRouteByPath, resolveNextPath, setFinalRoute } from "./RouteFlow";
 
 export const MainMenu: React.FC<{}> = () => {
   const theme = useTheme();
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  const [revision, forceUpdate] = useReducer((x) => x + 1, 0);
 
   const location = useLocation();
   const nav = useNavigate();
+  const lastRedirectKeyRef = React.useRef<string | null>(null);
 
   const supabase = useMemo(() => new SupaBase(), []);
-  const [targetPath, setTargetPath] = React.useState<string | null>(
-    location.pathname,
-  );
 
   useEffect(() => {
     const l = supabase.addListener({
@@ -51,34 +49,38 @@ export const MainMenu: React.FC<{}> = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    // On boot, the current route (If it exists) can be set as the final destination once the user passes all the checks.
-    setFinalRoute(location.pathname);
-  }, []);
+    // Persist the user's endpoint intent (e.g. /dashboard or /events) across prerequisite redirects.
+    const route = getRouteByPath(location.pathname);
+    if (!route?.isEndpoint) {
+      return;
+    }
 
-  // Run on each render to check if the user should be redirected to a different route based on their current state.
+    setFinalRoute(route.path);
+  }, [location.pathname]);
+
+  // Re-evaluate route gating when route or auth/profile state changes.
   useEffect(() => {
     const nextPath = resolveNextPath(supabase, location.pathname);
-    if (!nextPath) {
+    if (!nextPath || nextPath === location.pathname) {
+      lastRedirectKeyRef.current = null;
       return;
     }
 
-    setTargetPath(nextPath);
-  });
-
-  useEffect(() => {
-    if (targetPath === location.pathname) {
+    const redirectKey = `${location.pathname}->${nextPath}`;
+    if (lastRedirectKeyRef.current === redirectKey) {
       return;
     }
+    lastRedirectKeyRef.current = redirectKey;
 
     console.log(
-      `%cRoute gate: %c${location.pathname || "/"} %c-> %c${targetPath}`,
+      `%cRoute gate: %c${location.pathname || "/"} %c-> %c${nextPath}`,
       "color: grey;",
       "color: cyan;",
       "color: grey;",
       "color: lime;",
     );
-    nav(targetPath, { replace: true });
-  }, [targetPath, location.pathname]);
+    nav(nextPath, { replace: true });
+  }, [location.pathname, nav, revision, supabase]);
 
   return (
     <S.ContainerEl>
