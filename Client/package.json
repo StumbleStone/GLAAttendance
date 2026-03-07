@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "watch": "pnpm build --watch",
-    "build": "node ./node_modules/webpack/bin/webpack --config webpack.dev.js",
+    "build": "node ./node_modules/webpack/bin/webpack --config webpack.dev.ts",
     "build:prod": "node ./node_modules/webpack/bin/webpack --config webpack.prod.ts",
     "serve": "webpack-dev-server --open --config webpack.dev.ts"
   },

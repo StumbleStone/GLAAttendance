@@ -152,12 +152,12 @@ function normalizeString(str: string | null): string | null {
 }
 
 function filterData(supabase: SupaBase, filter: string) {
-  if (!supabase.attendees || supabase.attendees.size == 0) {
+  if (supabase.attendeesHandler.count == 0) {
     return [];
   }
 
   if (!filter || filter == "") {
-    return Array.from(supabase.attendees.values()).filter((a) => !a.isDeleted);
+    return supabase.attendeesHandler.arr();
   }
 
   let outArr: Attendee[] = [];
@@ -166,7 +166,7 @@ function filterData(supabase: SupaBase, filter: string) {
     .toLowerCase()
     .split(/ +/)
     .forEach((part) => {
-      supabase.attendees.forEach((att) => {
+      supabase.attendeesHandler.iterate((att) => {
         if (
           normalizeString(att.name)?.includes(part) ||
           normalizeString(att.surname)?.includes(part)

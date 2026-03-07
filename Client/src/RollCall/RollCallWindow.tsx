@@ -57,7 +57,7 @@ function startRollCallEvent(supabase: SupaBase) {
 
 function stopRollCallEvent(supabase: SupaBase) {
   LayerHandler.AddLayer((layerItem: LayerItem) => {
-    const attendeeCount = supabase.attendees.size;
+    const attendeeCount = supabase.attendeesHandler.count;
 
     let confirmMessage: string | (string | ReactNode)[];
     if (supabase.countUnScannedAttendees() > 0) {
@@ -185,7 +185,7 @@ const SummaryPills: React.FC<{
         id={SummaryPillId.NOT_SCANNED}
         icon={faMinusSquare}
         label={"No Scan"}
-        value={supabase.attendees.size - absentCount - presentCount}
+        value={supabase.attendeesHandler.count - absentCount - presentCount}
         color={DefaultColors.BrightGrey}
       />
       <SummaryPill

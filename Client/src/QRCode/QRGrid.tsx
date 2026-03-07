@@ -12,6 +12,7 @@ import { Tile } from "../Components/Tile";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
 import { QRGridController } from "./QRGridController";
+import { SupabaseAttendees } from "../SupaBase/table-handlers/SupabaseAttendees";
 
 export interface QRGridProps {
   supabase: SupaBase;
@@ -28,12 +29,7 @@ interface DrawQRGridOptions {
 
 async function drawQRGrid(options: DrawQRGridOptions): Promise<string> {
   const { cols, page, rows, supabase, transport } = options;
-  const arr = filter(
-    Array.from(supabase.attendees.values()).sort((a, b) =>
-      Attendee.SortByField(a, b, "name")
-    ),
-    transport
-  );
+  const arr = filter(supabase.attendeesHandler, transport);
 
   const canvas = document.createElement("canvas");
   canvas.width = cols * QR_SIZE;
@@ -91,7 +87,7 @@ function checkPageLimit(
   rows: number,
   cols: number,
   attendees: number,
-  newPage: number
+  newPage: number,
 ): number {
   if (attendees === 0) {
     return 0;
@@ -109,18 +105,23 @@ function checkPageLimit(
   return newPage;
 }
 
-function filter(arr: Attendee[], transport: Transport[]): Attendee[] {
-  return arr.filter((attendee) => {
-    if (transport.includes(Transport.CAR) && attendee.isUsingOwnTransport) {
-      return true;
-    }
+function filter(
+  attendeesHandler: SupabaseAttendees,
+  transport: Transport[],
+): Attendee[] {
+  return attendeesHandler
+    .sort((a, b) => Attendee.SortByField(a, b, "name"))
+    .filter((attendee) => {
+      if (transport.includes(Transport.CAR) && attendee.isUsingOwnTransport) {
+        return true;
+      }
 
-    if (transport.includes(Transport.BUS) && !attendee.isUsingOwnTransport) {
-      return true;
-    }
+      if (transport.includes(Transport.BUS) && !attendee.isUsingOwnTransport) {
+        return true;
+      }
 
-    return false;
-  });
+      return false;
+    });
 }
 
 export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
@@ -138,10 +139,7 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
     Transport.BUS,
   ]);
 
-  const attendeeCount = filter(
-    Array.from(supabase.attendees.values()),
-    transport
-  ).length;
+  const attendeeCount = filter(supabase.attendeesHandler, transport).length;
 
   const toggleCar = React.useCallback(() => {
     if (transport.includes(Transport.CAR)) {
@@ -171,7 +169,7 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
 
       setRows(() => newVal);
     },
-    [busy]
+    [busy],
   );
 
   const onColChange = React.useCallback(
@@ -186,7 +184,7 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
 
       setCols(() => newVal);
     },
-    [busy]
+    [busy],
   );
 
   const onPageChange = React.useCallback(
@@ -197,7 +195,7 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
 
       setPage(checkPageLimit(rows, cols, attendeeCount, newVal));
     },
-    [rows, cols, busy, attendeeCount]
+    [rows, cols, busy, attendeeCount],
   );
 
   React.useEffect(() => {
@@ -279,7 +277,7 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
               rows,
               cols,
               attendeeCount,
-              10000
+              10000,
             )})`}
             onChange={onPageChange}
             value={page}
