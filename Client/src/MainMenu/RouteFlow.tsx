@@ -50,7 +50,7 @@ export const DashboardRouteItem: RouteItem = new RouteItem({
   path: RoutePath.DASHBOARD,
   render: () => <Dashboard />,
   // Dashboard doesn't require any checks specifically since prerequisites handle them.
-  check: (s) => true,
+  check: () => true,
   isEndpoint: true,
   prerequisite: OnboardingRouteItem,
 });
@@ -58,7 +58,7 @@ export const DashboardRouteItem: RouteItem = new RouteItem({
 export const EventsRouteItem: RouteItem = new RouteItem({
   path: RoutePath.EVENTS,
   render: () => <Events />,
-  check: (s) => true,
+  check: () => true,
   isEndpoint: true,
   prerequisite: OnboardingRouteItem,
 });
@@ -66,7 +66,7 @@ export const EventsRouteItem: RouteItem = new RouteItem({
 export const DebugRouteItem: RouteItem = new RouteItem({
   path: RoutePath.DEBUG,
   render: () => <Debug />,
-  check: (s) => true,
+  check: () => true,
   isEndpoint: true,
   prerequisite: OnboardingRouteItem,
 });
