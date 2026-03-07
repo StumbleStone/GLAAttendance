@@ -46,11 +46,10 @@ export enum SupaBaseEventKey {
   USERNAMES_LOADED = "usernames_loaded",
   CLIENT_CONNECTED = "client_connected",
   INIT_DONE = "init_done",
-  LOADED_ATTENDEES = "loaded_attendees",
+  ATTENDEES_CHANGED = "attendees_changed",
   LOADED_ROLLCALLS = "loaded_rollcalls",
   LOADED_ROLLCALL_EVENTS = "loaded_rollcall_events",
-  DELETED_ATTENDEES = "deleted_attendees",
-  ADDED_ATTENDEES = "added_attendees",
+  EVENTS_CHANGED = "events_changed",
   UPDATED_ROLLCALL_EVENT = "updated_rollcall_event",
   VISIBILITY_CHANGED = "visibility_changed",
 }
@@ -61,12 +60,10 @@ export interface SupaBaseEvent extends EventClassEvents {
   [SupaBaseEventKey.USER_PROFILE]: (profile: ProfileEventEntry) => void;
   [SupaBaseEventKey.CLIENT_CONNECTED]: (done: boolean) => void;
   [SupaBaseEventKey.INIT_DONE]: (done: boolean) => void;
-  [SupaBaseEventKey.LOADED_ATTENDEES]: () => void;
+  [SupaBaseEventKey.ATTENDEES_CHANGED]: () => void;
   [SupaBaseEventKey.LOADED_ROLLCALLS]: () => void;
   [SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]: () => void;
   [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: () => void;
-  [SupaBaseEventKey.DELETED_ATTENDEES]: () => void;
-  [SupaBaseEventKey.ADDED_ATTENDEES]: () => void;
   [SupaBaseEventKey.VISIBILITY_CHANGED]: (isVisible: boolean) => void;
 }
 
@@ -144,7 +141,9 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.realtimeChannelMonitor = new RealtimeChannelMonitor(this);
     this.usernamesLoaded = false;
 
-    this.eventsHandler = new SupabaseEvents();
+    this.eventsHandler = new SupabaseEvents({
+      client: this.client,
+    });
     this.attendeesHandler = new SupabaseAttendees({
       client: this.client,
     });
@@ -153,16 +152,22 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   setupEventListeners() {
     this.attendeesHandler.addListener({
       [BaseTableHandlerEventKey.DATA_LOADED]: () => {
-        this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ATTENDEES]?.());
+        this.fireUpdate((cb) => cb[SupaBaseEventKey.ATTENDEES_CHANGED]?.());
       },
       [SupabaseAttendeesEventKey.ATTENDEE_ROLLCALL_REMOVED]: () => {
         this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALLS]?.());
       },
       [SupabaseAttendeesEventKey.ATTENDEE_ADDED]: () => {
-        this.fireUpdate((cb) => cb[SupaBaseEventKey.ADDED_ATTENDEES]?.());
+        this.fireUpdate((cb) => cb[SupaBaseEventKey.ATTENDEES_CHANGED]?.());
       },
       [SupabaseAttendeesEventKey.ATTENDEE_DELETED]: () => {
-        this.fireUpdate((cb) => cb[SupaBaseEventKey.DELETED_ATTENDEES]?.());
+        this.fireUpdate((cb) => cb[SupaBaseEventKey.ATTENDEES_CHANGED]?.());
+      },
+    });
+
+    this.eventsHandler.addListener({
+      [BaseTableHandlerEventKey.DATA_LOADED]: () => {
+        this.fireUpdate((cb) => cb[SupaBaseEventKey.EVENTS_CHANGED]?.());
       },
     });
   }

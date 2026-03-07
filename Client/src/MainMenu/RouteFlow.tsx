@@ -1,11 +1,11 @@
 import React from "react";
+import { Events } from "../AttendanceEvents/Events";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Login } from "../Components/Login/Login";
 import { Onboard } from "../Onboard/Onboard";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { Dashboard } from "./Dashboard";
 import { Debug } from "./Debug";
-import { Events } from "./Events";
 import { RouteItem } from "./RouteItem";
 
 export enum RoutePath {

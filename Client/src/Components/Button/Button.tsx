@@ -1,11 +1,13 @@
-import {useTheme} from "@emotion/react";
+import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
-import {IconDefinition} from "@fortawesome/free-solid-svg-icons";
-import React, {HTMLAttributes, useCallback, useMemo} from "react";
-import {Icon} from "../Icon";
+import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
+import React, { HTMLAttributes, useCallback, useMemo } from "react";
+import { Icon } from "../Icon";
 
-export interface ButtonProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, "onClick"> {
+export interface ButtonProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  "onClick"
+> {
   className?: string;
   disabled?: boolean;
   color?: string;
@@ -36,7 +38,9 @@ export const Button: React.FC<ButtonProps> = (props) => {
   }, [onClick, disabled]);
 
   const resolvedColor = useMemo(() => {
-    return disabled ? theme.colors.state.disabled : color || theme.colors.accent.primary;
+    return disabled
+      ? theme.colors.state.disabled
+      : color || theme.colors.accent.primary;
   }, [color, disabled, theme]);
 
   return (
@@ -86,6 +90,5 @@ export const ButtonContainer = styled("div")`
   width: 100%;
   user-select: none;
   gap: 10px;
-  cursor: pointer;
   white-space: nowrap;
 `;

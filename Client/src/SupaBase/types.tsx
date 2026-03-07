@@ -4,6 +4,8 @@ import { Database } from "./supabase-types";
 export enum Tables {
   PING_TABLE = "PingTable",
   ATTENDEES = "Attendees",
+  EVENT_PARTICIPANTS = "EventParticipants",
+  EVENTS = "Events",
   ROLLCALL = "RollCall",
   ROLLCALL_EVENT = "RollCallEvent",
   PROFILES = "profiles",
@@ -48,6 +50,12 @@ export type UpdateAttendees =
 export type PingEntry = Database["public"]["Tables"][Tables.PING_TABLE]["Row"];
 export type UpdatePingEntry =
   Database["public"]["Tables"][Tables.PING_TABLE]["Update"];
+
+export type EventsEntry = Database["public"]["Tables"][Tables.EVENTS]["Row"];
+export type InsertEvents =
+  Database["public"]["Tables"][Tables.EVENTS]["Insert"];
+export type UpdateEvents =
+  Database["public"]["Tables"][Tables.EVENTS]["Update"];
 
 const ORDERED_COLORS: string[] = [
   DefaultColors.BrightPurple,

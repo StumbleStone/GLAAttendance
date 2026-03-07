@@ -302,8 +302,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
   useEffect(() => {
     return supabase.addListener({
       [SupaBaseEventKey.LOADED_ROLLCALLS]: forceUpdate,
-      [SupaBaseEventKey.DELETED_ATTENDEES]: forceUpdate,
-      [SupaBaseEventKey.ADDED_ATTENDEES]: forceUpdate,
+      [SupaBaseEventKey.ATTENDEES_CHANGED]: forceUpdate,
       [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: forceUpdate,
     });
   }, []);
