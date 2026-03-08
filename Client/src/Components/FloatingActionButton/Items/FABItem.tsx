@@ -36,7 +36,7 @@ export const FABItem: React.FC<FABItemProps> = (props: FABItemProps) => {
     >
       <S.Background color={resolvedColor} disabled={disabled}>
         <Icon icon={icon} size={16} color={resolvedColor} />
-        <Label text={label} />
+        <Label text={label} color={resolvedColor} />
       </S.Background>
     </S.FABItemTile>
   );

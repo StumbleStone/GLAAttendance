@@ -6,14 +6,13 @@ import {
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback, useMemo, useState } from "react";
-import { Button } from "../../Components/Button/Button";
+import { Button, ButtonContainer } from "../../Components/Button/Button";
 import { Icon } from "../../Components/Icon";
 import { Input } from "../../Components/Inputs/BaseInput";
 import { SupaBase } from "../../SupaBase/SupaBase";
 import { UpdateAttendees } from "../../SupaBase/types";
 import { DefaultColors } from "../../Tools/Toolbox";
 import { Attendee } from "../Attendee";
-import { ButtonContainer } from "./shared";
 
 export interface AttendeeEditContainerProps {
   attendee: Attendee;
@@ -22,7 +21,7 @@ export interface AttendeeEditContainerProps {
 }
 
 export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
-  props: AttendeeEditContainerProps
+  props: AttendeeEditContainerProps,
 ) => {
   const { attendee, exitEdit, supabase } = props;
 
@@ -30,7 +29,7 @@ export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
   // const [surname, setSurname] = useState(attendee.surname);
   const [allergies, setAllergies] = useState(attendee.allergies.join(", "));
   const [emergencyContacts, setEmergencyContacts] = useState(
-    attendee.emergencyContacts.join(", ")
+    attendee.emergencyContacts.join(", "),
   );
   const [usingCar, setUsingCar] = useState(attendee.isUsingOwnTransport);
 
@@ -56,14 +55,14 @@ export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
     (ev: React.ChangeEvent<HTMLInputElement>) => {
       setAllergies(ev.target.value);
     },
-    []
+    [],
   );
 
   const onChangeEmergencyContacts = useCallback(
     (ev: React.ChangeEvent<HTMLInputElement>) => {
       setEmergencyContacts(ev.target.value);
     },
-    []
+    [],
   );
 
   const hasChanges = useMemo(() => {

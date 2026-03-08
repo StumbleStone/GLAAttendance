@@ -10,9 +10,9 @@ import { LayerItem } from "../Components/Layer";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Tile } from "../Components/Tile";
 import { SupaBase } from "../SupaBase/SupaBase";
+import { SupabaseAttendees } from "../SupaBase/table-handlers/SupabaseAttendees";
 import { DefaultColors } from "../Tools/Toolbox";
 import { QRGridController } from "./QRGridController";
-import { SupabaseAttendees } from "../SupaBase/table-handlers/SupabaseAttendees";
 
 export interface QRGridProps {
   supabase: SupaBase;
@@ -291,7 +291,7 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
           )}
         </S.Content>
         <S.Footer>
-          <S.ButtonContainer>
+          <S.ButtonContainerEl>
             <DownloadButton
               data={dataUrl}
               filename={`Attendee_QR_${page}.png`}
@@ -302,7 +302,7 @@ export const QRGrid: React.FC<QRGridProps> = (props: QRGridProps) => {
               text={`Page ${page} of Attendee QR codes`}
               title={`Attendee QR List`}
             />
-          </S.ButtonContainer>
+          </S.ButtonContainerEl>
           <S.IconContainer>
             <S.StyledIcon
               onClick={toggleBus}
@@ -395,7 +395,7 @@ namespace S {
     gap: 10px;
   `;
 
-  export const ButtonContainer = styled.div`
+  export const ButtonContainerEl = styled.div`
     display: flex;
     gap: 10px;
     box-sizing: border-box;

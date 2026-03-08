@@ -11,7 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback, useEffect, useReducer, useState } from "react";
 import { Backdrop } from "../../Components/Backdrop/Backdrop";
-import { Button } from "../../Components/Button/Button";
+import { Button, ButtonContainer } from "../../Components/Button/Button";
 import { DownloadButton } from "../../Components/Button/DownloadButton";
 import { ShareButton } from "../../Components/Button/ShareButton";
 import { Icon } from "../../Components/Icon";
@@ -29,7 +29,6 @@ import { DefaultColors } from "../../Tools/Toolbox";
 import { Attendee, AttendeeStatus } from "../Attendee";
 import { AttendeeEditContainer } from "./AttendeeEditContainer";
 import { AttendeeWindowStatusContainer } from "./AttendeeWindowStatusContainer";
-import { ButtonContainer } from "./shared";
 
 export interface AtendeeWindowProps {
   layerItem: LayerItem;

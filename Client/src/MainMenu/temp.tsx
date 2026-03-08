@@ -71,10 +71,10 @@ const temp = () => {
 
   return (
     <S.Container>
-      <S.ButtonContainer>
+      <S.ButtonContainerEl>
         <RollCallDisplay supabase={supabase} />
         <CaptureButton handleClick={captureClick} isCapturing={captureCode} />
-      </S.ButtonContainer>
+      </S.ButtonContainerEl>
       <CaptureWindow supabase={supabase} isCapturing={captureCode} />
       <AttendeesTable supabase={supabase} onClickedAttendee={clickedAttendee} />
       <FAB items={fabItems} />
@@ -98,7 +98,7 @@ namespace S {
     }
   `;
 
-  export const ButtonContainer = styled.div`
+  export const ButtonContainerEl = styled.div`
     label: DashboardButtonContainer;
     display: flex;
     flex-direction: column;

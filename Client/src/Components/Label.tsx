@@ -20,7 +20,7 @@ export const Label: React.FC<LabelProps> = (props: LabelProps) => {
 
 namespace S {
   export const LabelEl = styled("div")<{ tColor: string | null }>`
-    color: ${(p) => p.tColor ?? p.theme.colors.text};
+    color: ${(p) => p.tColor ?? p.theme.colors.textMuted};
     margin: 0;
     white-space: nowrap;
   `;

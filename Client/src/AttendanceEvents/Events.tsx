@@ -5,8 +5,8 @@ import * as React from "react";
 import { useOutletContext } from "react-router-dom";
 import { Button, ButtonContainer } from "../Components/Button/Button";
 import { Heading } from "../Components/Heading";
+import { LabelDateInput } from "../Components/Inputs/label/LabelDateInput";
 import { LabelTextInput } from "../Components/Inputs/label/LabelTextInput";
-import { SubHeading } from "../Components/SubHeading";
 import { Tile } from "../Components/Tile";
 import { SupaBase } from "../SupaBase/SupaBase";
 
@@ -55,6 +55,52 @@ function validateTime(time: string): boolean {
   return true;
 }
 
+function parseTime(time: string | null): number | null {
+  if (!validateTime(time)) {
+    return null;
+  }
+
+  const parsedTime = Date.parse(time);
+  if (isNaN(parsedTime)) {
+    return null;
+  }
+
+  return parsedTime;
+}
+
+function getTimeValidationError(
+  startTime: string | null,
+  endTime: string | null,
+): string | null {
+  if (!startTime) {
+    return "Start time is required.";
+  }
+
+  if (!validateTime(startTime)) {
+    return "Start time is invalid.";
+  }
+
+  if (!endTime) {
+    return "End time is required.";
+  }
+
+  if (!validateTime(endTime)) {
+    return "End time is invalid.";
+  }
+
+  const parsedStartTime = parseTime(startTime);
+  const parsedEndTime = parseTime(endTime);
+  if (parsedStartTime === null || parsedEndTime === null) {
+    return "Start and end times must be valid.";
+  }
+
+  if (parsedEndTime <= parsedStartTime) {
+    return "End time must be after start time.";
+  }
+
+  return null;
+}
+
 export interface EventCreationPanelProps {}
 
 export const EventCreationPanel: React.FC<EventCreationPanelProps> = (
@@ -70,10 +116,6 @@ export const EventCreationPanel: React.FC<EventCreationPanelProps> = (
     setIsCreating(() => false);
   }, []);
 
-  const handleCreateClick = React.useCallback(() => {
-    debugger;
-  }, []);
-
   const theme = useTheme();
 
   const [name, setName] = React.useState("");
@@ -84,7 +126,7 @@ export const EventCreationPanel: React.FC<EventCreationPanelProps> = (
     [],
   );
 
-  const [startTime, setStartTime] = React.useState<string>(null);
+  const [startTime, setStartTime] = React.useState<string>("");
   const onChangeStartTime = React.useCallback(
     (ev: React.ChangeEvent<HTMLInputElement>) => {
       setStartTime(() => ev.target.value);
@@ -92,7 +134,7 @@ export const EventCreationPanel: React.FC<EventCreationPanelProps> = (
     [],
   );
 
-  const [endTime, setEndTime] = React.useState<string>(null);
+  const [endTime, setEndTime] = React.useState<string>("");
   const onChangeEndTime = React.useCallback(
     (ev: React.ChangeEvent<HTMLInputElement>) => {
       setEndTime(() => ev.target.value);
@@ -100,17 +142,37 @@ export const EventCreationPanel: React.FC<EventCreationPanelProps> = (
     [],
   );
 
+  const timeValidationError = React.useMemo<string | null>(() => {
+    return getTimeValidationError(startTime, endTime);
+  }, [startTime, endTime]);
+
   const validEvent = React.useMemo<boolean>(() => {
     if (!validateName(name)) {
       return false;
     }
 
-    if (!validateTime(startTime) || !validateTime(endTime)) {
+    if (!!timeValidationError) {
       return false;
     }
 
     return true;
-  }, [name, startTime, endTime]);
+  }, [name, timeValidationError]);
+
+  const handleCreateClick = React.useCallback(() => {
+    if (!validEvent) {
+      return;
+    }
+
+    debugger;
+  }, [validEvent]);
+
+  const showTimeValidationError = React.useMemo<boolean>(() => {
+    if (!timeValidationError) {
+      return false;
+    }
+
+    return !!startTime || !!endTime;
+  }, [startTime, endTime, timeValidationError]);
 
   if (!isCreating) {
     return (
@@ -143,19 +205,26 @@ export const EventCreationPanel: React.FC<EventCreationPanelProps> = (
         onChange={onChangeName}
       />
       <S.SideBySide>
-        <S.StyledInput
+        <S.StyledDateInput
           label={"Start Time"}
           value={startTime}
           type={"datetime-local"}
+          required={true}
+          max={endTime || undefined}
           onChange={onChangeStartTime}
         />
-        <S.StyledInput
+        <S.StyledDateInput
           label={"End Time"}
           value={endTime}
           type={"datetime-local"}
+          required={true}
+          min={startTime || undefined}
           onChange={onChangeEndTime}
         />
       </S.SideBySide>
+      {showTimeValidationError && (
+        <S.ValidationText>{timeValidationError}</S.ValidationText>
+      )}
       <S.StyledButtonContainer buttonPosition={"left"}>
         <Button
           color={theme.colors.accent.success}
@@ -199,25 +268,6 @@ namespace S {
     padding: 14px;
   `;
 
-  export const PanelDescription = styled(SubHeading)`
-    color: ${(p) => p.theme.colors.textMuted};
-    font-size: 16px;
-  `;
-
-  export const ViewContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  `;
-
-  export const ViewLabel = styled.div`
-    font-size: 12px;
-    color: ${(p) => p.theme.colors.textMuted};
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-weight: 700;
-  `;
-
   export const ActiveViewTile = styled(Tile)`
     display: flex;
     flex-direction: column;
@@ -242,7 +292,12 @@ namespace S {
     gap: 5px;
   `;
 
-  export const StyledInput = styled(LabelTextInput)`
+  export const StyledDateInput = styled(LabelDateInput)`
     flex: 1;
+  `;
+
+  export const ValidationText = styled.div`
+    color: ${(p) => p.theme.colors.accent.danger};
+    font-size: 14px;
   `;
 }

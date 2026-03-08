@@ -24,7 +24,7 @@ Sanders, Colonel
 `;
 
 export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
-  props: AttendeeAddWindowProps
+  props: AttendeeAddWindowProps,
 ) => {
   const { layerItem, supabase } = props;
 
@@ -87,7 +87,7 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
           />
         )}
         {preview && <PreviewTable newRecords={records} />}
-        <S.ButtonContainer>
+        <S.StyledButtonContainer>
           <Button
             onClick={handlePreviewClick}
             label={preview ? "Edit" : "Preview"}
@@ -101,7 +101,7 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
             />
           )}
           {preview && <Button onClick={handleFLipClick} label={"Flip"} />}
-        </S.ButtonContainer>
+        </S.StyledButtonContainer>
       </S.AttendeeAddWindowEl>
     </S.StyledBackdrop>
   );
@@ -112,7 +112,7 @@ export interface PreviewTableProps {
 }
 
 export const PreviewTable: React.FC<PreviewTableProps> = (
-  props: PreviewTableProps
+  props: PreviewTableProps,
 ) => {
   const { newRecords } = props;
   return (
@@ -162,7 +162,7 @@ namespace S {
     padding-top: 10px;
   `;
 
-  export const ButtonContainer = styled.div`
+  export const StyledButtonContainer = styled.div`
     display: flex;
     padding-bottom: 10px;
     gap: 5px;

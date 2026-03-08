@@ -1,6 +1,7 @@
 export type ThemeMode = "dark" | "light";
 
 export interface AppTheme {
+  mode: ThemeMode;
   colors: {
     brand: string;
     text: string;
@@ -71,6 +72,7 @@ const baseTheme: Pick<AppTheme, "font" | "radius" | "shadow"> = {
 
 export const darkTheme: AppTheme = {
   ...baseTheme,
+  mode: "dark",
   colors: {
     brand: "#2c981f",
     text: "#e8ebf0",
@@ -99,10 +101,10 @@ export const darkTheme: AppTheme = {
       sortActive: "#808999",
     },
     input: {
-      background: "#8a93a1",
-      foreground: "#0a0c10",
-      border: "#000000",
-      focus: "#7e9530",
+      background: "#131923",
+      foreground: "#e8ebf0",
+      border: "#4d5b70",
+      focus: "#70a6d8",
     },
     state: {
       disabled: "#5a616d",
@@ -112,6 +114,7 @@ export const darkTheme: AppTheme = {
 
 export const lightTheme: AppTheme = {
   ...baseTheme,
+  mode: "light",
   shadow: {
     ...baseTheme.shadow,
     tile: "0px 4px 10px 1px #b8b3a844",
@@ -144,10 +147,10 @@ export const lightTheme: AppTheme = {
       sortActive: "#58626d",
     },
     input: {
-      background: "#ffffff",
-      foreground: "#2f343b",
-      border: "#807869",
-      focus: "#7d9530",
+      background: "#fcfdff",
+      foreground: "#2b343f",
+      border: "#bcc7d4",
+      focus: "#4f88b4",
     },
     state: {
       disabled: "#707a86",
