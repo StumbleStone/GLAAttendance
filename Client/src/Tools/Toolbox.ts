@@ -50,6 +50,55 @@ export class Toolbox {
       return element.classList.remove(classname);
     }
   }
+
+  static getDurationMs(
+    startEpoch: number | null | undefined,
+    endEpoch: number | null | undefined
+  ): number | null {
+    if (
+      startEpoch == null ||
+      endEpoch == null ||
+      isNaN(startEpoch) ||
+      isNaN(endEpoch) ||
+      endEpoch <= startEpoch
+    ) {
+      return null;
+    }
+
+    return endEpoch - startEpoch;
+  }
+
+  static formatDuration(durationMs: number | null | undefined): string | null {
+    if (durationMs == null || isNaN(durationMs) || durationMs < 0) {
+      return null;
+    }
+
+    const totalMinutes = Math.round(durationMs / (60 * 1000));
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    const minutes = totalMinutes % 60;
+
+    const parts: string[] = [];
+    if (days > 0) {
+      parts.push(`${days}d`);
+    }
+
+    if (hours > 0 || days > 0) {
+      parts.push(`${hours}h`);
+    }
+
+    parts.push(`${minutes}m`);
+
+    return parts.join(" ");
+  }
+
+  static formatDurationBetween(
+    startEpoch: number | null | undefined,
+    endEpoch: number | null | undefined
+  ): string | null {
+    const durationMs = this.getDurationMs(startEpoch, endEpoch);
+    return this.formatDuration(durationMs);
+  }
 }
 
 export enum DefaultColors {

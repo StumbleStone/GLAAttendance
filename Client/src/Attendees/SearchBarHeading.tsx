@@ -1,12 +1,11 @@
 import styled from "@emotion/styled";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import React, { useEffect } from "react";
-import { InputWithIcon } from "../Components/Inputs/InputWithIcon";
+import { SearchInput } from "../Components/Search/SearchInput";
 import { TableHeading } from "../Components/Table/TableHeading";
 
 export interface SearchBarProps {
-  filter: string;
-  onFilterChange: (newFilter: string) => void;
+  query: string;
+  onQueryChange: (newQuery: string) => void;
   onHeightChange?: (height: number) => void;
   colSpan: number;
 }
@@ -14,7 +13,7 @@ export interface SearchBarProps {
 export const SearchBarHeading: React.FC<SearchBarProps> = (
   props: SearchBarProps,
 ) => {
-  const { filter, onFilterChange, colSpan, onHeightChange } = props;
+  const { query, onQueryChange, colSpan, onHeightChange } = props;
   const [rowHeight, setRowHeight] = React.useState<number>(0);
   const rowRef = React.useRef<HTMLTableHeaderCellElement>(null);
 
@@ -52,19 +51,11 @@ export const SearchBarHeading: React.FC<SearchBarProps> = (
     onHeightChange?.(rowHeight);
   }, [rowHeight, onHeightChange]);
 
-  const onChange = React.useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onFilterChange(event.target.value);
-    },
-    [onFilterChange],
-  );
-
   return (
     <S.SearchHeading colSpan={colSpan} ref={rowRef}>
       <S.Search
-        icon={faMagnifyingGlass}
-        value={filter}
-        onChange={onChange}
+        query={query}
+        onQueryChange={onQueryChange}
         placeholder="Search..."
       />
     </S.SearchHeading>
@@ -72,9 +63,7 @@ export const SearchBarHeading: React.FC<SearchBarProps> = (
 };
 
 namespace S {
-  export const Search = styled(InputWithIcon)`
-    width: 100%;
-  `;
+  export const Search = styled(SearchInput)``;
 
   export const SearchHeading = styled(TableHeading)`
     background-color: ${(p) => p.theme.colors.background};

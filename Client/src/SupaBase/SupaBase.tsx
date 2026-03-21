@@ -16,7 +16,19 @@ import { EventClass, EventClassEvents } from "../Tools/EventClass";
 import { RealtimeChannelMonitor } from "./RealtimeChannelMonitor";
 import { Database } from "./supabase-types";
 import {
+  BaseTableHandlerEventKey,
+  RealtimeChangeEventType,
+} from "./table-handlers/BaseTableHandler";
+import {
+  SupabaseAttendees,
+  SupabaseAttendeesEventKey,
+} from "./table-handlers/SupabaseAttendees";
+import { SupabaseEventParticipants } from "./table-handlers/SupabaseEventParticipants";
+import { SupabaseEventProctors } from "./table-handlers/SupabaseEventProctors";
+import { SupabaseEvents } from "./table-handlers/SupabaseEvents";
+import {
   AttendeesEntry,
+  EventsEntry,
   InsertAttendees,
   InsertRollCallEntry,
   InsertRollCallEvent,
@@ -32,12 +44,6 @@ import {
   UpdateProfileEventEntry,
   UpdateRollCallEvent,
 } from "./types";
-import { SupabaseEvents } from "./table-handlers/SupabaseEvents";
-import {
-  SupabaseAttendees,
-  SupabaseAttendeesEventKey,
-} from "./table-handlers/SupabaseAttendees";
-import { BaseTableHandlerEventKey } from "./table-handlers/BaseTableHandler";
 
 export enum SupaBaseEventKey {
   USER_LOGIN = "user_login",
@@ -50,6 +56,8 @@ export enum SupaBaseEventKey {
   LOADED_ROLLCALLS = "loaded_rollcalls",
   LOADED_ROLLCALL_EVENTS = "loaded_rollcall_events",
   EVENTS_CHANGED = "events_changed",
+  EVENT_PARTICIPANTS_CHANGED = "event_participants_changed",
+  EVENT_PROCTORS_CHANGED = "event_proctors_changed",
   UPDATED_ROLLCALL_EVENT = "updated_rollcall_event",
   VISIBILITY_CHANGED = "visibility_changed",
 }
@@ -63,6 +71,9 @@ export interface SupaBaseEvent extends EventClassEvents {
   [SupaBaseEventKey.ATTENDEES_CHANGED]: () => void;
   [SupaBaseEventKey.LOADED_ROLLCALLS]: () => void;
   [SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]: () => void;
+  [SupaBaseEventKey.EVENTS_CHANGED]: () => void;
+  [SupaBaseEventKey.EVENT_PARTICIPANTS_CHANGED]: () => void;
+  [SupaBaseEventKey.EVENT_PROCTORS_CHANGED]: () => void;
   [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: () => void;
   [SupaBaseEventKey.VISIBILITY_CHANGED]: (isVisible: boolean) => void;
 }
@@ -110,6 +121,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
   loadPromise: Promise<void> | null;
 
+  loadUsernamePromise: Promise<void> | null;
+
   realtimeChannelMonitor: RealtimeChannelMonitor;
   realtimeChannel: RealtimeChannel | null;
 
@@ -117,6 +130,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
   eventsHandler: SupabaseEvents;
   attendeesHandler: SupabaseAttendees;
+  eventParticipantsHandler: SupabaseEventParticipants;
+  eventProctorsHandler: SupabaseEventProctors;
 
   constructor() {
     super();
@@ -147,6 +162,13 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.attendeesHandler = new SupabaseAttendees({
       client: this.client,
     });
+    this.eventParticipantsHandler = new SupabaseEventParticipants({
+      client: this.client,
+    });
+    this.eventProctorsHandler = new SupabaseEventProctors({
+      client: this.client,
+    });
+    this.setupEventListeners();
   }
 
   setupEventListeners() {
@@ -168,6 +190,35 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.eventsHandler.addListener({
       [BaseTableHandlerEventKey.DATA_LOADED]: () => {
         this.fireUpdate((cb) => cb[SupaBaseEventKey.EVENTS_CHANGED]?.());
+      },
+      [BaseTableHandlerEventKey.DATA_CHANGED]: () => {
+        this.fireUpdate((cb) => cb[SupaBaseEventKey.EVENTS_CHANGED]?.());
+      },
+    });
+
+    this.eventParticipantsHandler.addListener({
+      [BaseTableHandlerEventKey.DATA_LOADED]: () => {
+        this.fireUpdate((cb) =>
+          cb[SupaBaseEventKey.EVENT_PARTICIPANTS_CHANGED]?.(),
+        );
+      },
+      [BaseTableHandlerEventKey.DATA_CHANGED]: () => {
+        this.fireUpdate((cb) =>
+          cb[SupaBaseEventKey.EVENT_PARTICIPANTS_CHANGED]?.(),
+        );
+      },
+    });
+
+    this.eventProctorsHandler.addListener({
+      [BaseTableHandlerEventKey.DATA_LOADED]: () => {
+        this.fireUpdate((cb) =>
+          cb[SupaBaseEventKey.EVENT_PROCTORS_CHANGED]?.(),
+        );
+      },
+      [BaseTableHandlerEventKey.DATA_CHANGED]: () => {
+        this.fireUpdate((cb) =>
+          cb[SupaBaseEventKey.EVENT_PROCTORS_CHANGED]?.(),
+        );
       },
     });
   }
@@ -253,7 +304,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       if (isVis) {
         if (this._isLoggedIn) {
           this.loadData(true);
-          this.listenToAttendeesChanges();
+          this.listenToRealtimeChanges();
         }
       } else {
         this.realtimeUnsubscribe();
@@ -325,7 +376,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.fireUpdate((cb) => cb[SupaBaseEventKey.USER_LOGIN]?.(true));
 
     await this.loadProfile();
-    await this.listenToAttendeesChanges();
+    await this.listenToRealtimeChanges();
   }
 
   async loadData(refresh: boolean = false) {
@@ -339,6 +390,9 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       // These don't depend on each other and can be run at the same time
       await Promise.all([
         this.attendeesHandler.loadData(refresh),
+        this.eventsHandler.loadData(refresh),
+        this.eventParticipantsHandler.loadData(refresh),
+        this.eventProctorsHandler.loadData(refresh),
         this.loadUsernames(),
         this.loadRollCallEvents(),
       ]);
@@ -401,7 +455,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     return this.isLoggedIn && this.profile?.onboarding_done === true;
   }
 
-  async listenToAttendeesChanges() {
+  async listenToRealtimeChanges() {
     if (this.realtimeChannel) {
       console.debug(`Realtime channel already exists!`);
       return;
@@ -415,17 +469,34 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
         schema: "public",
       },
       (payload) => {
+        console.log(
+          `%cReceived update from remote for table %c${payload.table}%c with event %c${payload.eventType}`,
+          "color: grey",
+          "color: cyan",
+          "color: grey",
+          "color: lime",
+          payload,
+        );
         this.realtimeChannelMonitor.receivedRealtimeUpdate();
 
         switch (payload.table) {
           case Tables.ATTENDEES:
-            this.handleAttendeesChanges(payload);
+            this.attendeesHandler.handleAttendeesChangesFromRemote(payload);
             return;
           case Tables.ROLLCALL:
             this.handleRollCallChanges(payload);
             return;
           case Tables.ROLLCALL_EVENT:
             this.handleRollCallEventChanges(payload);
+            return;
+          case Tables.EVENTS:
+            this.handleEventsChanges(payload);
+            return;
+          case Tables.EVENT_PARTICIPANTS:
+            this.handleEventParticipantsChanges(payload);
+            return;
+          case Tables.EVENT_PROCTORS:
+            this.handleEventProctorsChanges(payload);
             return;
           case Tables.PING_TABLE:
             // Nothing to do
@@ -466,40 +537,15 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.realtimeChannel = null;
   }
 
-  async handleAttendeesChanges(
-    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
-  ) {
-    console.log(`${payload.table} Updated`, payload);
-
-    switch (payload.eventType) {
-      case "DELETE":
-        return this.attendeesHandler.removeAttendeeEventReceivedFromRemote(
-          payload.old.id,
-        );
-      case "INSERT":
-        return this.attendeesHandler.addAttendeeEventReceivedFromRemote(
-          payload.new as AttendeesEntry,
-        );
-      case "UPDATE":
-        return this.attendeesHandler.updateAttendeeEventReceivedFromRemote(
-          payload.new as AttendeesEntry,
-        );
-    }
-
-    debugger;
-  }
-
   async handleRollCallEventChanges(
     payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
   ) {
-    console.log(`${payload.table} Updated`, payload);
-
     switch (payload.eventType) {
-      case "INSERT":
+      case RealtimeChangeEventType.INSERT:
         return this.addRollCallEventFromDB(payload.new as RollCallEventEntry);
-      case "DELETE":
+      case RealtimeChangeEventType.DELETE:
         return this.removeRollCallEventFromDB(payload.old.id);
-      case "UPDATE":
+      case RealtimeChangeEventType.UPDATE:
         return this.updateRollCallEventFromDB(
           payload.new as RollCallEventEntry,
         );
@@ -510,20 +556,53 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   async handleRollCallChanges(
     payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
   ) {
-    console.log(`${payload.table} Updated`, payload);
-
     switch (payload.eventType) {
-      case "INSERT":
+      case RealtimeChangeEventType.INSERT:
         return this.addRollCallEventReceivedFromRemote(
           payload.new as RollCallEntry,
         );
-      case "DELETE":
+      case RealtimeChangeEventType.DELETE:
         return this.attendeesHandler.removeRollCallEventReceivedFromRemote(
           payload.old.id,
         );
     }
 
     debugger;
+  }
+
+  async handleEventsChanges(
+    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
+  ) {
+    switch (payload.eventType) {
+      case RealtimeChangeEventType.INSERT:
+        return this.eventsHandler.addEventReceivedFromRemote(
+          payload.new as EventsEntry,
+        );
+      case RealtimeChangeEventType.UPDATE:
+        return this.eventsHandler.updateEventReceivedFromRemote(
+          payload.new as EventsEntry,
+        );
+      case RealtimeChangeEventType.DELETE:
+        return this.eventsHandler.removeEventReceivedFromRemote(payload.old.id);
+    }
+
+    debugger;
+  }
+
+  async handleEventParticipantsChanges(
+    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
+  ) {
+    return this.eventParticipantsHandler.handleEventParticipantsChangesFromRemote(
+      payload,
+    );
+  }
+
+  async handleEventProctorsChanges(
+    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
+  ) {
+    return this.eventProctorsHandler.handleEventProctorsChangesFromRemote(
+      payload,
+    );
   }
 
   async addRollCallEventReceivedFromRemote(entry: RollCallEntry) {
@@ -583,7 +662,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
   }
 
-  async loadUsernames(): Promise<void> {
+  async _loadUsernames(): Promise<void> {
     console.log(`Loading Usernames`);
     const { data, error } = await this.client.from(Tables.PROFILES).select();
 
@@ -603,6 +682,14 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.usernamesLoaded = true;
     this.fireUpdate((cb) => cb[SupaBaseEventKey.USERNAMES_LOADED]?.());
     console.log(`[${data?.length || 0}] Usernames loaded`);
+  }
+
+  async loadUsernames(): Promise<void> {
+    if (!this.loadUsernamePromise) {
+      this.loadUsernamePromise = this._loadUsernames();
+    }
+
+    return this.loadUsernamePromise;
   }
 
   get rollcallInProgress(): boolean {
@@ -718,6 +805,37 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
 
     attendee.updateAttendee(data[0] as AttendeesEntry);
+  }
+
+  async createNewAttendanceEvent(
+    name: string,
+    startTime: string,
+    endTime: string,
+  ) {
+    const createdEvent = await this.eventsHandler.createNewAttendanceEvent(
+      name,
+      startTime,
+      endTime,
+      this.user.id,
+    );
+
+    if (!createdEvent) {
+      return false;
+    }
+
+    const didCreateCreatorProctor =
+      await this.eventProctorsHandler.createEventProctor(
+        createdEvent.id,
+        this.user.id,
+      );
+
+    if (!didCreateCreatorProctor) {
+      console.error(
+        `createNewAttendanceEvent: Event created but creator could not be added as first proctor`,
+      );
+    }
+
+    return true;
   }
 
   async createNewAttendees(

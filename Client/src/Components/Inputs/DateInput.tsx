@@ -19,6 +19,7 @@ export const DateInput: React.FC<DateInputProps> = (props: DateInputProps) => {
     fontSize,
     forwardRef,
     disabled = false,
+    hasError = false,
     type = "date",
     ...rest
   } = props;
@@ -71,6 +72,7 @@ export const DateInput: React.FC<DateInputProps> = (props: DateInputProps) => {
         color={color}
         fontSize={fontSize}
         disabled={disabled}
+        hasError={hasError}
         padRight={40 + (fontSize || 18)}
       />
       <S.PickerIcon
@@ -80,7 +82,9 @@ export const DateInput: React.FC<DateInputProps> = (props: DateInputProps) => {
         color={
           disabled
             ? theme.colors.textMuted
-            : color || theme.colors.input.foreground
+            : hasError
+              ? theme.colors.accent.danger
+              : color || theme.colors.input.foreground
         }
         isDisabled={disabled}
       />

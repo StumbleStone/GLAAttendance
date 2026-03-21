@@ -5,6 +5,7 @@ export enum Tables {
   PING_TABLE = "PingTable",
   ATTENDEES = "Attendees",
   EVENT_PARTICIPANTS = "EventParticipants",
+  EVENT_PROCTORS = "EventProctors",
   EVENTS = "Events",
   ROLLCALL = "RollCall",
   ROLLCALL_EVENT = "RollCallEvent",
@@ -46,6 +47,20 @@ export type InsertAttendees =
   Database["public"]["Tables"][Tables.ATTENDEES]["Insert"];
 export type UpdateAttendees =
   Database["public"]["Tables"][Tables.ATTENDEES]["Update"];
+
+export type EventParticipantsEntry =
+  Database["public"]["Tables"][Tables.EVENT_PARTICIPANTS]["Row"];
+export type InsertEventParticipants =
+  Database["public"]["Tables"][Tables.EVENT_PARTICIPANTS]["Insert"];
+export type UpdateEventParticipants =
+  Database["public"]["Tables"][Tables.EVENT_PARTICIPANTS]["Update"];
+
+export type EventProctorsEntry =
+  Database["public"]["Tables"][Tables.EVENT_PROCTORS]["Row"];
+export type InsertEventProctors =
+  Database["public"]["Tables"][Tables.EVENT_PROCTORS]["Insert"];
+export type UpdateEventProctors =
+  Database["public"]["Tables"][Tables.EVENT_PROCTORS]["Update"];
 
 export type PingEntry = Database["public"]["Tables"][Tables.PING_TABLE]["Row"];
 export type UpdatePingEntry =

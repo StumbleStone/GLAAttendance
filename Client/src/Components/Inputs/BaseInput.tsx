@@ -8,6 +8,7 @@ export interface BaseInputCustomProps {
   padLeft?: number | null;
   padRight?: number | null;
   disabled?: boolean;
+  hasError?: boolean;
 }
 
 export type BaseInputProps = React.InputHTMLAttributes<HTMLInputElement> &
@@ -67,7 +68,11 @@ namespace S {
 
     border: 1px solid
       ${(p) =>
-        p.isDisabled ? p.theme.colors.border : p.theme.colors.input.border};
+        p.isDisabled
+          ? p.theme.colors.border
+          : p.hasError
+          ? p.theme.colors.accent.danger
+          : p.theme.colors.input.border};
     border-radius: ${(p) => p.theme.radius.lg};
     box-shadow: inset 0 1px 0 ${(p) => p.theme.colors.borderSubtle};
     transition:
@@ -94,16 +99,25 @@ namespace S {
 
     :hover {
       border-color: ${(p) =>
-        p.isDisabled ? p.theme.colors.border : p.theme.colors.textMuted};
+        p.isDisabled
+          ? p.theme.colors.border
+          : p.hasError
+          ? p.theme.colors.accent.danger
+          : p.theme.colors.textMuted};
     }
 
     :focus,
     :focus-visible {
       outline: none;
-      border-color: ${(p) => p.theme.colors.input.focus};
+      border-color: ${(p) =>
+        p.hasError ? p.theme.colors.accent.danger : p.theme.colors.input.focus};
       box-shadow:
         inset 0 1px 0 ${(p) => p.theme.colors.borderSubtle},
-        0 0 0 2px ${(p) => p.theme.colors.input.focus};
+        0 0 0 2px
+          ${(p) =>
+            p.hasError
+              ? `${p.theme.colors.accent.danger}55`
+              : p.theme.colors.input.focus};
     }
   `;
 }

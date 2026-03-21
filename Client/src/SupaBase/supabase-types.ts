@@ -91,6 +91,7 @@ export type Database = {
           extra_fields: Json | null
           id: number
           removed: boolean | null
+          updated_at: string | null
         }
         Insert: {
           attendee_id: number
@@ -99,6 +100,7 @@ export type Database = {
           extra_fields?: Json | null
           id?: number
           removed?: boolean | null
+          updated_at?: string | null
         }
         Update: {
           attendee_id?: number
@@ -107,8 +109,48 @@ export type Database = {
           extra_fields?: Json | null
           id?: number
           removed?: boolean | null
+          updated_at?: string | null
         }
         Relationships: []
+      }
+      EventProctors: {
+        Row: {
+          created_at: string
+          event_id: number | null
+          id: number
+          removed: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id?: number | null
+          id?: number
+          removed?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: number | null
+          id?: number
+          removed?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "EventProctors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "Events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "EventProctors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["uid"]
+          },
+        ]
       }
       Events: {
         Row: {

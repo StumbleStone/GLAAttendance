@@ -1,4 +1,6 @@
 import React from "react";
+import { matchPath } from "react-router-dom";
+import { EventDetails } from "../AttendanceEvents/EventDetails";
 import { Events } from "../AttendanceEvents/Events";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Login } from "../Components/Login/Login";
@@ -15,6 +17,7 @@ export enum RoutePath {
   ONBOARDING = "/onboard",
   DASHBOARD = "/dashboard",
   EVENTS = "/events",
+  EVENT = "/event/:id",
   DEBUG = "/debug",
 }
 
@@ -63,6 +66,14 @@ export const EventsRouteItem: RouteItem = new RouteItem({
   prerequisite: OnboardingRouteItem,
 });
 
+export const EventRouteItem: RouteItem = new RouteItem({
+  path: RoutePath.EVENT,
+  render: () => <EventDetails />,
+  check: () => true,
+  isEndpoint: true,
+  prerequisite: OnboardingRouteItem,
+});
+
 export const DebugRouteItem: RouteItem = new RouteItem({
   path: RoutePath.DEBUG,
   render: () => <Debug />,
@@ -79,12 +90,21 @@ export const ROUTES: RouteItem[] = [
   OnboardingRouteItem,
   DashboardRouteItem,
   EventsRouteItem,
+  EventRouteItem,
   DebugRouteItem,
 ];
 
 export function getRouteByPath(pathname: string): RouteItem | null {
   for (const route of ROUTES) {
-    if (route.path === pathname) {
+    if (
+      !!matchPath(
+        {
+          path: route.path,
+          end: true,
+        },
+        pathname,
+      )
+    ) {
       return route;
     }
   }
@@ -92,30 +112,30 @@ export function getRouteByPath(pathname: string): RouteItem | null {
   return null;
 }
 
-let finalRoute: RouteItem = DashboardRouteItem;
+let finalRoutePath: string = DashboardRouteItem.path;
 const warnedMissingPaths = new Set<string>();
 
-export function setFinalRoute(path: string): void {
-  const route: RouteItem = getRouteByPath(path);
+export function setFinalRoute(pathname: string): void {
+  const route = getRouteByPath(pathname);
   if (!route) {
-    finalRoute = DashboardRouteItem;
+    finalRoutePath = DashboardRouteItem.path;
     return;
   }
 
   if (!route.isEndpoint) {
     console.warn(`Route ${route.path} is not an endpoint.`);
-    finalRoute = DashboardRouteItem;
+    finalRoutePath = DashboardRouteItem.path;
     return;
   }
 
-  finalRoute = route;
+  finalRoutePath = pathname;
 }
 
 export function resolveNextPath(
   supabase: SupaBase,
   currentPathname: string,
-): RoutePath | null {
-  const currentRoute: RouteItem = getRouteByPath(currentPathname);
+): string | null {
+  const currentRoute = getRouteByPath(currentPathname);
 
   if (!currentRoute) {
     if (!warnedMissingPaths.has(currentPathname)) {
@@ -135,11 +155,11 @@ export function resolveNextPath(
 
   // We passed a check but we're not at an endpoint, so we should be redirected to the default endpoint.
   if (!currentRoute.isEndpoint) {
-    return finalRoute.path;
+    return finalRoutePath;
   }
 
   // We're already at an endpoint and passed all checks, so stay here.
-  return currentRoute.path;
+  return currentPathname;
 }
 
 export function routePathToSegment(path: RoutePath): string {

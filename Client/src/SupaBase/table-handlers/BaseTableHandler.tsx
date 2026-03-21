@@ -7,10 +7,18 @@ export interface BaseTableHandlerOptions {
 
 export enum BaseTableHandlerEventKey {
   DATA_LOADED = "data_loaded",
+  DATA_CHANGED = "data_changed",
+}
+
+export enum RealtimeChangeEventType {
+  DELETE = "DELETE",
+  INSERT = "INSERT",
+  UPDATE = "UPDATE",
 }
 
 export interface BaseTableHandlerEvent extends EventClassEvents {
   [BaseTableHandlerEventKey.DATA_LOADED]: () => void;
+  [BaseTableHandlerEventKey.DATA_CHANGED]: () => void;
 }
 
 export abstract class BaseTableHandler<
@@ -46,5 +54,6 @@ export abstract class BaseTableHandler<
     await this.dataPromise;
     this.dataPromise = null;
     this.dataLoaded = true;
+    this.fireUpdate((cb) => cb[BaseTableHandlerEventKey.DATA_LOADED]?.());
   }
 }

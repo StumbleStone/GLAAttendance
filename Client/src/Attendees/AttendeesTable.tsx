@@ -16,6 +16,7 @@ import React, {
   useState,
 } from "react";
 import { Icon } from "../Components/Icon";
+import { Search } from "../Components/Search/Search";
 import { Table } from "../Components/Table/Table";
 import { TableHeading } from "../Components/Table/TableHeading";
 import { TableRow } from "../Components/Table/TableRow";
@@ -140,45 +141,6 @@ function sortOn(a: Attendee, b: Attendee, sortAsc: boolean) {
   return aTime - bTime;
 }
 
-function normalizeString(str: string | null): string | null {
-  if (str == null) {
-    return null;
-  }
-
-  return str
-    .normalize("NFD")
-    .replaceAll(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
-function filterData(supabase: SupaBase, filter: string) {
-  if (supabase.attendeesHandler.count == 0) {
-    return [];
-  }
-
-  if (!filter || filter == "") {
-    return supabase.attendeesHandler.arr();
-  }
-
-  let outArr: Attendee[] = [];
-
-  normalizeString(filter)
-    .toLowerCase()
-    .split(/ +/)
-    .forEach((part) => {
-      supabase.attendeesHandler.iterate((att) => {
-        if (
-          normalizeString(att.name)?.includes(part) ||
-          normalizeString(att.surname)?.includes(part)
-        ) {
-          outArr.push(att);
-        }
-      });
-    });
-
-  return outArr;
-}
-
 function isIncludedBySummaryPills(
   attendee: Attendee,
   currentRollCallEvent: SupaBase["currentRollCallEvent"],
@@ -274,12 +236,56 @@ function calculateColumnsOnResize(width: number): SortColumnsMap {
   return newCols;
 }
 
+const ATTENDEE_SEARCH_FIELDS: Array<keyof Attendee> = [
+  "name",
+  "surname",
+  "allergies",
+];
+
 export const AttendeesTable: React.FC<AttendeesTableProps> = (
   props: AttendeesTableProps,
 ) => {
   const { supabase, onClickedAttendee } = props;
+  const [recalculateRows, forceUpdate] = useReducer((x) => x + 1, 0);
 
-  const [filter, setFilter] = useState<string>("");
+  useEffect(() => {
+    return supabase.addListener({
+      [SupaBaseEventKey.LOADED_ROLLCALLS]: forceUpdate,
+      [SupaBaseEventKey.ATTENDEES_CHANGED]: forceUpdate,
+      [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: forceUpdate,
+    });
+  }, [supabase]);
+
+  const attendees = useMemo<Attendee[]>(
+    () => supabase.attendeesHandler.arr(),
+    [recalculateRows, supabase],
+  );
+
+  return (
+    <Search items={attendees} searchFields={ATTENDEE_SEARCH_FIELDS}>
+      {({ filteredItems, query, setQuery }) => (
+        <FilteredAttendeesTable
+          onClickedAttendee={onClickedAttendee}
+          query={query}
+          searchedRows={filteredItems}
+          setQuery={setQuery}
+          supabase={supabase}
+        />
+      )}
+    </Search>
+  );
+};
+
+interface FilteredAttendeesTableProps extends AttendeesTableProps {
+  query: string;
+  searchedRows: Attendee[];
+  setQuery: (newQuery: string) => void;
+}
+
+const FilteredAttendeesTable: React.FC<FilteredAttendeesTableProps> = (
+  props: FilteredAttendeesTableProps,
+) => {
+  const { onClickedAttendee, query, searchedRows, setQuery, supabase } = props;
   const [sortCol, setSortCol] = useState<SortColumns>(SortColumns.STATUS);
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   const [selectedAttendeeId, setSelectedAttendeeId] = useState<number | null>(
@@ -297,30 +303,17 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
     [SortColumns.STATUS]: SortColumnSize.NORMAL,
   }));
 
-  const [recalculateRows, forceUpdate] = useReducer((x) => x + 1, 0);
-
-  useEffect(() => {
-    return supabase.addListener({
-      [SupaBaseEventKey.LOADED_ROLLCALLS]: forceUpdate,
-      [SupaBaseEventKey.ATTENDEES_CHANGED]: forceUpdate,
-      [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: forceUpdate,
-    });
-  }, []);
-
-  const filtered: Attendee[] = useMemo(() => {
-    return filterData(supabase, filter).filter((attendee) =>
-      isIncludedBySummaryPills(
-        attendee,
-        supabase.currentRollCallEvent,
-        selectedPills,
+  const filtered = useMemo<Attendee[]>(
+    () =>
+      searchedRows.filter((attendee) =>
+        isIncludedBySummaryPills(
+          attendee,
+          supabase.currentRollCallEvent,
+          selectedPills,
+        ),
       ),
-    );
-  }, [
-    filter,
-    recalculateRows,
-    selectedPills,
-    supabase.currentRollCallEvent?.id,
-  ]);
+    [searchedRows, selectedPills, supabase.currentRollCallEvent?.id],
+  );
 
   useEffect(() => {
     if (!!colsToInclude[sortCol]) {
@@ -370,8 +363,7 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
       return Attendee.SortByField(a, b, field) * (sortAsc ? 1 : -1);
     };
 
-    // console.log("%cSorted rows", "color: lime");
-    return filtered.sort(sort);
+    return [...filtered].sort(sort);
   }, [filtered, sortCol, sortAsc, supabase.currentRollCallEvent?.id ?? 0]);
 
   const handleClickAttendee = useCallback(
@@ -401,8 +393,8 @@ export const AttendeesTable: React.FC<AttendeesTableProps> = (
           sortAsc={sortAsc}
           sortCol={sortCol}
           handleClickCol={handleClickCol}
-          filter={filter}
-          setFilter={setFilter}
+          query={query}
+          setQuery={setQuery}
           colsToInclude={colsToInclude}
         />
         <ContentRows
@@ -451,8 +443,8 @@ const ContentRows: React.FC<ContentRowsProps> = (props: ContentRowsProps) => {
 };
 
 interface TableHeadingsProps {
-  filter: string;
-  setFilter: (newFilter: string) => void;
+  query: string;
+  setQuery: (newQuery: string) => void;
   colsToInclude: SortColumnsMap;
   sortAsc: boolean;
   sortCol: SortColumns;
@@ -462,7 +454,7 @@ interface TableHeadingsProps {
 const TableHeadings: React.FC<TableHeadingsProps> = (
   props: TableHeadingsProps,
 ) => {
-  const { filter, setFilter, colsToInclude, sortAsc, sortCol, handleClickCol } =
+  const { query, setQuery, colsToInclude, sortAsc, sortCol, handleClickCol } =
     props;
 
   const visibleHeaderColSpan = useMemo(() => {
@@ -473,8 +465,8 @@ const TableHeadings: React.FC<TableHeadingsProps> = (
     <S.StickyTableHead>
       <S.HeaderRow>
         <SearchBarHeading
-          filter={filter}
-          onFilterChange={setFilter}
+          query={query}
+          onQueryChange={setQuery}
           colSpan={visibleHeaderColSpan}
         />
       </S.HeaderRow>

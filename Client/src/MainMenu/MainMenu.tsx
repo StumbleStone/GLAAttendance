@@ -5,6 +5,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Heading } from "../Components/Heading";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
+import { Breadcrumbs } from "./Breadcrumbs";
 import { HeadingIcons } from "./HeadingIcons";
 import { getRouteByPath, resolveNextPath, setFinalRoute } from "./RouteFlow";
 
@@ -55,7 +56,7 @@ export const MainMenu: React.FC<{}> = () => {
       return;
     }
 
-    setFinalRoute(route.path);
+    setFinalRoute(location.pathname);
   }, [location.pathname]);
 
   // Re-evaluate route gating when route or auth/profile state changes.
@@ -93,6 +94,7 @@ export const MainMenu: React.FC<{}> = () => {
         </S.StyledHeading>
         <HeadingIcons />
       </S.TitleTile>
+      <Breadcrumbs supabase={supabase} />
       {content}
     </S.ContainerEl>
   );

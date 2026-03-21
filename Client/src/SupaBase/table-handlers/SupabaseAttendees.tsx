@@ -1,10 +1,11 @@
+import { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { Attendee } from "../../Attendees/Attendee";
-import { AttendeesEntry, RollCallEntry, Tables } from "../types";
+import { AttendeesEntry, Tables } from "../types";
 import {
   BaseTableHandler,
   BaseTableHandlerEvent,
-  BaseTableHandlerEventKey,
   BaseTableHandlerOptions,
+  RealtimeChangeEventType,
 } from "./BaseTableHandler";
 
 export type AttendeesMap = Map<string, Attendee>;
@@ -65,6 +66,25 @@ export class SupabaseAttendees extends BaseTableHandler<
         cb[SupabaseAttendeesEventKey.ATTENDEE_ROLLCALL_REMOVED]?.(),
       );
     });
+  }
+
+  async handleAttendeesChangesFromRemote(
+    payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
+  ) {
+    switch (payload.eventType) {
+      case RealtimeChangeEventType.DELETE:
+        return this.removeAttendeeEventReceivedFromRemote(payload.old.id);
+      case RealtimeChangeEventType.INSERT:
+        return this.addAttendeeEventReceivedFromRemote(
+          payload.new as AttendeesEntry,
+        );
+      case RealtimeChangeEventType.UPDATE:
+        return this.updateAttendeeEventReceivedFromRemote(
+          payload.new as AttendeesEntry,
+        );
+    }
+
+    debugger;
   }
 
   async updateAttendeeEventReceivedFromRemote(entry: AttendeesEntry) {
