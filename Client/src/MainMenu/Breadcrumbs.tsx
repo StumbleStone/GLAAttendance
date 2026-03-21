@@ -84,6 +84,13 @@ function getBreadcrumbItems(
   switch (pathname) {
     case RoutePath.DASHBOARD:
       return [createDashboardBreadcrumb()];
+    case RoutePath.ROLLCALLS:
+      return withDashboardBase([
+        {
+          label: "Rollcalls",
+          path: RoutePath.ROLLCALLS,
+        },
+      ]);
     case RoutePath.EVENTS:
       return withDashboardBase([
         {

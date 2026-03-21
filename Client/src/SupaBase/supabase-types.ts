@@ -278,6 +278,7 @@ export type Database = {
           created_at: string
           created_by: string
           description: string | null
+          event_id: number | null
           id: number
         }
         Insert: {
@@ -287,6 +288,7 @@ export type Database = {
           created_at?: string
           created_by: string
           description?: string | null
+          event_id?: number | null
           id?: number
         }
         Update: {
@@ -296,6 +298,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           description?: string | null
+          event_id?: number | null
           id?: number
         }
         Relationships: [
@@ -312,6 +315,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["uid"]
+          },
+          {
+            foreignKeyName: "RollCallEvent_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "Events"
+            referencedColumns: ["id"]
           },
         ]
       }

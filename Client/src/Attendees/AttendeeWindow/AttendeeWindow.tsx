@@ -9,7 +9,13 @@ import {
   faXmarkCircle,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import React, { useCallback, useEffect, useReducer, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { Backdrop } from "../../Components/Backdrop/Backdrop";
 import { Button, ButtonContainer } from "../../Components/Button/Button";
 import { DownloadButton } from "../../Components/Button/DownloadButton";
@@ -45,6 +51,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
   const [showAnim, setShowAnim] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const previousStatusRef = useRef<AttendeeStatus>(AttendeeStatus.NOT_SCANNED);
 
   const bdClick = useCallback(() => {
     layerItem.close();
@@ -54,12 +61,9 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
     attendee.generateQRCode();
     return attendee.addListener({
       updated: forceUpdate,
-      statusUpdated: () => {
-        setShowAnim(() => true);
-      },
       qrReady: forceUpdate,
     });
-  }, []);
+  }, [attendee]);
 
   useEffect(() => {
     if (!attendee.isDeleted) {
@@ -70,9 +74,27 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
 
   useEffect(() => {
     return supabase.addListener({
-      [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: () => {},
+      [SupaBaseEventKey.LOADED_ROLLCALLS]: () => {
+        const nextStatus = supabase.getAttendeeStatus(attendee);
+        if (previousStatusRef.current !== nextStatus) {
+          previousStatusRef.current = nextStatus;
+          setShowAnim(() => true);
+        }
+        forceUpdate();
+      },
+      [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: () => {
+        previousStatusRef.current = supabase.getAttendeeStatus(attendee);
+        forceUpdate();
+      },
     });
-  }, []);
+  }, [attendee, supabase]);
+
+  const status: AttendeeStatus = supabase.getAttendeeStatus(attendee);
+  const currentRollCall = supabase.getCurrentRollCallForAttendee(attendee);
+
+  useEffect(() => {
+    previousStatusRef.current = status;
+  }, [status]);
 
   const handleDelete = useCallback(() => {
     LayerHandler.AddLayer((layerItem: LayerItem) => {
@@ -109,9 +131,8 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
         />
       );
     });
-  }, []);
+  }, [attendee, supabase]);
 
-  const status: AttendeeStatus = attendee.status(supabase.currentRollCallEvent);
   const statusCol =
     status === AttendeeStatus.PRESENT
       ? DefaultColors.BrightGreen
@@ -130,7 +151,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
 
   const handlePresent = useCallback(() => {
     supabase.createNewRollCall(attendee, RollCallMethod.MANUAL);
-  }, [status]);
+  }, [attendee, supabase]);
 
   const handleAbsent = useCallback(() => {
     supabase.createNewRollCall(
@@ -138,7 +159,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
       RollCallMethod.MANUAL,
       RollCallStatus.ABSENT,
     );
-  }, [status]);
+  }, [attendee, supabase]);
 
   return (
     <S.StyledBackdrop onClose={bdClick}>
@@ -167,6 +188,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
           {!editMode && (
             <AttendeeWindowStatusContainer
               attendee={attendee}
+              currentRollCall={currentRollCall}
               status={status}
               statusCol={statusCol}
               supabase={supabase}

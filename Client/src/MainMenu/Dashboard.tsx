@@ -16,6 +16,10 @@ export const Dashboard: React.FC = () => {
   useOutletContext<DashboardProps>();
   const nav = useNavigate();
 
+  const onClickRollCalls = React.useCallback(() => {
+    nav(RoutePath.ROLLCALLS);
+  }, [nav]);
+
   const onClickEvents = React.useCallback(() => {
     nav(RoutePath.EVENTS);
   }, [nav]);
@@ -29,6 +33,12 @@ export const Dashboard: React.FC = () => {
         </S.PanelDescription>
 
         <S.PanelGrid>
+          <S.PanelItem onClick={onClickRollCalls} clickable={true}>
+            <S.ItemTitle>Rollcalls</S.ItemTitle>
+            <S.ItemCopy>Start and monitor attendance rollcalls.</S.ItemCopy>
+            <S.Badge label="Surface" />
+          </S.PanelItem>
+
           <S.PanelItem onClick={onClickEvents} clickable={true}>
             <S.ItemTitle>Events</S.ItemTitle>
             <S.ItemCopy>Manage event setup and scheduling.</S.ItemCopy>
@@ -86,7 +96,7 @@ namespace S {
     gap: 10px;
 
     @media (min-width: 700px) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
   `;
 

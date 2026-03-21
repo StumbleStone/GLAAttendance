@@ -2,7 +2,8 @@ import styled from "@emotion/styled";
 import React, { useCallback, useEffect, useReducer } from "react";
 import { TableCell } from "../Components/Table/TableCell";
 import { TableRow } from "../Components/Table/TableRow";
-import { SupaBase } from "../SupaBase/SupaBase";
+import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
+import { RollCallEntry } from "../SupaBase/types";
 import { epochToDate } from "../Tools/Toolbox";
 import { Attendee, AttendeeStatus } from "./Attendee";
 import { SortColumns, SortColumnSize, SortColumnsMap } from "./Shared";
@@ -19,20 +20,20 @@ export interface AttendeeRowProps {
 }
 
 function getRecorderName(
-  att: Attendee,
   supabase: SupaBase,
   columnSizes: SortColumnsMap,
   status: AttendeeStatus,
+  currentRollCall: RollCallEntry | null,
 ): string {
-  if (status == AttendeeStatus.NOT_SCANNED || !att.currentRollCall) {
+  if (status == AttendeeStatus.NOT_SCANNED || !currentRollCall) {
     return "--";
   }
 
   if (columnSizes[SortColumns.BY] <= SortColumnSize.COMPACTER) {
-    return supabase.getUserInitials(att.currentRollCall!.created_by);
+    return supabase.getUserInitials(currentRollCall.created_by);
   }
 
-  let recorderName = supabase.getUserName(att.currentRollCall!.created_by, {
+  let recorderName = supabase.getUserName(currentRollCall.created_by, {
     nameOnly: true,
   });
 
@@ -49,14 +50,25 @@ const AttendeeRowComponent: React.FC<AttendeeRowProps> = (
 ) => {
   const { att, supabase, onClickAttendee, selected, columnSizes } = props;
 
-  const status: AttendeeStatus = att.status(supabase.currentRollCallEvent);
+  const currentRollCall = supabase.getCurrentRollCallForAttendee(att);
+  const status: AttendeeStatus = supabase.getAttendeeStatus(att);
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
-    return att.addListener({
+    const removeAttendeeListener = att.addListener({
       updated: forceUpdate,
     });
-  }, []);
+    const removeSupabaseListener = supabase.addListener({
+      [SupaBaseEventKey.LOADED_ROLLCALLS]: forceUpdate,
+      [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: forceUpdate,
+      [SupaBaseEventKey.USERNAMES_LOADED]: forceUpdate,
+    });
+
+    return () => {
+      removeAttendeeListener();
+      removeSupabaseListener();
+    };
+  }, [att, supabase]);
 
   if (att.isDeleted) {
     return null;
@@ -97,7 +109,7 @@ const AttendeeRowComponent: React.FC<AttendeeRowProps> = (
       {columnSizes[SortColumns.ON] && (
         <S.NameCell>
           {status !== AttendeeStatus.NOT_SCANNED
-            ? epochToDate(new Date(att.currentRollCall!.created_at).getTime(), {
+            ? epochToDate(new Date(currentRollCall!.created_at).getTime(), {
                 includeDate: false,
                 includeTime: true,
                 includeSeconds:
@@ -108,7 +120,7 @@ const AttendeeRowComponent: React.FC<AttendeeRowProps> = (
       )}
       {columnSizes[SortColumns.BY] && (
         <S.RecorderCell>
-          {getRecorderName(att, supabase, columnSizes, status)}
+          {getRecorderName(supabase, columnSizes, status, currentRollCall)}
         </S.RecorderCell>
       )}
     </S.DataRow>

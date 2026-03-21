@@ -1,17 +1,11 @@
 import * as qrcode from "qrcode";
-import {
-  AttendeesEntry,
-  RollCallEntry,
-  RollCallEventEntry,
-  RollCallStatus,
-} from "../SupaBase/types";
+import { AttendeesEntry } from "../SupaBase/types";
 import { EventClass, EventClassEvents } from "../Tools/EventClass";
 
 export const QR_SIZE: number = 1024;
 
 export interface AttendeeEvents extends EventClassEvents {
   updated: () => void;
-  statusUpdated: () => void;
   qrReady: (qrCode: HTMLCanvasElement) => void;
 }
 
@@ -34,10 +28,7 @@ async function generateQRCode(str: string): Promise<HTMLCanvasElement | null> {
 
 export class Attendee extends EventClass<AttendeeEvents> {
   entry: AttendeesEntry;
-  rollCalls: RollCallEntry[];
   hash: string;
-
-  currentRollCall: RollCallEntry | null;
 
   qrCode: HTMLCanvasElement;
   qrCodeString: string;
@@ -47,8 +38,6 @@ export class Attendee extends EventClass<AttendeeEvents> {
     super();
     this.entry = entry;
     this.hash = this.generateHash();
-    this.rollCalls = [];
-    this.currentRollCall = null;
   }
 
   private generateHash(): string {
@@ -105,93 +94,9 @@ export class Attendee extends EventClass<AttendeeEvents> {
       .filter((v) => v.trim() !== "");
   }
 
-  removeRollCall(rollCall: RollCallEntry): void {
-    if (!this.rollCalls.find((r) => r.id === rollCall.id)) {
-      return;
-    }
-
-    this.rollCalls = this.rollCalls.filter((r) => r.id !== rollCall.id);
-
-    this.fireUpdate((cb) => cb.updated?.());
-  }
-
-  checkCurrentRollCall(currentRollCallEvent: RollCallEventEntry) {
-    const matchingRollCall = this.rollCalls.find(
-      (rc) => rc.roll_call_event_id === currentRollCallEvent.id
-    );
-
-    if (matchingRollCall) {
-      this.setCurrentRollCall(matchingRollCall);
-    } else {
-      this.setCurrentRollCall(null);
-    }
-  }
-
-  setCurrentRollCall(rollCall: RollCallEntry | null): void {
-    if (!rollCall && this.currentRollCall != null) {
-      this.currentRollCall = null;
-      this.fireUpdate((cb) => cb.statusUpdated?.());
-      return;
-    }
-
-    if (!rollCall) {
-      // Both are null
-      return;
-    }
-
-    // Unchanged
-    if (rollCall.id === this.currentRollCall?.id) {
-      return;
-    }
-
-    const statusChanged = this.currentRollCall?.status !== rollCall.status;
-    this.currentRollCall = rollCall;
-
-    this.fireUpdate((cb) => cb.updated?.());
-    if (statusChanged) {
-      this.fireUpdate((cb) => cb.statusUpdated?.());
-    }
-  }
-
-  pushRollCall(rollCall: RollCallEntry, isCurrent: boolean): void {
-    this.rollCalls.push(rollCall);
-
-    this.fireUpdate((cb) => cb.updated?.());
-
-    if (isCurrent) {
-      this.setCurrentRollCall(rollCall);
-    }
-  }
-
   updateAttendee(entry: AttendeesEntry): void {
     this.entry = entry;
     this.fireUpdate((cb) => cb.updated?.());
-  }
-
-  status(rollCallEvent: RollCallEventEntry): AttendeeStatus {
-    if (!rollCallEvent) {
-      return AttendeeStatus.NOT_SCANNED;
-    }
-
-    const matching = this.rollCalls
-      .filter((rc) => rc.roll_call_event_id === rollCallEvent.id)
-      .sort((a, b) => {
-        return (
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-      });
-
-    if (matching.length == 0) {
-      return AttendeeStatus.NOT_SCANNED;
-    }
-
-    return matching[0].status === RollCallStatus.PRESENT
-      ? AttendeeStatus.PRESENT
-      : AttendeeStatus.ABSENT;
-  }
-
-  isPresent(rollCallEvent: RollCallEventEntry): boolean {
-    return this.status(rollCallEvent) === AttendeeStatus.PRESENT;
   }
 
   async generateQRCode(): Promise<HTMLCanvasElement> {
@@ -233,14 +138,14 @@ export class Attendee extends EventClass<AttendeeEvents> {
           name,
           QR_SIZE / 2,
           QR_SIZE * 0.08,
-          QR_SIZE - QR_SIZE * 0.3
+          QR_SIZE - QR_SIZE * 0.3,
         );
 
         ctx.fillText(
           this.isUsingOwnTransport ? "🚙 Car" : "🚌 Bus",
           QR_SIZE / 2,
           QR_SIZE * (1 - 0.08),
-          QR_SIZE - QR_SIZE * 0.3
+          QR_SIZE - QR_SIZE * 0.3,
         );
 
         this.qrCodeString = canvas.toDataURL("image/png");

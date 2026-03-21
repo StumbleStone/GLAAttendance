@@ -9,8 +9,9 @@ import {
   User,
 } from "@supabase/supabase-js";
 import React from "react";
-import { Attendee } from "../Attendees/Attendee";
+import { Attendee, AttendeeStatus } from "../Attendees/Attendee";
 import { LayerHandler } from "../Components/Layer";
+import { EventParticipant } from "../RollCall/EventParticipant";
 import { RollCallConfirm } from "../RollCall/RollCallConfirm";
 import { EventClass, EventClassEvents } from "../Tools/EventClass";
 import { RealtimeChannelMonitor } from "./RealtimeChannelMonitor";
@@ -26,12 +27,13 @@ import {
 import { SupabaseEventParticipants } from "./table-handlers/SupabaseEventParticipants";
 import { SupabaseEventProctors } from "./table-handlers/SupabaseEventProctors";
 import { SupabaseEvents } from "./table-handlers/SupabaseEvents";
+import { SupabaseRollCallEvents } from "./table-handlers/SupabaseRollCallEvents";
+import { SupabaseRollCalls } from "./table-handlers/SupabaseRollCalls";
 import {
   AttendeesEntry,
+  EventParticipantsEntry,
   EventsEntry,
   InsertAttendees,
-  InsertRollCallEntry,
-  InsertRollCallEvent,
   PingEntry,
   ProfileEventEntry,
   RollCallEntry,
@@ -42,7 +44,6 @@ import {
   UpdateAttendees,
   UpdatePingEntry,
   UpdateProfileEventEntry,
-  UpdateRollCallEvent,
 } from "./types";
 
 export enum SupaBaseEventKey {
@@ -111,7 +112,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   profile: ProfileEventEntry;
 
   rollCallEvents: RollCallEventEntry[];
-  currentRollCallEvent: RollCallEventEntry;
+  currentRollCallEvent: RollCallEventEntry | null;
   rollcallEventsLoaded: boolean;
 
   barcodeProcessMap: Map<string, BarcodeProcessingMap>;
@@ -132,6 +133,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   attendeesHandler: SupabaseAttendees;
   eventParticipantsHandler: SupabaseEventParticipants;
   eventProctorsHandler: SupabaseEventProctors;
+  rollCallEventsHandler: SupabaseRollCallEvents;
+  rollCallsHandler: SupabaseRollCalls;
 
   constructor() {
     super();
@@ -152,6 +155,8 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this._loadedAuthState = false;
     this._initDone = false;
     this.userNameMap = new Map();
+    this.rollCallEvents = [];
+    this.currentRollCallEvent = null;
     this.rollcallEventsLoaded = false;
     this.realtimeChannelMonitor = new RealtimeChannelMonitor(this);
     this.usernamesLoaded = false;
@@ -168,6 +173,12 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.eventProctorsHandler = new SupabaseEventProctors({
       client: this.client,
     });
+    this.rollCallEventsHandler = new SupabaseRollCallEvents({
+      client: this.client,
+    });
+    this.rollCallsHandler = new SupabaseRollCalls({
+      client: this.client,
+    });
     this.setupEventListeners();
   }
 
@@ -175,9 +186,6 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     this.attendeesHandler.addListener({
       [BaseTableHandlerEventKey.DATA_LOADED]: () => {
         this.fireUpdate((cb) => cb[SupaBaseEventKey.ATTENDEES_CHANGED]?.());
-      },
-      [SupabaseAttendeesEventKey.ATTENDEE_ROLLCALL_REMOVED]: () => {
-        this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALLS]?.());
       },
       [SupabaseAttendeesEventKey.ATTENDEE_ADDED]: () => {
         this.fireUpdate((cb) => cb[SupaBaseEventKey.ATTENDEES_CHANGED]?.());
@@ -221,6 +229,54 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
         );
       },
     });
+
+    this.rollCallEventsHandler.addListener({
+      [BaseTableHandlerEventKey.DATA_LOADED]: () => {
+        const currentChanged = this.refreshLegacyRollCallState();
+        this.fireUpdate((cb) =>
+          cb[SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]?.(),
+        );
+        if (currentChanged) {
+          this.fireUpdate((cb) =>
+            cb[SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]?.(),
+          );
+        }
+      },
+      [BaseTableHandlerEventKey.DATA_CHANGED]: () => {
+        const currentChanged = this.refreshLegacyRollCallState();
+        this.fireUpdate((cb) =>
+          cb[SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]?.(),
+        );
+        if (currentChanged) {
+          this.fireUpdate((cb) =>
+            cb[SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]?.(),
+          );
+        }
+      },
+    });
+
+    this.rollCallsHandler.addListener({
+      [BaseTableHandlerEventKey.DATA_LOADED]: () => {
+        this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALLS]?.());
+      },
+      [BaseTableHandlerEventKey.DATA_CHANGED]: () => {
+        this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALLS]?.());
+      },
+    });
+  }
+
+  private refreshLegacyRollCallState(): boolean {
+    const nextRollCallEvents = this.rollCallEventsHandler.arr();
+    const nextCurrentRollCallEvent =
+      this.rollCallEventsHandler.getLegacyCurrent();
+    const currentChanged =
+      this.currentRollCallEvent !== nextCurrentRollCallEvent;
+
+    this.rollCallEvents = nextRollCallEvents;
+    this.rollcallEventsLoaded = this.rollCallEventsHandler.dataLoaded;
+    this.currentRollCallEvent = nextCurrentRollCallEvent;
+
+    return currentChanged;
   }
 
   handleAuthEvent(event: AuthChangeEvent, session: Session | null) {
@@ -393,11 +449,11 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
         this.eventsHandler.loadData(refresh),
         this.eventParticipantsHandler.loadData(refresh),
         this.eventProctorsHandler.loadData(refresh),
+        this.rollCallEventsHandler.loadData(refresh),
+        this.rollCallsHandler.loadData(refresh),
         this.loadUsernames(),
-        this.loadRollCallEvents(),
       ]);
-
-      await this.loadRollCalls();
+      this.refreshLegacyRollCallState();
 
       // Clear so that we can load again if needed
       this.loadPromise = null;
@@ -484,10 +540,12 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
             this.attendeesHandler.handleAttendeesChangesFromRemote(payload);
             return;
           case Tables.ROLLCALL:
-            this.handleRollCallChanges(payload);
+            this.rollCallsHandler.handleRollCallChangesFromRemote(payload);
             return;
           case Tables.ROLLCALL_EVENT:
-            this.handleRollCallEventChanges(payload);
+            this.rollCallEventsHandler.handleRollCallEventChangesFromRemote(
+              payload,
+            );
             return;
           case Tables.EVENTS:
             this.handleEventsChanges(payload);
@@ -540,34 +598,15 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   async handleRollCallEventChanges(
     payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
   ) {
-    switch (payload.eventType) {
-      case RealtimeChangeEventType.INSERT:
-        return this.addRollCallEventFromDB(payload.new as RollCallEventEntry);
-      case RealtimeChangeEventType.DELETE:
-        return this.removeRollCallEventFromDB(payload.old.id);
-      case RealtimeChangeEventType.UPDATE:
-        return this.updateRollCallEventFromDB(
-          payload.new as RollCallEventEntry,
-        );
-    }
-    debugger;
+    return this.rollCallEventsHandler.handleRollCallEventChangesFromRemote(
+      payload,
+    );
   }
 
   async handleRollCallChanges(
     payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
   ) {
-    switch (payload.eventType) {
-      case RealtimeChangeEventType.INSERT:
-        return this.addRollCallEventReceivedFromRemote(
-          payload.new as RollCallEntry,
-        );
-      case RealtimeChangeEventType.DELETE:
-        return this.attendeesHandler.removeRollCallEventReceivedFromRemote(
-          payload.old.id,
-        );
-    }
-
-    debugger;
+    return this.rollCallsHandler.handleRollCallChangesFromRemote(payload);
   }
 
   async handleEventsChanges(
@@ -606,60 +645,23 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   async addRollCallEventReceivedFromRemote(entry: RollCallEntry) {
-    // TODO missing ading this to Rollcalls?
-
-    const attendee = this.attendeesHandler.getById(entry.attendee_id);
-
-    if (!attendee) {
-      return;
-    }
-
-    attendee.pushRollCall(
-      entry,
-      entry.roll_call_event_id === this.currentRollCallEvent?.id,
-    );
-    this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALLS]?.());
+    return this.rollCallsHandler.addRollCallReceivedFromRemote(entry);
   }
 
   async removeRollCallEventFromDB(rollCallEventId: number) {
-    if (!this.rollCallEvents.find((rce) => rce.id === rollCallEventId)) {
-      return;
-    }
-
-    this.rollCallEvents = this.rollCallEvents.filter(
-      (rce) => rce.id !== rollCallEventId,
+    return this.rollCallEventsHandler.removeRollCallEventReceivedFromRemote(
+      rollCallEventId,
     );
-    await this.calculateCurrentRollCallEvent();
   }
 
   async addRollCallEventFromDB(entry: RollCallEventEntry) {
-    if (this.rollCallEvents.find((rce) => rce.id === entry.id)) {
-      return;
-    }
-
-    this.rollCallEvents.push(entry);
-    this.rollCallEvents.sort(this.sortRollCallEvent);
-    await this.calculateCurrentRollCallEvent();
+    return this.rollCallEventsHandler.addRollCallEventReceivedFromRemote(entry);
   }
 
   async updateRollCallEventFromDB(entry: RollCallEventEntry) {
-    const indexOf: number = this.rollCallEvents.findIndex(
-      (rce) => rce.id === entry.id,
+    return this.rollCallEventsHandler.updateRollCallEventReceivedFromRemote(
+      entry,
     );
-    if (indexOf < 0) {
-      return;
-    }
-
-    this.rollCallEvents[indexOf] = entry;
-    this.rollCallEvents.sort(this.sortRollCallEvent);
-
-    if (this.currentRollCallEvent.id === entry.id) {
-      // Don't need to update attendeees (I think?) because the event is the same, only specific details might have changed
-      this.currentRollCallEvent = entry;
-      this.fireUpdate((cb) => cb[SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]?.());
-    } else {
-      await this.calculateCurrentRollCallEvent();
-    }
   }
 
   async _loadUsernames(): Promise<void> {
@@ -701,77 +703,34 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   async loadRollCalls() {
-    console.log(`Loading RollCalls`);
-
-    const { data, error } = await this.client
-      .from(Tables.ROLLCALL)
-      .select()
-      .in("attendee_id", this.attendeesHandler.attendeeIds)
-      .order("created_at", {
-        ascending: true,
-      });
-
-    if (error) {
-      console.error(error);
-      debugger;
-    }
-
-    data?.forEach((rollCall: RollCallEntry) => {
-      const att = this.attendeesHandler.getById(rollCall.attendee_id);
-
-      if (!att) {
-        return;
-      }
-
-      att.pushRollCall(
-        rollCall,
-        rollCall.roll_call_event_id === this.currentRollCallEvent?.id,
-      );
-    });
-    this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALLS]?.());
-
-    console.log(`[${data?.length || 0}] RollCalls loaded`);
+    await this.rollCallsHandler.loadData(true);
   }
 
   async loadRollCallEvents() {
-    console.log(`Loading RollCall Events`);
-
-    const { data, error } = await this.client
-      .from(Tables.ROLLCALL_EVENT)
-      .select()
-      .order("counter", {
-        ascending: false,
-      });
-
-    if (error) {
-      console.error(error);
-      debugger;
-    }
-
-    this.rollCallEvents = [];
-    this.rollCallEvents = (data ?? []).sort(this.sortRollCallEvent);
-    this.fireUpdate((cb) => cb[SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]?.());
-    this.rollcallEventsLoaded = true;
-    console.log(`[${this.rollCallEvents.length}] RollCall Events loaded`);
-
-    this.calculateCurrentRollCallEvent();
+    await this.rollCallEventsHandler.loadData(true);
+    this.refreshLegacyRollCallState();
   }
 
   sortRollCallEvent(a: RollCallEventEntry, b: RollCallEventEntry) {
-    return (b.counter ?? 0) - (a.counter ?? 0);
+    const createdAtDelta =
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (createdAtDelta !== 0) {
+      return createdAtDelta;
+    }
+
+    const counterDelta = (b.counter ?? 0) - (a.counter ?? 0);
+    if (counterDelta !== 0) {
+      return counterDelta;
+    }
+
+    return b.id - a.id;
   }
 
   async calculateCurrentRollCallEvent() {
-    if (this.currentRollCallEvent?.id === this.rollCallEvents[0]?.id) {
-      return;
+    const currentChanged = this.refreshLegacyRollCallState();
+    if (currentChanged) {
+      this.fireUpdate((cb) => cb[SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]?.());
     }
-
-    this.currentRollCallEvent = this.rollCallEvents[0];
-    this.fireUpdate((cb) => cb[SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]?.());
-
-    this.attendeesHandler.iterate((attendee: Attendee) =>
-      attendee.checkCurrentRollCall(this.currentRollCallEvent),
-    );
   }
 
   async updateAttendee(attendee: Attendee, newData: UpdateAttendees) {
@@ -851,31 +810,21 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
   }
 
-  async createNewRollCall(
+  async createRollCall(
     attendee: Attendee,
+    rollCallEventId: number,
     method: RollCallMethod,
     status: RollCallStatus = RollCallStatus.PRESENT,
   ): Promise<boolean> {
-    if (!this.currentRollCallEvent) {
-      return false;
-    }
-
-    const entry: InsertRollCallEntry = {
-      attendee_id: attendee.id,
-      created_by: this.user.id,
-      roll_call_event_id: this.currentRollCallEvent.id,
-      created_method: method,
+    const data = await this.rollCallsHandler.createRollCall(
+      attendee.id,
+      this.user.id,
+      rollCallEventId,
+      method,
       status,
-    };
+    );
 
-    const { error, data } = await this.client
-      .from(Tables.ROLLCALL)
-      .insert<InsertRollCallEntry>(entry)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(`createNewRollCall`, error);
+    if (!data) {
       return false;
     }
 
@@ -890,6 +839,23 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     return true;
   }
 
+  async createNewRollCall(
+    attendee: Attendee,
+    method: RollCallMethod,
+    status: RollCallStatus = RollCallStatus.PRESENT,
+  ): Promise<boolean> {
+    if (!this.currentRollCallEvent) {
+      return false;
+    }
+
+    return this.createRollCall(
+      attendee,
+      this.currentRollCallEvent.id,
+      method,
+      status,
+    );
+  }
+
   barcodeScanned(hash: string): BarcodeProcessResult {
     const attendee = this.attendeesHandler.get(hash);
 
@@ -899,7 +865,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       };
     }
 
-    if (attendee.isPresent(this.currentRollCallEvent)) {
+    if (this.isAttendeePresent(attendee, this.currentRollCallEvent?.id)) {
       return {
         state: BarcodeProcessState.PRESENT,
       };
@@ -967,54 +933,226 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     });
   }
 
-  async createNewRollCallEvent(description: string) {
-    const entry: InsertRollCallEvent = {
-      created_by: this.user.id,
-      description: description || "",
-      counter: (this.currentRollCallEvent?.counter ?? 0) + 1,
-    };
-
-    const { error, data } = await this.client
-      .from(Tables.ROLLCALL_EVENT)
-      .insert<InsertRollCallEvent>(entry)
-      .select();
-
-    if (error) {
-      console.error(`createNewRollCallEvent`, error);
-    }
+  async createRollCallEvent(
+    description: string,
+    eventId: number,
+  ): Promise<boolean> {
+    return this.rollCallEventsHandler.createRollCallEvent(
+      eventId,
+      this.user.id,
+      description,
+    );
   }
 
-  countAttendees(status: RollCallStatus): number {
-    const curRCE = this.currentRollCallEvent?.id;
-    if (!curRCE) {
+  async createNewRollCallEvent(
+    description: string,
+    eventId: number,
+  ): Promise<boolean> {
+    return this.createRollCallEvent(description, eventId);
+  }
+
+  getRollCallEventById(rollCallEventId: number): RollCallEventEntry | null {
+    return this.rollCallEventsHandler.getById(rollCallEventId);
+  }
+
+  getRollCallEventsByEventId(eventId: number): RollCallEventEntry[] {
+    return this.rollCallEventsHandler.getByEventId(eventId);
+  }
+
+  getRollCallEventsByEventIds(eventIds: number[]): RollCallEventEntry[] {
+    const validEventIds = eventIds.filter((eventId) =>
+      Number.isInteger(eventId),
+    );
+    if (validEventIds.length === 0) {
+      return [];
+    }
+
+    const eventIdSet = new Set(validEventIds);
+    return this.rollCallEventsHandler
+      .arr()
+      .filter(
+        (event) => event.event_id != null && eventIdSet.has(event.event_id),
+      );
+  }
+
+  getLatestRollCallEventByEventIds(
+    eventIds: number[],
+  ): RollCallEventEntry | null {
+    return this.getRollCallEventsByEventIds(eventIds)[0] ?? null;
+  }
+
+  getLatestRollCallEvent(eventId: number): RollCallEventEntry | null {
+    return this.rollCallEventsHandler.getLatestByEventId(eventId);
+  }
+
+  getActiveRollCallEvent(eventId: number): RollCallEventEntry | null {
+    return this.rollCallEventsHandler.getActiveByEventId(eventId);
+  }
+
+  hasActiveRollCallEvent(eventId: number): boolean {
+    return this.rollCallEventsHandler.hasActiveByEventId(eventId);
+  }
+
+  getNextRollCallEventCounter(eventId: number): number {
+    return this.rollCallEventsHandler.getNextCounter(eventId);
+  }
+
+  getRollCallsByRollCallEventId(rollCallEventId: number): RollCallEntry[] {
+    return this.rollCallsHandler.getByRollCallEventId(rollCallEventId);
+  }
+
+  getLatestRollCallForAttendee(
+    rollCallEventId: number,
+    attendeeId: number,
+  ): RollCallEntry | null {
+    return this.rollCallsHandler.getLatestByRollCallEventAndAttendeeId(
+      rollCallEventId,
+      attendeeId,
+    );
+  }
+
+  getCurrentRollCallForAttendee(
+    attendee: Attendee,
+    rollCallEventId: number | null = this.currentRollCallEvent?.id,
+  ): RollCallEntry | null {
+    if (!rollCallEventId) {
+      return null;
+    }
+
+    return this.getLatestRollCallForAttendee(rollCallEventId, attendee.id);
+  }
+
+  getAttendeeStatus(
+    attendee: Attendee,
+    rollCallEventId: number | null = this.currentRollCallEvent?.id,
+  ): AttendeeStatus {
+    const currentRollCall = this.getCurrentRollCallForAttendee(
+      attendee,
+      rollCallEventId,
+    );
+
+    if (!currentRollCall) {
+      return AttendeeStatus.NOT_SCANNED;
+    }
+
+    return currentRollCall.status === RollCallStatus.PRESENT
+      ? AttendeeStatus.PRESENT
+      : AttendeeStatus.ABSENT;
+  }
+
+  isAttendeePresent(
+    attendee: Attendee,
+    rollCallEventId: number | null = this.currentRollCallEvent?.id,
+  ): boolean {
+    return (
+      this.getAttendeeStatus(attendee, rollCallEventId) ===
+      AttendeeStatus.PRESENT
+    );
+  }
+
+  getEventParticipants(eventId: number): EventParticipant[] {
+    return this.eventParticipantsHandler
+      .getByEventId(eventId)
+      .map((eventParticipant) => this.createEventParticipant(eventParticipant))
+      .filter(
+        (eventParticipant): eventParticipant is EventParticipant =>
+          eventParticipant != null,
+      );
+  }
+
+  getEventParticipantsForRollCallEvent(
+    rollCallEventId: number | null,
+  ): EventParticipant[] {
+    if (!rollCallEventId) {
+      return [];
+    }
+
+    const rollCallEvent = this.getRollCallEventById(rollCallEventId);
+    if (!rollCallEvent?.event_id) {
+      return [];
+    }
+
+    return this.getEventParticipants(rollCallEvent.event_id);
+  }
+
+  countAttendees(
+    status: RollCallStatus,
+    rollCallEventId: number | null = this.currentRollCallEvent?.id,
+  ): number {
+    if (!rollCallEventId) {
       return 0;
     }
 
-    let counter: number = 0;
+    const rollCallEvent = this.getRollCallEventById(rollCallEventId);
+    if (!!rollCallEvent?.event_id) {
+      const attendeeStatus =
+        status === RollCallStatus.PRESENT
+          ? AttendeeStatus.PRESENT
+          : AttendeeStatus.ABSENT;
+      return this.getEventParticipantsForRollCallEvent(rollCallEventId).filter(
+        (eventParticipant) =>
+          eventParticipant.status(rollCallEvent) === attendeeStatus,
+      ).length;
+    }
 
-    this.attendeesHandler.iterate((att) => {
-      if (!att.currentRollCall) {
+    let counter = 0;
+    this.attendeesHandler.iterate((attendee) => {
+      if (
+        this.getAttendeeStatus(attendee, rollCallEventId) ===
+        AttendeeStatus.PRESENT
+      ) {
+        if (status === RollCallStatus.PRESENT) {
+          counter += 1;
+        }
         return;
       }
 
-      if (
-        att.currentRollCall.roll_call_event_id === curRCE &&
-        att.currentRollCall.status === status
-      ) {
-        counter += 1;
-        return;
+      if (status === RollCallStatus.ABSENT) {
+        const attendeeStatus = this.getAttendeeStatus(
+          attendee,
+          rollCallEventId,
+        );
+        if (attendeeStatus === AttendeeStatus.ABSENT) {
+          counter += 1;
+        }
       }
     });
 
     return counter;
   }
 
-  countPresentAttendees(): number {
-    return this.countAttendees(RollCallStatus.PRESENT);
+  countTrackedAttendees(
+    rollCallEventId: number | null = this.currentRollCallEvent?.id,
+  ): number {
+    if (!rollCallEventId) {
+      return this.attendeesHandler.count;
+    }
+
+    const rollCallEvent = this.getRollCallEventById(rollCallEventId);
+    if (!!rollCallEvent?.event_id) {
+      return this.getEventParticipantsForRollCallEvent(rollCallEventId).length;
+    }
+
+    return this.attendeesHandler.count;
   }
 
-  countAbsentAttendees(): number {
-    return this.countAttendees(RollCallStatus.ABSENT);
+  countPresentAttendees(
+    rollCallEventId: number | null = this.currentRollCallEvent?.id,
+  ): number {
+    return this.countAttendees(RollCallStatus.PRESENT, rollCallEventId);
+  }
+
+  countAbsentAttendees(
+    rollCallEventId: number | null = this.currentRollCallEvent?.id,
+  ): number {
+    return this.countAttendees(RollCallStatus.ABSENT, rollCallEventId);
+  }
+
+  async closeRollCallEvent(rollCallEventId: number): Promise<boolean> {
+    return this.rollCallEventsHandler.closeRollCallEvent(
+      rollCallEventId,
+      this.user.id,
+    );
   }
 
   async closeCurrentRollCallEvent() {
@@ -1032,20 +1170,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       return;
     }
 
-    const updateEntry: UpdateRollCallEvent = {
-      closed_at: new Date().toISOString(),
-      closed_by: this.user.id,
-    };
-
-    const { error, data } = await this.client
-      .from(Tables.ROLLCALL_EVENT)
-      .update(updateEntry)
-      .eq("id", this.currentRollCallEvent.id)
-      .select();
-
-    if (error) {
-      console.error(`closeCurrentRollCallEvent`, error);
-    }
+    return this.closeRollCallEvent(this.currentRollCallEvent.id);
   }
 
   async generateAllQRCodes(): Promise<HTMLCanvasElement[]> {
@@ -1157,9 +1282,46 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     }
   }
 
-  countUnScannedAttendees() {
-    return this.attendeesHandler.countUnScannedAttendees(
-      this.currentRollCallEvent?.id,
+  private createEventParticipant(
+    eventParticipant: EventParticipantsEntry,
+  ): EventParticipant | null {
+    const attendee = this.attendeesHandler.getById(
+      eventParticipant.attendee_id,
     );
+    if (!attendee) {
+      return null;
+    }
+
+    return new EventParticipant({
+      attendee,
+      eventParticipant,
+      rollCalls: this.rollCallsHandler.getByAttendeeId(attendee.id),
+    });
+  }
+
+  countUnScannedAttendees(
+    rollCallEventId: number | null = this.currentRollCallEvent?.id,
+  ) {
+    const rollCallEvent = rollCallEventId
+      ? this.getRollCallEventById(rollCallEventId)
+      : null;
+    if (!!rollCallEvent?.event_id) {
+      return this.getEventParticipantsForRollCallEvent(rollCallEventId).filter(
+        (eventParticipant) =>
+          eventParticipant.status(rollCallEvent) === AttendeeStatus.NOT_SCANNED,
+      ).length;
+    }
+
+    let counter = 0;
+    this.attendeesHandler.iterate((attendee) => {
+      if (
+        this.getAttendeeStatus(attendee, rollCallEventId) ===
+        AttendeeStatus.NOT_SCANNED
+      ) {
+        counter += 1;
+      }
+    });
+
+    return counter;
   }
 }

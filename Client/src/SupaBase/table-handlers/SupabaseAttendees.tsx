@@ -13,7 +13,6 @@ export type AttendeesMap = Map<string, Attendee>;
 export interface SupabaseAttendeesOptions extends BaseTableHandlerOptions {}
 
 export enum SupabaseAttendeesEventKey {
-  ATTENDEE_ROLLCALL_REMOVED = "attendee_rollcall_removed",
   ATTENDEE_ADDED = "attendee_added",
   ATTENDEE_DELETED = "attendee_deleted",
 }
@@ -52,20 +51,6 @@ export class SupabaseAttendees extends BaseTableHandler<
     });
 
     console.log(`[${data?.length || 0}] Attendees loaded`);
-  }
-
-  async removeRollCallEventReceivedFromRemote(rollCallId: number) {
-    this.attendees.forEach((attendee) => {
-      const rollCall = attendee.rollCalls.find((rc) => rc.id == rollCallId);
-      if (!rollCall) {
-        return;
-      }
-
-      attendee.removeRollCall(rollCall);
-      this.fireUpdate((cb) =>
-        cb[SupabaseAttendeesEventKey.ATTENDEE_ROLLCALL_REMOVED]?.(),
-      );
-    });
   }
 
   async handleAttendeesChangesFromRemote(
@@ -158,28 +143,6 @@ export class SupabaseAttendees extends BaseTableHandler<
 
   getById(id: number): Attendee | null {
     return this.getBy((attendee) => attendee.id === id);
-  }
-
-  countUnScannedAttendees(activeRollcallId: number | null): number {
-    if (!activeRollcallId) {
-      return 0;
-    }
-
-    let counter: number = 0;
-
-    this.attendees.forEach((att: Attendee) => {
-      if (!att.currentRollCall) {
-        counter += 1;
-        return;
-      }
-
-      if (att.currentRollCall.roll_call_event_id !== activeRollcallId) {
-        counter += 1;
-        return;
-      }
-    });
-
-    return counter;
   }
 
   get attendeeIds(): number[] {

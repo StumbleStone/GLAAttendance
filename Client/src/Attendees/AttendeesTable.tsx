@@ -44,8 +44,8 @@ function sortStatus(
   supabase: SupaBase,
   sortAsc: boolean,
 ) {
-  const aPresent = a.status(supabase.currentRollCallEvent);
-  const bPresent = b.status(supabase.currentRollCallEvent);
+  const aPresent = supabase.getAttendeeStatus(a);
+  const bPresent = supabase.getAttendeeStatus(b);
 
   if (aPresent === bPresent) {
     // Cancel out the sortAsc
@@ -94,26 +94,29 @@ function sortBy(
   supabase: SupaBase,
   sortAsc: boolean,
 ) {
-  if (a.currentRollCall == null && b.currentRollCall == null) {
+  const aCurrentRollCall = supabase.getCurrentRollCallForAttendee(a);
+  const bCurrentRollCall = supabase.getCurrentRollCallForAttendee(b);
+
+  if (aCurrentRollCall == null && bCurrentRollCall == null) {
     return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
   }
 
-  if (a.currentRollCall == null) {
+  if (aCurrentRollCall == null) {
     return 1 * (sortAsc ? 1 : -1);
   }
 
-  if (b.currentRollCall == null) {
+  if (bCurrentRollCall == null) {
     return -1 * (sortAsc ? 1 : -1);
   }
 
-  if (a.currentRollCall.created_by === b.currentRollCall.created_by) {
+  if (aCurrentRollCall.created_by === bCurrentRollCall.created_by) {
     return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
   }
 
-  const aName = supabase.getUserName(a.currentRollCall.created_by, {
+  const aName = supabase.getUserName(aCurrentRollCall.created_by, {
     nameOnly: true,
   });
-  const bName = supabase.getUserName(b.currentRollCall.created_by, {
+  const bName = supabase.getUserName(bCurrentRollCall.created_by, {
     nameOnly: true,
   });
 
@@ -122,31 +125,43 @@ function sortBy(
   });
 }
 
-function sortOn(a: Attendee, b: Attendee, sortAsc: boolean) {
-  if (a.currentRollCall == null && b.currentRollCall == null) {
+function sortOn(
+  a: Attendee,
+  b: Attendee,
+  supabase: SupaBase,
+  sortAsc: boolean,
+) {
+  const aCurrentRollCall = supabase.getCurrentRollCallForAttendee(a);
+  const bCurrentRollCall = supabase.getCurrentRollCallForAttendee(b);
+
+  if (aCurrentRollCall == null && bCurrentRollCall == null) {
     return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
   }
 
-  if (a.currentRollCall == null) {
+  if (aCurrentRollCall == null) {
     return 1 * (sortAsc ? 1 : -1);
   }
 
-  if (b.currentRollCall == null) {
+  if (bCurrentRollCall == null) {
     return -1 * (sortAsc ? 1 : -1);
   }
 
-  const aTime = new Date(a.currentRollCall.created_at).getTime();
-  const bTime = new Date(b.currentRollCall.created_at).getTime();
+  const aTime = new Date(aCurrentRollCall.created_at).getTime();
+  const bTime = new Date(bCurrentRollCall.created_at).getTime();
 
   return aTime - bTime;
 }
 
 function isIncludedBySummaryPills(
   attendee: Attendee,
+  supabase: SupaBase,
   currentRollCallEvent: SupaBase["currentRollCallEvent"],
   selectedPills: SummaryPillSelection,
 ): boolean {
-  const status = attendee.status(currentRollCallEvent);
+  const status = supabase.getAttendeeStatus(
+    attendee,
+    currentRollCallEvent?.id ?? null,
+  );
   const isCar = attendee.isUsingOwnTransport;
 
   let statusMatches = false;
@@ -308,11 +323,12 @@ const FilteredAttendeesTable: React.FC<FilteredAttendeesTableProps> = (
       searchedRows.filter((attendee) =>
         isIncludedBySummaryPills(
           attendee,
+          supabase,
           supabase.currentRollCallEvent,
           selectedPills,
         ),
       ),
-    [searchedRows, selectedPills, supabase.currentRollCallEvent?.id],
+    [searchedRows, selectedPills, supabase, supabase.currentRollCallEvent?.id],
   );
 
   useEffect(() => {
@@ -351,7 +367,7 @@ const FilteredAttendeesTable: React.FC<FilteredAttendeesTableProps> = (
           return sortBy(a, b, supabase, sortAsc) * (sortAsc ? 1 : -1);
 
         case SortColumns.ON:
-          return sortOn(a, b, sortAsc) * (sortAsc ? 1 : -1);
+          return sortOn(a, b, supabase, sortAsc) * (sortAsc ? 1 : -1);
         case SortColumns.TP:
           return sortTransport(a, b, sortAsc) * (sortAsc ? 1 : -1);
 
@@ -385,6 +401,7 @@ const FilteredAttendeesTable: React.FC<FilteredAttendeesTableProps> = (
       <AttendeesSummary
         rows={sorted}
         currentRollCallEvent={supabase.currentRollCallEvent}
+        supabase={supabase}
         selectedPills={selectedPills}
         setSelectedPills={setSelectedPills}
       />

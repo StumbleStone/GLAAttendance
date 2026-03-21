@@ -8,6 +8,7 @@ import {
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback, useMemo } from "react";
+import { SupaBase } from "../SupaBase/SupaBase";
 import { RollCallEventEntry } from "../SupaBase/types";
 import { Attendee, AttendeeStatus } from "./Attendee";
 import {
@@ -19,7 +20,8 @@ import {
 
 export interface AttendeesSummaryProps {
   rows: Attendee[];
-  currentRollCallEvent: RollCallEventEntry;
+  currentRollCallEvent: RollCallEventEntry | null;
+  supabase: SupaBase;
   selectedPills: SummaryPillSelection;
   setSelectedPills: (
     cb: (prev: SummaryPillSelection) => SummaryPillSelection,
@@ -32,7 +34,13 @@ export interface AttendeesSummaryProps {
 export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
   props: AttendeesSummaryProps,
 ) => {
-  const { rows, currentRollCallEvent, selectedPills, setSelectedPills } = props;
+  const {
+    rows,
+    currentRollCallEvent,
+    selectedPills,
+    setSelectedPills,
+    supabase,
+  } = props;
   const theme = useTheme();
 
   const summary = useMemo(() => {
@@ -43,7 +51,10 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
     let car = 0;
 
     rows.forEach((att) => {
-      const status = att.status(currentRollCallEvent);
+      const status = supabase.getAttendeeStatus(
+        att,
+        currentRollCallEvent?.id ?? null,
+      );
       if (status === AttendeeStatus.PRESENT) {
         present++;
       } else if (status === AttendeeStatus.ABSENT) {
@@ -66,7 +77,7 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
       bus,
       car,
     };
-  }, [rows, currentRollCallEvent?.id ?? 0]);
+  }, [rows, currentRollCallEvent?.id ?? 0, supabase]);
 
   const handleToggleSummaryPill = useCallback(
     (pillId: SummaryPillId) => {

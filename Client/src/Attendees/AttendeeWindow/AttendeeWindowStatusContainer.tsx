@@ -3,7 +3,7 @@ import { faHandPointUp, faQrcode } from "@fortawesome/free-solid-svg-icons";
 import React, { Fragment } from "react";
 import { Icon } from "../../Components/Icon";
 import { SupaBase } from "../../SupaBase/SupaBase";
-import { RollCallMethod } from "../../SupaBase/types";
+import { RollCallEntry, RollCallMethod } from "../../SupaBase/types";
 import { Username } from "../../SupaBase/Username";
 import { DefaultColors, epochToDate } from "../../Tools/Toolbox";
 import { Attendee, AttendeeStatus } from "../Attendee";
@@ -12,6 +12,7 @@ import { TransportChip } from "../TransportChip";
 
 export interface AttendeeWindowStatusContainerProps {
   attendee: Attendee;
+  currentRollCall: RollCallEntry | null;
   supabase: SupaBase;
   statusCol?: string;
   status?: AttendeeStatus;
@@ -20,7 +21,7 @@ export interface AttendeeWindowStatusContainerProps {
 export const AttendeeWindowStatusContainer: React.FC<
   AttendeeWindowStatusContainerProps
 > = (props: AttendeeWindowStatusContainerProps) => {
-  const { attendee, statusCol, status, supabase } = props;
+  const { attendee, currentRollCall, statusCol, status, supabase } = props;
 
   let allergies: string[] = attendee.allergies;
   if (allergies.length == 0) {
@@ -42,45 +43,39 @@ export const AttendeeWindowStatusContainer: React.FC<
               <StatusChip status={status} />
             </S.StyledCell>
           </tr>
-          {!!attendee.currentRollCall &&
-            status !== AttendeeStatus.NOT_SCANNED && (
-              <tr>
-                <td>{"Recorder:"}</td>
-                <td>
-                  <S.TextIconContainer>
-                    <Icon
-                      color={DefaultColors.BrightCyan}
-                      icon={
-                        attendee.currentRollCall.created_method ===
-                        RollCallMethod.MANUAL
-                          ? faHandPointUp
-                          : faQrcode
-                      }
-                      size={14}
-                    />
-                    <Username
-                      id={attendee.currentRollCall.created_by}
-                      supabase={supabase}
-                    />
-                  </S.TextIconContainer>
-                </td>
-              </tr>
-            )}
-          {!!attendee.currentRollCall &&
-            status !== AttendeeStatus.NOT_SCANNED && (
-              <tr>
-                <td>{"Time:"}</td>
-                <td>
-                  {epochToDate(
-                    new Date(attendee.currentRollCall.created_at).getTime(),
-                    {
-                      includeTime: true,
-                      includeSeconds: true,
-                    },
-                  )}
-                </td>
-              </tr>
-            )}
+          {!!currentRollCall && status !== AttendeeStatus.NOT_SCANNED && (
+            <tr>
+              <td>{"Recorder:"}</td>
+              <td>
+                <S.TextIconContainer>
+                  <Icon
+                    color={DefaultColors.BrightCyan}
+                    icon={
+                      currentRollCall.created_method === RollCallMethod.MANUAL
+                        ? faHandPointUp
+                        : faQrcode
+                    }
+                    size={14}
+                  />
+                  <Username
+                    id={currentRollCall.created_by}
+                    supabase={supabase}
+                  />
+                </S.TextIconContainer>
+              </td>
+            </tr>
+          )}
+          {!!currentRollCall && status !== AttendeeStatus.NOT_SCANNED && (
+            <tr>
+              <td>{"Time:"}</td>
+              <td>
+                {epochToDate(new Date(currentRollCall.created_at).getTime(), {
+                  includeTime: true,
+                  includeSeconds: true,
+                })}
+              </td>
+            </tr>
+          )}
           <tr>
             <td>
               <S.CellHeading>{"Allergy:"}</S.CellHeading>
