@@ -1,92 +1,41 @@
 import styled from "@emotion/styled";
 import * as React from "react";
-import { useOutletContext } from "react-router-dom";
-import { Chip } from "../Components/Chip/Chip";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { Heading } from "../Components/Heading";
 import { SubHeading } from "../Components/SubHeading";
 import { Tile } from "../Components/Tile";
+import { RoutePath } from "../MainMenu/RouteFlow";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { EventsEntry, RollCallEventEntry } from "../SupaBase/types";
-import { epochToDate } from "../Tools/Toolbox";
-import { RollCallDisplay } from "./RollCallDisplay";
+import {
+  RollCallCardActivityState,
+  RollCallCardList,
+  RollCallEmptyStateCard,
+  RollCallSessionCard,
+  RollCallStartCard,
+} from "./RollCallCardComponents";
+import {
+  getRollCallEventLabel,
+  getRollCallSessionLabel,
+} from "./RollCallUtils";
+import { ShowRollCallStartPopup } from "./RollCallWindow";
 
 export interface RollCallsProps {
   supabase: SupaBase;
 }
 
-enum RollCallActivityState {
-  NONE = "none",
-  ACTIVE = "active",
-  CLOSED = "closed",
-}
-
-interface RollCallStatusSummary {
-  description: string;
-  label: string;
-  state: RollCallActivityState;
-}
-
-function getRollCallEventLabel(
-  event: EventsEntry | null,
-  eventId: number | null,
-): string {
-  const eventName = event?.name?.trim();
-  if (!!eventName) {
-    return eventName;
-  }
-
-  if (eventId != null) {
-    return `Event #${eventId}`;
-  }
-
-  return "Unassigned Event";
-}
-
-function formatRollCallTimestamp(timestamp: string | null): string {
-  if (!timestamp) {
-    return "--";
-  }
-
-  return epochToDate(new Date(timestamp).getTime(), {
-    includeTime: true,
-  });
-}
-
-function getRollCallStatusSummary(
-  currentRollCallEvent: RollCallEventEntry | null,
-): RollCallStatusSummary {
-  if (!currentRollCallEvent) {
-    return {
-      state: RollCallActivityState.NONE,
-      label: "No Session",
-      description: "There is no rollcall session yet.",
-    };
-  }
-
-  if (currentRollCallEvent.closed_by != null) {
-    return {
-      state: RollCallActivityState.CLOSED,
-      label: "Closed",
-      description: "The most recent rollcall has concluded.",
-    };
-  }
-
-  return {
-    state: RollCallActivityState.ACTIVE,
-    label: "In Progress",
-    description: "A rollcall is currently active.",
-  };
-}
-
 export const RollCalls: React.FC = () => {
   const { supabase } = useOutletContext<RollCallsProps>();
+  const nav = useNavigate();
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
   const [loading, setLoading] = React.useState<boolean>(() => {
     return (
       !supabase.attendeesHandler.dataLoaded ||
+      !supabase.eventParticipantsHandler.dataLoaded ||
       !supabase.eventProctorsHandler.dataLoaded ||
       !supabase.eventsHandler.dataLoaded ||
-      !supabase.rollcallEventsLoaded
+      !supabase.rollcallEventsLoaded ||
+      !supabase.rollCallsHandler.dataLoaded
     );
   });
 
@@ -94,11 +43,14 @@ export const RollCalls: React.FC = () => {
     let active = true;
     const listener = supabase.addListener({
       [SupaBaseEventKey.ATTENDEES_CHANGED]: forceUpdate,
+      [SupaBaseEventKey.EVENT_PARTICIPANTS_CHANGED]: forceUpdate,
       [SupaBaseEventKey.EVENT_PROCTORS_CHANGED]: forceUpdate,
       [SupaBaseEventKey.EVENTS_CHANGED]: forceUpdate,
       [SupaBaseEventKey.LOADED_ROLLCALLS]: forceUpdate,
       [SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]: forceUpdate,
       [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: forceUpdate,
+      [SupaBaseEventKey.USER_UPDATE]: forceUpdate,
+      [SupaBaseEventKey.USER_PROFILE]: forceUpdate,
       [SupaBaseEventKey.USERNAMES_LOADED]: forceUpdate,
     });
 
@@ -118,71 +70,69 @@ export const RollCalls: React.FC = () => {
   }, [supabase]);
 
   const currentUserId = supabase.user?.id ?? supabase.profile?.uid ?? null;
-  const proctoredEventIds = React.useMemo<number[]>(() => {
-    if (!currentUserId) {
-      return [];
-    }
+  const proctoredEventIds: number[] = !currentUserId
+    ? []
+    : supabase.eventProctorsHandler
+        .getByUserId(currentUserId)
+        .map((eventProctor) => eventProctor.event_id)
+        .filter((eventId): eventId is number => Number.isInteger(eventId));
 
-    return supabase.eventProctorsHandler
-      .getByUserId(currentUserId)
-      .map((eventProctor) => eventProctor.event_id)
-      .filter((eventId): eventId is number => Number.isInteger(eventId));
-  }, [currentUserId, supabase]);
+  const proctoredEventIdSet = new Set(proctoredEventIds);
 
-  const proctoredEventIdSet = React.useMemo<Set<number>>(() => {
-    return new Set(proctoredEventIds);
-  }, [proctoredEventIds]);
-
-  const proctoredEvents = React.useMemo<EventsEntry[]>(() => {
-    return supabase.eventsHandler.attendanceEvents.filter((event) =>
+  const proctoredEvents: EventsEntry[] =
+    supabase.eventsHandler.attendanceEvents.filter((event) =>
       proctoredEventIdSet.has(event.id),
     );
-  }, [proctoredEventIdSet, supabase]);
 
-  const currentRollCallEvent = React.useMemo<RollCallEventEntry | null>(() => {
-    return supabase.getLatestRollCallEventByEventIds(proctoredEventIds);
-  }, [proctoredEventIds, supabase]);
-
-  const currentRollCallEventId = currentRollCallEvent?.id ?? null;
-  const statusSummary = React.useMemo<RollCallStatusSummary>(() => {
-    return getRollCallStatusSummary(currentRollCallEvent);
-  }, [currentRollCallEvent]);
-
-  const presentCount = supabase.countPresentAttendees(currentRollCallEventId);
-  const absentCount = supabase.countAbsentAttendees(currentRollCallEventId);
-  const unscannedCount = supabase.countUnScannedAttendees(
-    currentRollCallEventId,
+  const rollCallEvents =
+    supabase.getRollCallEventsByEventIds(proctoredEventIds);
+  const activeRollCallEvents = rollCallEvents.filter(
+    (rollCallEvent) => !rollCallEvent.closed_at,
   );
-  const totalTrackedCount = supabase.countTrackedAttendees(
-    currentRollCallEventId,
+  const pastRollCallEvents = rollCallEvents.filter(
+    (rollCallEvent) => !!rollCallEvent.closed_at,
   );
-  const currentEventRecord =
-    currentRollCallEvent?.event_id != null
-      ? (proctoredEvents.find(
-          (event) => event.id === currentRollCallEvent.event_id,
-        ) ??
-        supabase.eventsHandler.attendanceEvents.find(
-          (event) => event.id === currentRollCallEvent.event_id,
-        ) ??
-        null)
-      : null;
-  const currentEventLabel = getRollCallEventLabel(
-    currentEventRecord,
-    currentRollCallEvent?.event_id ?? null,
-  );
-  const currentRollCallName =
-    currentRollCallEvent?.description?.trim() || "Untitled";
-  const createdByLabel = currentRollCallEvent
-    ? supabase.getUserName(currentRollCallEvent.created_by, {
-        nameOnly: true,
-      })
-    : "--";
-  const closedByLabel = currentRollCallEvent?.closed_by
-    ? supabase.getUserName(currentRollCallEvent.closed_by, {
-        nameOnly: true,
-      })
-    : null;
+  const startableEventIds = proctoredEvents
+    .filter((event) => !supabase.hasActiveRollCallEvent(event.id))
+    .map((event) => event.id);
   const hasProctoredEvents = proctoredEventIds.length > 0;
+
+  const handleStartRollCall = React.useCallback(() => {
+    ShowRollCallStartPopup(supabase, {
+      allowedEventIds: startableEventIds,
+    });
+  }, [startableEventIds, supabase]);
+
+  const renderRollCallCard = React.useCallback(
+    (rollCallEvent: RollCallEventEntry) => {
+      const eventRecord =
+        supabase.eventsHandler.attendanceEvents.find(
+          (event) => event.id === rollCallEvent.event_id,
+        ) ?? null;
+      const activityState = rollCallEvent.closed_at
+        ? RollCallCardActivityState.CLOSED
+        : RollCallCardActivityState.ACTIVE;
+      const presentCount = supabase.countPresentAttendees(rollCallEvent.id);
+      const absentCount = supabase.countAbsentAttendees(rollCallEvent.id);
+      const unscannedCount = supabase.countUnScannedAttendees(rollCallEvent.id);
+      const participantCount = supabase.countTrackedAttendees(rollCallEvent.id);
+
+      return (
+        <RollCallSessionCard
+          absentCount={absentCount}
+          activityState={activityState}
+          key={rollCallEvent.id}
+          onSelect={() => nav(`${RoutePath.ROLLCALLS}/${rollCallEvent.id}`)}
+          participantCount={participantCount}
+          presentCount={presentCount}
+          sessionLabel={getRollCallSessionLabel(rollCallEvent)}
+          title={getRollCallEventLabel(eventRecord, rollCallEvent.event_id)}
+          unscannedCount={unscannedCount}
+        />
+      );
+    },
+    [nav, supabase],
+  );
 
   return (
     <S.Container>
@@ -210,84 +160,32 @@ export const RollCalls: React.FC = () => {
           </S.EmptyStateTile>
         ) : (
           <>
-            <S.ActiveViewTile>
-              <S.ActionCopy>
-                <S.SectionTitle>{"Rollcall Controls"}</S.SectionTitle>
-                <S.SectionDescription>
-                  {
-                    "Open the rollcall manager to start or conclude a session for one of your assigned events."
-                  }
-                </S.SectionDescription>
-              </S.ActionCopy>
-              <RollCallDisplay
-                allowedEventIds={proctoredEventIds}
-                rollCallEvent={currentRollCallEvent}
-                supabase={supabase}
+            <RollCallCardList>
+              <RollCallStartCard
+                canStart={startableEventIds.length > 0}
+                description={
+                  startableEventIds.length > 0
+                    ? "Click anywhere on this card to start a new rollcall for an assigned event that does not already have an active session."
+                    : "Every proctored event already has an active rollcall. Conclude one below before starting another for that same event."
+                }
+                onStart={handleStartRollCall}
               />
-            </S.ActiveViewTile>
 
-            <S.ActiveViewTile>
-              <S.SectionTitle>{"Current Overview"}</S.SectionTitle>
-              <S.SectionDescription>
-                {statusSummary.description}
-              </S.SectionDescription>
-              <S.StatsRow>
-                <S.StatusChip
-                  activityState={statusSummary.state}
-                  label={statusSummary.label}
+              {activeRollCallEvents.length === 0 &&
+              pastRollCallEvents.length === 0 ? (
+                <RollCallEmptyStateCard
+                  description={
+                    "When you start a session it will appear here so you can monitor it and conclude it when needed."
+                  }
+                  title={"No Rollcalls Yet"}
                 />
-                <S.EventChip label={currentEventLabel} />
-                <S.CountChip
-                  label={`${proctoredEvents.length} Proctored Events`}
-                />
-                <S.CountChip label={`${presentCount} Present`} />
-                <S.CountChip label={`${absentCount} Absent`} />
-                <S.CountChip label={`${unscannedCount} Unscanned`} />
-                <S.CountChip label={`${totalTrackedCount} Participants`} />
-              </S.StatsRow>
-            </S.ActiveViewTile>
-
-            <S.ActiveViewTile>
-              <S.SectionTitle>{"Latest Session"}</S.SectionTitle>
-              {!currentRollCallEvent ? (
-                <S.SectionDescription>
-                  {"No rollcall has been started yet."}
-                </S.SectionDescription>
               ) : (
-                <S.DetailsGrid>
-                  <S.DetailItem>
-                    <S.DetailLabel>{"Event"}</S.DetailLabel>
-                    <S.DetailValue>{currentEventLabel}</S.DetailValue>
-                  </S.DetailItem>
-                  <S.DetailItem>
-                    <S.DetailLabel>{"Session"}</S.DetailLabel>
-                    <S.DetailValue>
-                      {`#${currentRollCallEvent.counter} ${currentRollCallName}`}
-                    </S.DetailValue>
-                  </S.DetailItem>
-                  <S.DetailItem>
-                    <S.DetailLabel>{"Started"}</S.DetailLabel>
-                    <S.DetailValue>
-                      {formatRollCallTimestamp(currentRollCallEvent.created_at)}
-                    </S.DetailValue>
-                  </S.DetailItem>
-                  <S.DetailItem>
-                    <S.DetailLabel>{"Started By"}</S.DetailLabel>
-                    <S.DetailValue>{createdByLabel}</S.DetailValue>
-                  </S.DetailItem>
-                  <S.DetailItem>
-                    <S.DetailLabel>{"Closed"}</S.DetailLabel>
-                    <S.DetailValue>
-                      {formatRollCallTimestamp(currentRollCallEvent.closed_at)}
-                    </S.DetailValue>
-                  </S.DetailItem>
-                  <S.DetailItem>
-                    <S.DetailLabel>{"Closed By"}</S.DetailLabel>
-                    <S.DetailValue>{closedByLabel ?? "--"}</S.DetailValue>
-                  </S.DetailItem>
-                </S.DetailsGrid>
+                <>
+                  {activeRollCallEvents.map(renderRollCallCard)}
+                  {pastRollCallEvents.map(renderRollCallCard)}
+                </>
               )}
-            </S.ActiveViewTile>
+            </RollCallCardList>
           </>
         )}
       </S.Panel>
@@ -349,79 +247,5 @@ namespace S {
   export const SectionDescription = styled.div`
     font-size: 14px;
     color: ${(p) => p.theme.colors.textMuted};
-  `;
-
-  export const StatsRow = styled.div`
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  `;
-
-  export const StatusChip = styled(Chip)<{
-    activityState: RollCallActivityState;
-  }>`
-    color: ${(p) =>
-      p.activityState === RollCallActivityState.ACTIVE
-        ? p.theme.colors.accent.success
-        : p.activityState === RollCallActivityState.CLOSED
-          ? p.theme.colors.textMuted
-          : p.theme.colors.accent.warning};
-    border-color: ${(p) =>
-      p.activityState === RollCallActivityState.ACTIVE
-        ? `${p.theme.colors.accent.success}55`
-        : p.activityState === RollCallActivityState.CLOSED
-          ? `${p.theme.colors.textMuted}55`
-          : `${p.theme.colors.accent.warning}55`};
-    background-color: ${(p) =>
-      p.activityState === RollCallActivityState.ACTIVE
-        ? `${p.theme.colors.accent.success}14`
-        : p.activityState === RollCallActivityState.CLOSED
-          ? `${p.theme.colors.textMuted}14`
-          : `${p.theme.colors.accent.warning}14`};
-    font-size: 12px;
-  `;
-
-  export const CountChip = styled(Chip)`
-    color: ${(p) => p.theme.colors.accent.primary};
-    border-color: ${(p) => `${p.theme.colors.accent.primary}44`};
-    background-color: ${(p) => `${p.theme.colors.accent.primary}12`};
-    font-size: 12px;
-  `;
-
-  export const EventChip = styled(Chip)`
-    color: ${(p) => p.theme.colors.accent.success};
-    border-color: ${(p) => `${p.theme.colors.accent.success}44`};
-    background-color: ${(p) => `${p.theme.colors.accent.success}12`};
-    font-size: 12px;
-  `;
-
-  export const HiddenNotice = styled.div`
-    color: ${(p) => p.theme.colors.accent.warning};
-    font-size: 14px;
-  `;
-
-  export const DetailsGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 10px;
-  `;
-
-  export const DetailItem = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  `;
-
-  export const DetailLabel = styled.div`
-    font-size: 12px;
-    color: ${(p) => p.theme.colors.textMuted};
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-weight: 700;
-  `;
-
-  export const DetailValue = styled.div`
-    font-size: 14px;
-    color: ${(p) => p.theme.colors.text};
   `;
 }

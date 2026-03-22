@@ -66,6 +66,22 @@ export class EventParticipant {
     return this.status(rollCallEvent) === AttendeeStatus.PRESENT;
   }
 
+  isLate(rollCallEvent: RollCallEventEntry | null): boolean {
+    if (!rollCallEvent?.closed_at) {
+      return false;
+    }
+
+    const latestRollCall = this.getLatestRollCall(rollCallEvent.id);
+    if (!latestRollCall || latestRollCall.status !== RollCallStatus.PRESENT) {
+      return false;
+    }
+
+    return (
+      new Date(latestRollCall.created_at).getTime() >
+      new Date(rollCallEvent.closed_at).getTime()
+    );
+  }
+
   private sortRollCallsDescending = (
     a: RollCallEntry,
     b: RollCallEntry,

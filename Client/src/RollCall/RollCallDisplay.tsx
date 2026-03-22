@@ -6,6 +6,7 @@ import { Button } from "../Components/Button/Button";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { RollCallEventEntry } from "../SupaBase/types";
 import {
+  ShowRollCallStartPopup,
   ShowRollCallWindow,
   ShowRollCallWindowOptions,
 } from "./RollCallWindow";
@@ -40,10 +41,12 @@ export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
 
   let isInProgress: boolean | null;
   let message: string;
+  let isStartAction = false;
 
   if (!curRoll) {
     isInProgress = null;
-    message = `None`;
+    message = `Start a Rollcall`;
+    isStartAction = true;
   } else if (curRoll.closed_by != null) {
     isInProgress = false;
     message = `Closed`;
@@ -53,11 +56,18 @@ export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
   }
 
   const handleClick = useCallback(() => {
+    if (isStartAction) {
+      ShowRollCallStartPopup(supabase, {
+        allowedEventIds,
+      });
+      return;
+    }
+
     ShowRollCallWindow(supabase, {
       allowedEventIds,
       rollCallEvent: curRoll,
     });
-  }, [allowedEventIds, curRoll, supabase]);
+  }, [allowedEventIds, curRoll, isStartAction, supabase]);
 
   return (
     <S.StyledButton
@@ -67,11 +77,19 @@ export const RollCallDisplay: React.FC<RollCallDisplayProps> = (
       color={
         isInProgress === true
           ? theme.colors.accent.warning
-          : theme.colors.textMuted
+          : isStartAction
+            ? theme.colors.accent.primary
+            : theme.colors.textMuted
       }
     >
-      <S.RollCallText>{"RollCall:"}</S.RollCallText>
-      <S.RollCallStatus>{message}</S.RollCallStatus>
+      {isStartAction ? (
+        <S.RollCallAction>{message}</S.RollCallAction>
+      ) : (
+        <>
+          <S.RollCallText>{"RollCall:"}</S.RollCallText>
+          <S.RollCallStatus>{message}</S.RollCallStatus>
+        </>
+      )}
     </S.StyledButton>
   );
 };
@@ -86,4 +104,5 @@ namespace S {
 
   export const RollCallText = styled.span``;
   export const RollCallStatus = styled.span``;
+  export const RollCallAction = styled.span``;
 }

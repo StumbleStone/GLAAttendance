@@ -1,18 +1,17 @@
 import styled from "@emotion/styled";
 import * as React from "react";
 
-export interface TileProps {
+export interface TileProps extends React.HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode;
   className?: string;
   forwardRef?: React.RefObject<HTMLDivElement>;
-  onClick?: (event: React.MouseEvent) => void;
 }
 
 export const Tile: React.FC<TileProps> = (props: TileProps) => {
-  const { children, className, onClick, forwardRef } = props;
+  const { children, className, forwardRef, ...rest } = props;
 
   return (
-    <S.TileEl onClick={onClick} className={className} ref={forwardRef}>
+    <S.TileEl {...rest} className={className} ref={forwardRef}>
       {children}
     </S.TileEl>
   );

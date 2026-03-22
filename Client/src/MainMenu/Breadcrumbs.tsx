@@ -1,8 +1,9 @@
 import styled from "@emotion/styled";
 import * as React from "react";
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
+import { getRollCallSessionLabel } from "../RollCall/RollCallUtils";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { EventsEntry } from "../SupaBase/types";
+import { EventsEntry, RollCallEventEntry } from "../SupaBase/types";
 import { RoutePath } from "./RouteFlow";
 
 export interface BreadcrumbsProps {
@@ -53,10 +54,48 @@ function getEventBreadcrumbLabel(eventId: number, supabase: SupaBase): string {
   return "Event";
 }
 
+function findRollCallEvent(
+  rollCallEventId: number,
+  supabase: SupaBase,
+): RollCallEventEntry | null {
+  return supabase.getRollCallEventById(rollCallEventId);
+}
+
+function getRollCallBreadcrumbLabel(
+  rollCallEventId: number,
+  supabase: SupaBase,
+): string {
+  return getRollCallSessionLabel(findRollCallEvent(rollCallEventId, supabase));
+}
+
 function getBreadcrumbItems(
   pathname: string,
   supabase: SupaBase,
 ): BreadcrumbItem[] {
+  const rollCallRouteMatch = matchPath(
+    {
+      path: RoutePath.ROLLCALL,
+      end: true,
+    },
+    pathname,
+  );
+
+  if (!!rollCallRouteMatch?.params.rollcallid) {
+    const rollCallEventId = Number(rollCallRouteMatch.params.rollcallid);
+    return withDashboardBase([
+      {
+        label: "Rollcalls",
+        path: RoutePath.ROLLCALLS,
+      },
+      {
+        label: Number.isInteger(rollCallEventId)
+          ? getRollCallBreadcrumbLabel(rollCallEventId, supabase)
+          : "Rollcall",
+        path: pathname,
+      },
+    ]);
+  }
+
   const eventRouteMatch = matchPath(
     {
       path: RoutePath.EVENT,
@@ -149,6 +188,8 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = (
   React.useEffect(() => {
     const listener = supabase.addListener({
       [SupaBaseEventKey.EVENTS_CHANGED]: forceUpdate,
+      [SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]: forceUpdate,
+      [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: forceUpdate,
     });
 
     return listener;

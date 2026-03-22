@@ -5,6 +5,7 @@ import { Events } from "../AttendanceEvents/Events";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Login } from "../Components/Login/Login";
 import { Onboard } from "../Onboard/Onboard";
+import { RollCallDetails } from "../RollCall/RollCallDetails";
 import { RollCalls } from "../RollCall/RollCalls";
 import { SupaBase } from "../SupaBase/SupaBase";
 import { Dashboard } from "./Dashboard";
@@ -18,6 +19,7 @@ export enum RoutePath {
   ONBOARDING = "/onboard",
   DASHBOARD = "/dashboard",
   ROLLCALLS = "/rollcalls",
+  ROLLCALL = "/rollcalls/:rollcallid",
   EVENTS = "/events",
   EVENT = "/event/:id",
   DEBUG = "/debug",
@@ -76,6 +78,14 @@ export const RollCallsRouteItem: RouteItem = new RouteItem({
   prerequisite: OnboardingRouteItem,
 });
 
+export const RollCallRouteItem: RouteItem = new RouteItem({
+  path: RoutePath.ROLLCALL,
+  render: () => <RollCallDetails />,
+  check: () => true,
+  isEndpoint: true,
+  prerequisite: OnboardingRouteItem,
+});
+
 export const EventRouteItem: RouteItem = new RouteItem({
   path: RoutePath.EVENT,
   render: () => <EventDetails />,
@@ -100,6 +110,7 @@ export const ROUTES: RouteItem[] = [
   OnboardingRouteItem,
   DashboardRouteItem,
   RollCallsRouteItem,
+  RollCallRouteItem,
   EventsRouteItem,
   EventRouteItem,
   DebugRouteItem,

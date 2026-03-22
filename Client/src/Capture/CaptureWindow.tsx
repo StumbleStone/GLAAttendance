@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Icon } from "../Components/Icon";
 import { Tile } from "../Components/Tile";
 import { EmoteData, QRScanner } from "../QRCode/QRScanner";
@@ -8,6 +7,7 @@ import { SupaBase } from "../SupaBase/SupaBase";
 import { DefaultColors } from "../Tools/Toolbox";
 
 export interface CaptureWindowProps {
+  rollCallEventId?: number | null;
   supabase: SupaBase;
   isCapturing: boolean;
 }
@@ -17,14 +17,17 @@ function renderEmotes(emotes: EmoteData[]) {
 }
 
 export const CaptureWindow: React.FC<CaptureWindowProps> = (
-  props: CaptureWindowProps
+  props: CaptureWindowProps,
 ) => {
-  const { supabase, isCapturing } = props;
+  const { rollCallEventId, supabase, isCapturing } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const emoteRef = useRef<HTMLDivElement>(null);
-  const scanner = useMemo(() => new QRScanner(supabase), []);
+  const scanner = useMemo(
+    () => new QRScanner(supabase, rollCallEventId ?? null),
+    [rollCallEventId, supabase],
+  );
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export const CaptureWindow: React.FC<CaptureWindowProps> = (
       scanner.dispose();
       dereg();
     };
-  }, [isCapturing]);
+  }, [isCapturing, scanner]);
 
   // Fix video size since we can't change camera size
   const onReady = useCallback(() => {
@@ -130,7 +133,8 @@ const EmoteIcon: React.FC<EmoteData> = (props: EmoteData) => {
 namespace S {
   export const Container = styled.div`
     display: flex;
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
     justify-content: center;
   `;
 
@@ -150,8 +154,12 @@ namespace S {
     transform: translate(-50%, -50%);
     transform-origin: 0 0;
 
-    transition: transform 0.25s linear, width 0.25s linear, height 0.25s linear,
-      top 0.1s linear, left 0.1s linear;
+    transition:
+      transform 0.25s linear,
+      width 0.25s linear,
+      height 0.25s linear,
+      top 0.1s linear,
+      left 0.1s linear;
   `;
 
   export const CaptureWindowEl = styled(Tile)`
@@ -167,13 +175,6 @@ namespace S {
     justify-content: center;
     align-items: center;
   `;
-
-  export const StyledBackdrop = styled(Backdrop)`
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  `;
-
   export const Video = styled.video`
     /* max-height: 100%;
     max-width: 100%;

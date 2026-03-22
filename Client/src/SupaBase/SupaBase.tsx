@@ -695,11 +695,9 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   get rollcallInProgress(): boolean {
-    if (!this.currentRollCallEvent) {
-      return false;
-    }
-
-    return this.currentRollCallEvent.closed_by == null;
+    return this.isRollCallEventInProgress(
+      this.currentRollCallEvent?.id ?? null,
+    );
   }
 
   async loadRollCalls() {
@@ -857,6 +855,16 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
   }
 
   barcodeScanned(hash: string): BarcodeProcessResult {
+    return this.barcodeScannedForRollCallEvent(
+      hash,
+      this.currentRollCallEvent?.id ?? null,
+    );
+  }
+
+  barcodeScannedForRollCallEvent(
+    hash: string,
+    rollCallEventId: number | null,
+  ): BarcodeProcessResult {
     const attendee = this.attendeesHandler.get(hash);
 
     if (!attendee) {
@@ -865,17 +873,18 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       };
     }
 
-    if (this.isAttendeePresent(attendee, this.currentRollCallEvent?.id)) {
+    if (this.isAttendeePresent(attendee, rollCallEventId)) {
       return {
         state: BarcodeProcessState.PRESENT,
       };
     }
 
-    const processing = this.barcodeProcessMap.get(hash);
+    const processingKey = this.getBarcodeProcessKey(hash, rollCallEventId);
+    const processing = this.barcodeProcessMap.get(processingKey);
 
     // Never processed before, process now
     if (!processing) {
-      this.barcodeProcess(attendee);
+      this.barcodeProcessForRollCallEvent(attendee, rollCallEventId);
       return {
         state: BarcodeProcessState.PROCESSING,
       };
@@ -901,24 +910,41 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       processing.errored = false;
     }
 
-    this.barcodeProcess(attendee);
+    this.barcodeProcessForRollCallEvent(attendee, rollCallEventId);
     return {
       state: BarcodeProcessState.PROCESSING,
     };
   }
 
   async barcodeProcess(attendee: Attendee) {
-    this.barcodeProcessMap.set(attendee.hash, {
+    return this.barcodeProcessForRollCallEvent(
+      attendee,
+      this.currentRollCallEvent?.id ?? null,
+    );
+  }
+
+  async barcodeProcessForRollCallEvent(
+    attendee: Attendee,
+    rollCallEventId: number | null,
+  ) {
+    const processingKey = this.getBarcodeProcessKey(
+      attendee.hash,
+      rollCallEventId,
+    );
+
+    this.barcodeProcessMap.set(processingKey, {
       processing: true,
       errored: false,
       errorTime: 0,
     });
     console.log(`${attendee.fullName} is being processed!`);
-    const success = await this.createNewRollCall(attendee, RollCallMethod.QR);
+    const success =
+      !!rollCallEventId &&
+      (await this.createRollCall(attendee, rollCallEventId, RollCallMethod.QR));
 
     if (success == true) {
       console.log(`${attendee.fullName} is now Present!`);
-      this.barcodeProcessMap.set(attendee.hash, {
+      this.barcodeProcessMap.set(processingKey, {
         processing: false,
         errored: false,
         errorTime: 0,
@@ -926,7 +952,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       return;
     }
 
-    this.barcodeProcessMap.set(attendee.hash, {
+    this.barcodeProcessMap.set(processingKey, {
       processing: false,
       errored: true,
       errorTime: Date.now(),
@@ -987,6 +1013,19 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
   getActiveRollCallEvent(eventId: number): RollCallEventEntry | null {
     return this.rollCallEventsHandler.getActiveByEventId(eventId);
+  }
+
+  isRollCallEventInProgress(rollCallEventId: number | null): boolean {
+    if (!rollCallEventId) {
+      return false;
+    }
+
+    const rollCallEvent = this.getRollCallEventById(rollCallEventId);
+    if (!rollCallEvent) {
+      return false;
+    }
+
+    return rollCallEvent.closed_at == null;
   }
 
   hasActiveRollCallEvent(eventId: number): boolean {
@@ -1297,6 +1336,13 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       eventParticipant,
       rollCalls: this.rollCallsHandler.getByAttendeeId(attendee.id),
     });
+  }
+
+  private getBarcodeProcessKey(
+    hash: string,
+    rollCallEventId: number | null,
+  ): string {
+    return `${rollCallEventId ?? "none"}:${hash}`;
   }
 
   countUnScannedAttendees(

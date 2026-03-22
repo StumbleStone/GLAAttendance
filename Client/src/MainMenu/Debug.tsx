@@ -29,11 +29,131 @@ import { PasswordInput } from "../Components/Inputs/PasswordInput";
 import { Label } from "../Components/Label";
 import { SubHeading } from "../Components/SubHeading";
 import { Tile } from "../Components/Tile";
+import {
+  RollCallCardActivityState,
+  RollCallCardList,
+  RollCallEmptyStateCard,
+  RollCallSessionCard,
+  RollCallSessionCardProps,
+  RollCallStartCard,
+} from "../RollCall/RollCallCardComponents";
 import { SupaBase } from "../SupaBase/SupaBase";
 
 export interface DebugProps {
   supabase: SupaBase;
 }
+
+interface RollCallDemoExample {
+  emptyDescription?: string;
+  emptyTitle?: string;
+  id: string;
+  sessions: RollCallSessionCardProps[];
+  startDescription: string;
+  startEnabled: boolean;
+  title: string;
+}
+
+function onDemoAction(): void {
+  // Visual demo only.
+}
+
+const ROLL_CALL_DEMO_EXAMPLES: RollCallDemoExample[] = [
+  {
+    emptyDescription:
+      "When you start a session it will appear here so you can monitor it and conclude it when needed.",
+    emptyTitle: "No Rollcalls Yet",
+    id: "no_rollcalls",
+    sessions: [],
+    startDescription:
+      "Click anywhere on this card to start a new rollcall for an assigned event that does not already have an active session.",
+    startEnabled: true,
+    title: "No Rollcall Events Exist For The User",
+  },
+  {
+    id: "two_closed",
+    sessions: [
+      {
+        absentCount: 1,
+        activityState: RollCallCardActivityState.CLOSED,
+        participantCount: 12,
+        presentCount: 9,
+        sessionLabel: "#2 Morning Registration",
+        title: "Leadership Summit",
+        unscannedCount: 2,
+      },
+      {
+        absentCount: 0,
+        activityState: RollCallCardActivityState.CLOSED,
+        participantCount: 8,
+        presentCount: 8,
+        sessionLabel: "#5 Debrief Attendance",
+        title: "Ops Debrief",
+        unscannedCount: 0,
+      },
+    ],
+    startDescription:
+      "Click anywhere on this card to start a new rollcall for an assigned event that does not already have an active session.",
+    startEnabled: true,
+    title: "No Active Rollcalls But Two Inactive",
+  },
+  {
+    id: "two_active",
+    sessions: [
+      {
+        absentCount: 1,
+        activityState: RollCallCardActivityState.ACTIVE,
+        onEndRollCall: onDemoAction,
+        participantCount: 14,
+        presentCount: 10,
+        sessionLabel: "#0 Doors Open",
+        title: "Final Test Event",
+        unscannedCount: 3,
+      },
+      {
+        absentCount: 0,
+        activityState: RollCallCardActivityState.ACTIVE,
+        onEndRollCall: onDemoAction,
+        participantCount: 6,
+        presentCount: 4,
+        sessionLabel: "#1 Evening Check-In",
+        title: "Training Night",
+        unscannedCount: 2,
+      },
+    ],
+    startDescription:
+      "Every proctored event already has an active rollcall. Conclude one below before starting another for that same event.",
+    startEnabled: false,
+    title: "No Inactive Rollcalls But Two Active",
+  },
+  {
+    id: "mixed",
+    sessions: [
+      {
+        absentCount: 2,
+        activityState: RollCallCardActivityState.ACTIVE,
+        onEndRollCall: onDemoAction,
+        participantCount: 10,
+        presentCount: 6,
+        sessionLabel: "#3 Session One",
+        title: "Leadership Check-In",
+        unscannedCount: 2,
+      },
+      {
+        absentCount: 1,
+        activityState: RollCallCardActivityState.CLOSED,
+        participantCount: 9,
+        presentCount: 7,
+        sessionLabel: "#4 Session Zero",
+        title: "Field Briefing",
+        unscannedCount: 1,
+      },
+    ],
+    startDescription:
+      "Click anywhere on this card to start a new rollcall for an assigned event that does not already have an active session.",
+    startEnabled: true,
+    title: "One Active And One Inactive Rollcall",
+  },
+];
 
 export const Debug: React.FC = () => {
   useOutletContext<DebugProps>();
@@ -209,6 +329,48 @@ export const Debug: React.FC = () => {
           />
         </S.Row>
       </S.Panel>
+
+      <S.Panel>
+        <SubHeading>Rollcall Page Examples</SubHeading>
+        <S.PanelDescription>
+          Example states for the rollcalls page using the same card components
+          as the live route.
+        </S.PanelDescription>
+        <S.RollCallExampleGrid>
+          {ROLL_CALL_DEMO_EXAMPLES.map((example) => (
+            <S.RollCallExamplePanel key={example.id}>
+              <S.RollCallExampleTitle>{example.title}</S.RollCallExampleTitle>
+              <RollCallCardList>
+                <RollCallStartCard
+                  canStart={example.startEnabled}
+                  description={example.startDescription}
+                  onStart={onDemoAction}
+                />
+                {example.sessions.length === 0 ? (
+                  <RollCallEmptyStateCard
+                    description={example.emptyDescription ?? ""}
+                    title={example.emptyTitle ?? "No Rollcalls Yet"}
+                  />
+                ) : (
+                  example.sessions.map((session, index) => (
+                    <RollCallSessionCard
+                      absentCount={session.absentCount}
+                      activityState={session.activityState}
+                      key={`${example.id}_${index}`}
+                      onEndRollCall={session.onEndRollCall}
+                      participantCount={session.participantCount}
+                      presentCount={session.presentCount}
+                      sessionLabel={session.sessionLabel}
+                      title={session.title}
+                      unscannedCount={session.unscannedCount}
+                    />
+                  ))
+                )}
+              </RollCallCardList>
+            </S.RollCallExamplePanel>
+          ))}
+        </S.RollCallExampleGrid>
+      </S.Panel>
     </S.Container>
   );
 };
@@ -257,5 +419,23 @@ namespace S {
     display: flex;
     flex-direction: column;
     gap: 4px;
+  `;
+
+  export const RollCallExampleGrid = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  `;
+
+  export const RollCallExamplePanel = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  `;
+
+  export const RollCallExampleTitle = styled.div`
+    font-size: 15px;
+    font-weight: 700;
+    color: ${(p) => p.theme.colors.text};
   `;
 }

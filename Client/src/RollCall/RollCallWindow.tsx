@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import {
   faCheckSquare,
+  faChevronDown,
   faMinusSquare,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
@@ -11,6 +12,7 @@ import { SummaryPill, SummaryPillId } from "../Attendees/SummaryPill";
 import { Backdrop } from "../Components/Backdrop/Backdrop";
 import { Button, ButtonContainer } from "../Components/Button/Button";
 import { Heading } from "../Components/Heading";
+import { Icon } from "../Components/Icon";
 import { Input } from "../Components/Inputs/BaseInput";
 import { LayerHandler, LayerItem } from "../Components/Layer";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
@@ -125,13 +127,19 @@ const RollCallStartPopup: React.FC<RollCallStartPopupProps> = (
         <S.StartPopupFields>
           <S.StartPopupField>
             <S.StartPopupLabel>{"Event"}</S.StartPopupLabel>
-            <S.EventSelect value={selectedEventId} onChange={handleEventChange}>
-              {availableEvents.map((event) => (
-                <option key={event.id} value={event.id}>
-                  {getEventDisplayLabel(event)}
-                </option>
-              ))}
-            </S.EventSelect>
+            <S.EventSelectWrap>
+              <S.EventSelect
+                value={selectedEventId}
+                onChange={handleEventChange}
+              >
+                {availableEvents.map((event) => (
+                  <option key={event.id} value={event.id}>
+                    {getEventDisplayLabel(event)}
+                  </option>
+                ))}
+              </S.EventSelect>
+              <S.EventSelectIcon icon={faChevronDown} size={16} />
+            </S.EventSelectWrap>
           </S.StartPopupField>
           <S.StartPopupField>
             <S.StartPopupLabel>{"Description"}</S.StartPopupLabel>
@@ -164,6 +172,26 @@ export function ShowRollCallWindow(
   });
 }
 
+export function ShowRollCallStartPopup(
+  supabase: SupaBase,
+  options: ShowRollCallWindowOptions = {},
+) {
+  const availableEvents = getAllowedRollCallEvents(
+    supabase,
+    options.allowedEventIds,
+  );
+  const startableEvents = getStartableRollCallEvents(supabase, availableEvents);
+
+  showStartRollCallPopup(supabase, startableEvents);
+}
+
+export function ShowRollCallStopPopup(
+  supabase: SupaBase,
+  rollCallEvent: RollCallEventEntry | null,
+) {
+  stopRollCallEvent(supabase, rollCallEvent);
+}
+
 export interface RollCallWindowProps {
   allowedEventIds?: number[];
   rollCallEvent?: RollCallEventEntry | null;
@@ -171,7 +199,7 @@ export interface RollCallWindowProps {
   layerItem: LayerItem;
 }
 
-function startRollCallEvent(
+function showStartRollCallPopup(
   supabase: SupaBase,
   availableEvents: EventsEntry[],
 ) {
@@ -287,6 +315,7 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
   React.useEffect(() => {
     return supabase.addListener({
       [SupaBaseEventKey.EVENTS_CHANGED]: forceUpdate,
+      [SupaBaseEventKey.EVENT_PROCTORS_CHANGED]: forceUpdate,
       [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: forceUpdate,
       [SupaBaseEventKey.LOADED_ROLLCALL_EVENTS]: forceUpdate,
       [SupaBaseEventKey.LOADED_ROLLCALLS]: forceUpdate,
@@ -295,7 +324,7 @@ export const RollCallWindow: React.FC<RollCallWindowProps> = (
   }, []);
 
   const handleNewRollCall = React.useCallback(
-    () => startRollCallEvent(supabase, startableEvents),
+    () => showStartRollCallPopup(supabase, startableEvents),
     [startableEvents, supabase],
   );
 
@@ -541,6 +570,11 @@ namespace S {
     gap: 6px;
   `;
 
+  export const EventSelectWrap = styled.div`
+    position: relative;
+    width: 100%;
+  `;
+
   export const StartPopupLabel = styled.div`
     font-size: 14px;
     color: ${(p) => p.theme.colors.textMuted};
@@ -548,15 +582,35 @@ namespace S {
 
   export const EventSelect = styled.select`
     box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
     width: 100%;
     min-height: 48px;
     font-size: 18px;
     font-family: inherit;
+    line-height: 1.2;
+    color-scheme: ${(p) => p.theme.mode};
     background-color: ${(p) => p.theme.colors.input.background};
     color: ${(p) => p.theme.colors.input.foreground};
     border: 1px solid ${(p) => p.theme.colors.input.border};
     border-radius: ${(p) => p.theme.radius.lg};
-    padding: 8px 16px;
+    box-shadow: inset 0 1px 0 ${(p) => p.theme.colors.borderSubtle};
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease,
+      box-shadow 120ms ease,
+      color 120ms ease;
+    padding: 8px 44px 8px 16px;
+    cursor: pointer;
+
+    option {
+      background-color: ${(p) => p.theme.colors.surface};
+      color: ${(p) => p.theme.colors.text};
+    }
+
+    :hover {
+      border-color: ${(p) => p.theme.colors.textMuted};
+    }
 
     :focus,
     :focus-visible {
@@ -564,7 +618,16 @@ namespace S {
       border-color: ${(p) => p.theme.colors.input.focus};
       box-shadow:
         inset 0 1px 0 ${(p) => p.theme.colors.borderSubtle},
-        0 0 0 2px ${(p) => p.theme.colors.input.focus};
+        0 0 0 2px ${(p) => `${p.theme.colors.input.focus}55`};
     }
+  `;
+
+  export const EventSelectIcon = styled(Icon)`
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: ${(p) => p.theme.colors.textMuted};
   `;
 }

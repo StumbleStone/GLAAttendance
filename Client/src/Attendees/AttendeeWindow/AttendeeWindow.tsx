@@ -39,19 +39,37 @@ import { AttendeeWindowStatusContainer } from "./AttendeeWindowStatusContainer";
 export interface AtendeeWindowProps {
   layerItem: LayerItem;
   attendee: Attendee;
+  rollCallEventId?: number | null;
   supabase: SupaBase;
 }
 
 const ICON_SIZE = 16;
 
+export function ShowAttendeeWindow(
+  supabase: SupaBase,
+  attendee: Attendee,
+  rollCallEventId?: number | null,
+): void {
+  LayerHandler.AddLayer((layerItem: LayerItem) => (
+    <AttendeeWindow
+      attendee={attendee}
+      layerItem={layerItem}
+      rollCallEventId={rollCallEventId}
+      supabase={supabase}
+    />
+  ));
+}
+
 export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   props: AtendeeWindowProps,
 ) => {
-  const { layerItem, attendee, supabase } = props;
+  const { layerItem, attendee, rollCallEventId, supabase } = props;
   const [, forceUpdate] = useReducer((x) => x + 1, 0);
   const [showAnim, setShowAnim] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const previousStatusRef = useRef<AttendeeStatus>(AttendeeStatus.NOT_SCANNED);
+  const resolvedRollCallEventId =
+    rollCallEventId ?? supabase.currentRollCallEvent?.id ?? null;
 
   const bdClick = useCallback(() => {
     layerItem.close();
@@ -75,7 +93,10 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   useEffect(() => {
     return supabase.addListener({
       [SupaBaseEventKey.LOADED_ROLLCALLS]: () => {
-        const nextStatus = supabase.getAttendeeStatus(attendee);
+        const nextStatus = supabase.getAttendeeStatus(
+          attendee,
+          resolvedRollCallEventId,
+        );
         if (previousStatusRef.current !== nextStatus) {
           previousStatusRef.current = nextStatus;
           setShowAnim(() => true);
@@ -83,14 +104,23 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
         forceUpdate();
       },
       [SupaBaseEventKey.UPDATED_ROLLCALL_EVENT]: () => {
-        previousStatusRef.current = supabase.getAttendeeStatus(attendee);
+        previousStatusRef.current = supabase.getAttendeeStatus(
+          attendee,
+          resolvedRollCallEventId,
+        );
         forceUpdate();
       },
     });
-  }, [attendee, supabase]);
+  }, [attendee, resolvedRollCallEventId, supabase]);
 
-  const status: AttendeeStatus = supabase.getAttendeeStatus(attendee);
-  const currentRollCall = supabase.getCurrentRollCallForAttendee(attendee);
+  const status: AttendeeStatus = supabase.getAttendeeStatus(
+    attendee,
+    resolvedRollCallEventId,
+  );
+  const currentRollCall = supabase.getCurrentRollCallForAttendee(
+    attendee,
+    resolvedRollCallEventId,
+  );
 
   useEffect(() => {
     previousStatusRef.current = status;
@@ -139,7 +169,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
       : status === AttendeeStatus.ABSENT
         ? DefaultColors.BrightRed
         : DefaultColors.BrightGrey;
-  const rollCallInProgress = supabase.rollcallInProgress;
+  const canRecordRollCall = resolvedRollCallEventId != null;
 
   const handleEdit = useCallback(() => {
     setEditMode((prev) => !prev);
@@ -150,16 +180,29 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
   }, []);
 
   const handlePresent = useCallback(() => {
-    supabase.createNewRollCall(attendee, RollCallMethod.MANUAL);
-  }, [attendee, supabase]);
+    if (!resolvedRollCallEventId) {
+      return;
+    }
+
+    supabase.createRollCall(
+      attendee,
+      resolvedRollCallEventId,
+      RollCallMethod.MANUAL,
+    );
+  }, [attendee, resolvedRollCallEventId, supabase]);
 
   const handleAbsent = useCallback(() => {
-    supabase.createNewRollCall(
+    if (!resolvedRollCallEventId) {
+      return;
+    }
+
+    supabase.createRollCall(
       attendee,
+      resolvedRollCallEventId,
       RollCallMethod.MANUAL,
       RollCallStatus.ABSENT,
     );
-  }, [attendee, supabase]);
+  }, [attendee, resolvedRollCallEventId, supabase]);
 
   return (
     <S.StyledBackdrop onClose={bdClick}>
@@ -209,7 +252,7 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
           </S.QRCodeContainer>
         )}
         {!editMode && (
-          <ButtonContainer>
+          <S.ActionButtonRow>
             <Button
               onClick={handleDelete}
               icon={faTrash}
@@ -233,26 +276,24 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
               icon={faEdit}
               color={DefaultColors.BrightOrange}
             />
-          </ButtonContainer>
+          </S.ActionButtonRow>
         )}
         {!editMode && (
-          <ButtonContainer>
+          <S.ActionButtonRow>
             <S.WideButton
               onClick={handleAbsent}
               icon={faXmarkCircle}
-              disabled={!rollCallInProgress || status === AttendeeStatus.ABSENT}
+              disabled={!canRecordRollCall || status === AttendeeStatus.ABSENT}
               color={DefaultColors.BrightRed}
             />
 
             <S.WideButton
               onClick={handlePresent}
               icon={faCheckCircle}
-              disabled={
-                !rollCallInProgress || status === AttendeeStatus.PRESENT
-              }
+              disabled={!canRecordRollCall || status === AttendeeStatus.PRESENT}
               color={DefaultColors.BrightGreen}
             />
-          </ButtonContainer>
+          </S.ActionButtonRow>
         )}
       </S.AttendeeWindowEl>
     </S.StyledBackdrop>
@@ -268,20 +309,22 @@ namespace S {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: stretch;
-    padding: 0;
+    gap: 14px;
+    padding: 18px 0 16px;
   `;
 
   export const AttendeeHeading = styled.div`
     width: 100%;
     box-sizing: border-box;
     text-align: center;
-    padding: 10px 0 5px;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: stretch;
+    gap: 10px;
   `;
 
   export const Name = styled.div`
@@ -290,8 +333,9 @@ namespace S {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 5px;
-    padding: 0 20px;
+    gap: 8px;
+    padding: 0 24px;
+    line-height: 1.1;
   `;
 
   export const IconContainer = styled.div``;
@@ -323,10 +367,16 @@ namespace S {
   export const QRCodeContainer = styled.div`
     display: flex;
     justify-content: center;
+    padding: 0 16px;
   `;
 
   export const WideButton = styled(Button)`
     flex: 1;
     justify-content: center;
+  `;
+
+  export const ActionButtonRow = styled(ButtonContainer)`
+    padding: 0 16px;
+    box-sizing: border-box;
   `;
 }

@@ -129,14 +129,28 @@ const PhoneNumber: React.FC<{ number: string }> = ({ number }) => {
 namespace S {
   export const StatusMetaContainer = styled.div`
     box-sizing: border-box;
-    padding: 0 20px;
+    padding: 0 24px;
   `;
 
-  export const StyledTable = styled.table``;
+  export const StyledTable = styled.table`
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 6px;
+
+    td {
+      vertical-align: top;
+    }
+
+    td:first-of-type {
+      padding-right: 12px;
+      white-space: nowrap;
+    }
+  `;
 
   export const StyledCell = styled.td<{ color?: string }>`
     max-width: 200px;
     color: ${(p) => p.color};
+    line-height: 1.3;
   `;
 
   export const CellHeading = styled.div`

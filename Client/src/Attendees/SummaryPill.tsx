@@ -39,6 +39,7 @@ export const SummaryPill: React.FC<SummaryPillProps> = (
   props: SummaryPillProps,
 ) => {
   const { id, icon, label, value, color, selected, onToggle } = props;
+  const isInteractive = !!onToggle;
 
   const handleClick = React.useCallback(() => {
     onToggle?.(id);
@@ -48,9 +49,15 @@ export const SummaryPill: React.FC<SummaryPillProps> = (
     <S.SummaryButton
       tone={color}
       selected={selected}
-      onClick={onToggle ? handleClick : undefined}
-      aria-pressed={selected}
-      title={selected ? `${label} filter selected` : `${label} filter`}
+      onClick={isInteractive ? handleClick : undefined}
+      aria-pressed={isInteractive ? selected : undefined}
+      title={
+        isInteractive
+          ? selected
+            ? `${label} filter selected`
+            : `${label} filter`
+          : `${label}: ${value}`
+      }
       icon={icon}
       iconSize={12}
       label={
