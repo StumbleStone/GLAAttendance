@@ -36,7 +36,10 @@ export class RouteItem {
   getMissingPrerequisite(supabase: SupaBase): RouteItem | null {
     // Go to the first prerequisite that fails the check. This ensures the user is always on the most relevant route.
     if (this.prerequisite) {
-      return this.prerequisite.getMissingPrerequisite(supabase);
+      const anyFailed = this.prerequisite.getMissingPrerequisite(supabase);
+      if (anyFailed != null) {
+        return anyFailed;
+      }
     }
 
     if (!this.canPassCheck(supabase)) {
