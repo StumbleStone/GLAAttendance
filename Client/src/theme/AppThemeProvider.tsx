@@ -55,6 +55,11 @@ export const AppThemeProvider: React.FC<AppThemeProviderProps> = ({
 
   const getStyles = useCallback((theme: Theme) => {
     return css`
+      html {
+        scrollbar-color: ${theme.colors.border} ${theme.colors.surfaceRaised};
+        scrollbar-width: thin;
+      }
+
       body {
         background-color: ${theme.colors.background};
         margin: 0px;
@@ -69,6 +74,32 @@ export const AppThemeProvider: React.FC<AppThemeProviderProps> = ({
 
       * {
         -webkit-tap-highlight-color: transparent;
+        scrollbar-color: ${theme.colors.border} ${theme.colors.surfaceRaised};
+        scrollbar-width: thin;
+      }
+
+      *::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+      }
+
+      *::-webkit-scrollbar-track {
+        background-color: ${theme.colors.surfaceRaised};
+        border-radius: ${theme.radius.pill};
+      }
+
+      *::-webkit-scrollbar-thumb {
+        background-color: ${theme.colors.border};
+        border-radius: ${theme.radius.pill};
+        border: 2px solid ${theme.colors.surfaceRaised};
+      }
+
+      *::-webkit-scrollbar-thumb:hover {
+        background-color: ${theme.colors.accent.primary};
+      }
+
+      *::-webkit-scrollbar-corner {
+        background-color: ${theme.colors.surfaceRaised};
       }
 
       div#Container {
