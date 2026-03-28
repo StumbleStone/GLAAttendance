@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
-import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import {IconDefinition} from "@fortawesome/fontawesome-svg-core";
 import React from "react";
-import { Chip } from "../Components/Chip/Chip";
+import {Chip} from "../Components/Chip/Chip";
 
 export interface SummaryPillProps {
   id: SummaryPillId;
@@ -17,8 +17,6 @@ export enum SummaryPillId {
   PRESENT = "present",
   ABSENT = "absent",
   NOT_SCANNED = "not_scanned",
-  BUS = "bus",
-  CAR = "car",
 }
 
 export type SummaryPillSelection = Record<SummaryPillId, boolean>;
@@ -30,8 +28,6 @@ export function createSummaryPillSelection(
     [SummaryPillId.PRESENT]: selectedByDefault,
     [SummaryPillId.ABSENT]: selectedByDefault,
     [SummaryPillId.NOT_SCANNED]: selectedByDefault,
-    [SummaryPillId.BUS]: selectedByDefault,
-    [SummaryPillId.CAR]: selectedByDefault,
   };
 }
 

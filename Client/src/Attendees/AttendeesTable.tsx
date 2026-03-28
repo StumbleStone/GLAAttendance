@@ -1,4 +1,4 @@
-import { useTheme } from "@emotion/react";
+import {useTheme} from "@emotion/react";
 import styled from "@emotion/styled";
 import {
   faArrowDown,
@@ -8,30 +8,20 @@ import {
   faArrowUp19,
   faArrowUpAZ,
 } from "@fortawesome/free-solid-svg-icons";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useState,
-} from "react";
-import { Icon } from "../Components/Icon";
-import { Search } from "../Components/Search/Search";
-import { Table } from "../Components/Table/Table";
-import { TableHeading } from "../Components/Table/TableHeading";
-import { TableRow } from "../Components/Table/TableRow";
-import { useObserveWidth } from "../hooks/useObserveWidth";
-import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
-import { Attendee, AttendeeStatus } from "./Attendee";
-import { AttendeeRow } from "./AttendeeRow";
-import { AttendeesSummary } from "./AttendeesSummary";
-import { SearchBarHeading } from "./SearchBarHeading";
-import { SortColumns, SortColumnSize, SortColumnsMap } from "./Shared";
-import {
-  createSummaryPillSelection,
-  SummaryPillId,
-  SummaryPillSelection,
-} from "./SummaryPill";
+import React, {useCallback, useEffect, useMemo, useReducer, useState,} from "react";
+import {Icon} from "../Components/Icon";
+import {Search} from "../Components/Search/Search";
+import {Table} from "../Components/Table/Table";
+import {TableHeading} from "../Components/Table/TableHeading";
+import {TableRow} from "../Components/Table/TableRow";
+import {useObserveWidth} from "../hooks/useObserveWidth";
+import {SupaBase, SupaBaseEventKey} from "../SupaBase/SupaBase";
+import {Attendee, AttendeeStatus} from "./Attendee";
+import {AttendeeRow} from "./AttendeeRow";
+import {AttendeesSummary} from "./AttendeesSummary";
+import {SearchBarHeading} from "./SearchBarHeading";
+import {SortColumns, SortColumnSize, SortColumnsMap} from "./Shared";
+import {createSummaryPillSelection, SummaryPillId, SummaryPillSelection,} from "./SummaryPill";
 
 export interface AttendeesTableProps {
   supabase: SupaBase;
@@ -66,26 +56,6 @@ function sortStatus(
         : 0;
 
   return bWeight - aWeight;
-}
-
-function sortTransport(a: Attendee, b: Attendee, sortAsc: boolean) {
-  const aTransport: boolean = a.isUsingOwnTransport;
-  const bTransport: boolean = b.isUsingOwnTransport;
-
-  if (aTransport === bTransport) {
-    // Cancel out the sortAsc
-    return Attendee.SortByField(a, b, "name") * (sortAsc ? 1 : -1);
-  }
-
-  if (aTransport == true) {
-    return -1;
-  }
-
-  if (bTransport == true) {
-    return 1;
-  }
-
-  return 0;
 }
 
 function sortBy(
@@ -162,7 +132,6 @@ function isIncludedBySummaryPills(
     attendee,
     currentRollCallEvent?.id ?? null,
   );
-  const isCar = attendee.isUsingOwnTransport;
 
   let statusMatches = false;
 
@@ -184,17 +153,7 @@ function isIncludedBySummaryPills(
     statusMatches = true;
   }
 
-  let transportMatches = false;
-
-  if (selectedPills[SummaryPillId.BUS] && !isCar) {
-    transportMatches = true;
-  }
-
-  if (selectedPills[SummaryPillId.CAR] && isCar) {
-    transportMatches = true;
-  }
-
-  return statusMatches && transportMatches;
+  return statusMatches;
 }
 
 function calculateColumnsOnResize(width: number): SortColumnsMap {
@@ -203,14 +162,6 @@ function calculateColumnsOnResize(width: number): SortColumnsMap {
     [SortColumns.SURNAME]: SortColumnSize.NORMAL,
     [SortColumns.STATUS]: SortColumnSize.COMPACTER,
   };
-
-  if (width > 340) {
-    newCols[SortColumns.TP] = SortColumnSize.COMPACTER;
-  }
-
-  if (width > 380) {
-    newCols[SortColumns.TP] = SortColumnSize.COMPACT;
-  }
 
   if (width > 430) {
     newCols[SortColumns.ON] = SortColumnSize.COMPACTER;
@@ -242,10 +193,6 @@ function calculateColumnsOnResize(width: number): SortColumnsMap {
 
   if (width > 680) {
     newCols[SortColumns.STATUS] = SortColumnSize.NORMAL;
-  }
-
-  if (width > 680) {
-    newCols[SortColumns.TP] = SortColumnSize.NORMAL;
   }
 
   return newCols;
@@ -368,9 +315,6 @@ const FilteredAttendeesTable: React.FC<FilteredAttendeesTableProps> = (
 
         case SortColumns.ON:
           return sortOn(a, b, supabase, sortAsc) * (sortAsc ? 1 : -1);
-        case SortColumns.TP:
-          return sortTransport(a, b, sortAsc) * (sortAsc ? 1 : -1);
-
         case SortColumns.STATUS:
         default:
           return sortStatus(a, b, supabase, sortAsc) * (sortAsc ? 1 : -1);
@@ -513,21 +457,6 @@ const TableHeadings: React.FC<TableHeadingsProps> = (
           onClick={handleClickCol}
         />
         <S.SpacerHeading />
-        <Heading
-          columnSize={colsToInclude[SortColumns.TP]}
-          colName={SortColumns.TP}
-          label={
-            colsToInclude[SortColumns.TP] >= SortColumnSize.NORMAL
-              ? "Travel"
-              : "TR"
-          }
-          centerLabel={true}
-          sortAsc={sortAsc}
-          sortCol={sortCol}
-          addArrowSpacer={true}
-          hideSpacersWhenNotSelected={true}
-          onClick={handleClickCol}
-        />
         <Heading
           columnSize={colsToInclude[SortColumns.STATUS]}
           colName={SortColumns.STATUS}

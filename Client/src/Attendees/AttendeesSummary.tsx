@@ -1,8 +1,6 @@
 import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 import {
-  faBusSimple,
-  faCar,
   faCheckSquare,
   faMinusSquare,
   faXmarkSquare,
@@ -47,8 +45,6 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
     let present = 0;
     let absent = 0;
     let notScanned = 0;
-    let bus = 0;
-    let car = 0;
 
     rows.forEach((att) => {
       const status = supabase.getAttendeeStatus(
@@ -62,20 +58,12 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
       } else {
         notScanned++;
       }
-
-      if (att.isUsingOwnTransport) {
-        car++;
-      } else {
-        bus++;
-      }
     });
 
     return {
       present,
       absent,
       notScanned,
-      bus,
-      car,
     };
   }, [rows, currentRollCallEvent?.id ?? 0, supabase]);
 
@@ -120,24 +108,6 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
         selected: selectedPills[SummaryPillId.NOT_SCANNED],
         onToggle: handleToggleSummaryPill,
       },
-      {
-        id: SummaryPillId.BUS,
-        label: "Bus",
-        value: summary.bus,
-        icon: faBusSimple,
-        color: theme.colors.accent.transportBus,
-        selected: selectedPills[SummaryPillId.BUS],
-        onToggle: handleToggleSummaryPill,
-      },
-      {
-        id: SummaryPillId.CAR,
-        label: "Car",
-        value: summary.car,
-        icon: faCar,
-        color: theme.colors.accent.transportCar,
-        selected: selectedPills[SummaryPillId.CAR],
-        onToggle: handleToggleSummaryPill,
-      },
     ],
     [handleToggleSummaryPill, selectedPills, summary],
   );
@@ -148,9 +118,6 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
       pill.id === SummaryPillId.ABSENT ||
       pill.id === SummaryPillId.NOT_SCANNED,
   );
-  const transportPills = pillData.filter(
-    (pill) => pill.id === SummaryPillId.BUS || pill.id === SummaryPillId.CAR,
-  );
 
   return (
     <S.SummaryBar>
@@ -158,15 +125,6 @@ export const AttendeesSummary: React.FC<AttendeesSummaryProps> = (
         <S.GroupLabel>Status</S.GroupLabel>
         <S.PillsRow>
           {statusPills.map((pill) => (
-            <SummaryPill key={pill.id} {...pill} />
-          ))}
-        </S.PillsRow>
-      </S.Group>
-
-      <S.Group>
-        <S.GroupLabel>Transport</S.GroupLabel>
-        <S.PillsRow>
-          {transportPills.map((pill) => (
             <SummaryPill key={pill.id} {...pill} />
           ))}
         </S.PillsRow>

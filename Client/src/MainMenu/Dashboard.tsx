@@ -24,6 +24,10 @@ export const Dashboard: React.FC = () => {
     nav(RoutePath.EVENTS);
   }, [nav]);
 
+  const onClickAttendees = React.useCallback(() => {
+    nav(RoutePath.ATTENDEES);
+  }, [nav]);
+
   return (
     <S.Container>
       <S.Panel>
@@ -45,7 +49,7 @@ export const Dashboard: React.FC = () => {
             <S.Badge label="Surface" />
           </S.PanelItem>
 
-          <S.PanelItem>
+          <S.PanelItem onClick={onClickAttendees} clickable={true}>
             <S.ItemTitle>Attendees</S.ItemTitle>
             <S.ItemCopy>View and manage attendee records.</S.ItemCopy>
             <S.Badge label="Surface" />

@@ -30,14 +30,17 @@ export class Attendee extends EventClass<AttendeeEvents> {
   entry: AttendeesEntry;
   hash: string;
 
-  qrCode: HTMLCanvasElement;
+  qrCode: HTMLCanvasElement | null;
   qrCodeString: string;
-  qrGenPromise: Promise<HTMLCanvasElement>;
+  qrGenPromise: Promise<HTMLCanvasElement> | null;
 
   constructor(entry: AttendeesEntry) {
     super();
     this.entry = entry;
     this.hash = this.generateHash();
+    this.qrCode = null;
+    this.qrCodeString = "";
+    this.qrGenPromise = null;
   }
 
   private generateHash(): string {
@@ -78,24 +81,34 @@ export class Attendee extends EventClass<AttendeeEvents> {
     return this.fullName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
   }
 
-  get isUsingOwnTransport(): boolean {
-    return this.entry.own_transport;
-  }
-
   get allergies(): string[] {
     return (this.entry.allergies ?? "")
       .split(",")
-      .filter((v) => v.trim() !== "");
+      .map((value) => value.trim())
+      .filter((value) => value !== "");
   }
 
   get emergencyContacts(): string[] {
     return (this.entry.emergency_contact ?? "")
       .split(",")
-      .filter((v) => v.trim() !== "");
+      .map((value) => value.trim())
+      .filter((value) => value !== "");
   }
 
   updateAttendee(entry: AttendeesEntry): void {
+    const previousHash = this.hash;
+    const nextHash = Attendee.GenerateHash(entry);
+    const shouldResetQRCode = previousHash !== nextHash;
+
     this.entry = entry;
+    this.hash = nextHash;
+
+    if (shouldResetQRCode) {
+      this.qrCode = null;
+      this.qrCodeString = "";
+      this.qrGenPromise = null;
+    }
+
     this.fireUpdate((cb) => cb.updated?.());
   }
 
@@ -129,22 +142,10 @@ export class Attendee extends EventClass<AttendeeEvents> {
         //   Math.abs(actualBoundingBoxLeft) + Math.abs(actualBoundingBoxRight)
         // );
 
-        let name = this.fullName;
-        if (this.isUsingOwnTransport == false) {
-          name += " ";
-        }
-
         ctx.fillText(
-          name,
+          this.fullName,
           QR_SIZE / 2,
           QR_SIZE * 0.08,
-          QR_SIZE - QR_SIZE * 0.3,
-        );
-
-        ctx.fillText(
-          this.isUsingOwnTransport ? "🚙 Car" : "🚌 Bus",
-          QR_SIZE / 2,
-          QR_SIZE * (1 - 0.08),
           QR_SIZE - QR_SIZE * 0.3,
         );
 
@@ -162,11 +163,11 @@ export class Attendee extends EventClass<AttendeeEvents> {
   }
 
   get QRCodeURL(): string {
-    return this.qrCodeString;
+    return this.qrCodeString ?? "";
   }
 
   get QRCode(): HTMLCanvasElement {
-    return this.qrCode;
+    return this.qrCode!;
   }
 
   static SortByField(a: Attendee, b: Attendee, field: string) {

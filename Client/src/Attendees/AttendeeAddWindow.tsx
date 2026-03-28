@@ -16,6 +16,11 @@ export interface AttendeeAddWindowProps {
   supabase: SupaBase;
 }
 
+export interface PreviewAttendeeRecord {
+  name: string;
+  surname: string;
+}
+
 const placeholder = `Smith, John 
 Doe, Jane 
 Baggins, Bilbo 
@@ -49,12 +54,12 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
     setFlip((prev) => !prev);
   }, []);
 
-  const records = useMemo<{ name: string; surname: string }[]>(() => {
+  const records = useMemo<PreviewAttendeeRecord[]>(() => {
     if (!preview || text == "") {
       return [];
     }
 
-    let outArr: { name: string; surname: string }[] = [];
+    let outArr: PreviewAttendeeRecord[] = [];
     const dataRows = text.trim().split("\n");
     dataRows.forEach((row) => {
       const [a1, a2] = row.trim().split(",");
@@ -71,8 +76,11 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
   }, [preview, flip]);
 
   const handleSaveClick = useCallback(() => {
-    supabase.createNewAttendees(records);
-    layerItem.close();
+    supabase.createNewAttendees(records).then((didCreate) => {
+      if (didCreate) {
+        layerItem.close();
+      }
+    });
   }, [records, supabase, layerItem]);
 
   return (
@@ -108,7 +116,7 @@ export const AttendeeAddWindow: React.FC<AttendeeAddWindowProps> = (
 };
 
 export interface PreviewTableProps {
-  newRecords: { name: string; surname: string }[];
+  newRecords: PreviewAttendeeRecord[];
 }
 
 export const PreviewTable: React.FC<PreviewTableProps> = (

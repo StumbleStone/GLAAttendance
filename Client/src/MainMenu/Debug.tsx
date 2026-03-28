@@ -2,8 +2,6 @@ import { useTheme } from "@emotion/react";
 import styled from "@emotion/styled";
 import {
   faAsterisk,
-  faBusSimple,
-  faCar,
   faCheckSquare,
   faMinusSquare,
   faUser,
@@ -12,7 +10,10 @@ import {
 import * as React from "react";
 import { useOutletContext } from "react-router-dom";
 import { AttendeeStatus } from "../Attendees/Attendee";
-import { SortColumnSize } from "../Attendees/Shared";
+import {
+  AttendeeRecordsItem,
+  AttendeesRecordsPanel,
+} from "../Attendees/AttendeesPage";
 import { StatusChip } from "../Attendees/StatusChip";
 import {
   createSummaryPillSelection,
@@ -20,7 +21,7 @@ import {
   SummaryPillId,
   SummaryPillSelection,
 } from "../Attendees/SummaryPill";
-import { TransportChip } from "../Attendees/TransportChip";
+import { CollapsiblePanel } from "../Components/CollapsiblePanel";
 import { Heading } from "../Components/Heading";
 import { EmailInput } from "../Components/Inputs/EmailInput";
 import { LabelDateInput } from "../Components/Inputs/label/LabelDateInput";
@@ -43,6 +44,13 @@ export interface DebugProps {
   supabase: SupaBase;
 }
 
+interface AttendeeDemoExample {
+  attendees: AttendeeRecordsItem[];
+  id: string;
+  initialQuery?: string;
+  title: string;
+}
+
 interface RollCallDemoExample {
   emptyDescription?: string;
   emptyTitle?: string;
@@ -56,6 +64,66 @@ interface RollCallDemoExample {
 function onDemoAction(): void {
   // Visual demo only.
 }
+
+const ATTENDEE_DEMO_ITEMS: AttendeeRecordsItem[] = [
+  {
+    allergies: ["Peanuts"],
+    emergencyContacts: ["073 555 0101"],
+    fullName: "Anastasia Patel",
+    id: "attendee_demo_1",
+    name: "Anastasia",
+    surname: "Patel",
+  },
+  {
+    allergies: [],
+    emergencyContacts: ["071 999 2200"],
+    fullName: "Joshua Abrahams",
+    id: "attendee_demo_2",
+    name: "Joshua",
+    surname: "Abrahams",
+  },
+  {
+    allergies: ["Shellfish", "Dairy"],
+    emergencyContacts: [],
+    fullName: "Amila Minya",
+    id: "attendee_demo_3",
+    name: "Amila",
+    surname: "Minya",
+  },
+  {
+    allergies: [],
+    emergencyContacts: ["082 111 4321", "Mom"],
+    fullName: "Andries de Jager",
+    id: "attendee_demo_4",
+    name: "Andries",
+    surname: "de Jager",
+  },
+];
+
+const ATTENDEE_DEMO_EXAMPLES: AttendeeDemoExample[] = [
+  {
+    attendees: [],
+    id: "empty_attendees",
+    title: "No Attendees Yet",
+  },
+  {
+    attendees: ATTENDEE_DEMO_ITEMS,
+    id: "populated_attendees",
+    title: "Populated Attendee Records",
+  },
+  {
+    attendees: ATTENDEE_DEMO_ITEMS,
+    id: "filtered_attendees",
+    initialQuery: "patel peanuts",
+    title: "Filtered Search Results",
+  },
+  {
+    attendees: ATTENDEE_DEMO_ITEMS,
+    id: "no_match_attendees",
+    initialQuery: "zebra",
+    title: "No Matching Attendees",
+  },
+];
 
 const ROLL_CALL_DEMO_EXAMPLES: RollCallDemoExample[] = [
   {
@@ -155,6 +223,25 @@ const ROLL_CALL_DEMO_EXAMPLES: RollCallDemoExample[] = [
   },
 ];
 
+const AttendeeDebugExample: React.FC<{ example: AttendeeDemoExample }> = ({
+  example,
+}: {
+  example: AttendeeDemoExample;
+}) => {
+  const [query, setQuery] = React.useState(example.initialQuery ?? "");
+
+  return (
+    <S.ExamplePanel>
+      <S.ExampleTitle>{example.title}</S.ExampleTitle>
+      <AttendeesRecordsPanel
+        attendees={example.attendees}
+        onQueryChange={setQuery}
+        query={query}
+      />
+    </S.ExamplePanel>
+  );
+};
+
 export const Debug: React.FC = () => {
   useOutletContext<DebugProps>();
   const theme = useTheme();
@@ -183,12 +270,13 @@ export const Debug: React.FC = () => {
         </S.PanelDescription>
       </S.Panel>
 
-      <S.Panel>
-        <SubHeading>Input Playground</SubHeading>
-        <S.PanelDescription>
-          Shared BaseInput styling across text, datetime, icon, and disabled
-          states.
-        </S.PanelDescription>
+      <CollapsiblePanel
+        defaultExpanded={false}
+        description={
+          "Shared BaseInput styling across text, datetime, icon, and disabled states."
+        }
+        heading={"Input Playground"}
+      >
         <S.InputGrid>
           <LabelTextInput
             label={"Text Input"}
@@ -229,10 +317,13 @@ export const Debug: React.FC = () => {
             onChange={() => null}
           />
         </S.InputGrid>
-      </S.Panel>
+      </CollapsiblePanel>
 
-      <S.Panel>
-        <SubHeading>Status Pills</SubHeading>
+      <CollapsiblePanel
+        defaultExpanded={false}
+        description={"Compact and regular attendee status states."}
+        heading={"Status Pills"}
+      >
         <S.Row>
           <StatusChip status={AttendeeStatus.PRESENT} />
           <StatusChip status={AttendeeStatus.ABSENT} />
@@ -243,44 +334,13 @@ export const Debug: React.FC = () => {
           <StatusChip status={AttendeeStatus.ABSENT} compact={true} />
           <StatusChip status={AttendeeStatus.NOT_SCANNED} compact={true} />
         </S.Row>
-      </S.Panel>
+      </CollapsiblePanel>
 
-      <S.Panel>
-        <SubHeading>Transport Pills</SubHeading>
-        <S.Row>
-          <TransportChip
-            usingOwnTransport={false}
-            size={SortColumnSize.NORMAL}
-          />
-          <TransportChip
-            usingOwnTransport={true}
-            size={SortColumnSize.NORMAL}
-          />
-        </S.Row>
-        <S.Row>
-          <TransportChip
-            usingOwnTransport={false}
-            size={SortColumnSize.COMPACT}
-          />
-          <TransportChip
-            usingOwnTransport={true}
-            size={SortColumnSize.COMPACT}
-          />
-        </S.Row>
-        <S.Row>
-          <TransportChip
-            usingOwnTransport={false}
-            size={SortColumnSize.COMPACTER}
-          />
-          <TransportChip
-            usingOwnTransport={true}
-            size={SortColumnSize.COMPACTER}
-          />
-        </S.Row>
-      </S.Panel>
-
-      <S.Panel>
-        <SubHeading>Summary Pills</SubHeading>
+      <CollapsiblePanel
+        defaultExpanded={false}
+        description={"Interactive summary pill states and color treatments."}
+        heading={"Summary Pills"}
+      >
         <S.Row>
           <SummaryPill
             id={SummaryPillId.PRESENT}
@@ -309,37 +369,34 @@ export const Debug: React.FC = () => {
             selected={selectedPills[SummaryPillId.NOT_SCANNED]}
             onToggle={onToggleSummaryPill}
           />
-          <SummaryPill
-            id={SummaryPillId.BUS}
-            icon={faBusSimple}
-            label={"Bus"}
-            value={7}
-            color={theme.colors.accent.transportBus}
-            selected={selectedPills[SummaryPillId.BUS]}
-            onToggle={onToggleSummaryPill}
-          />
-          <SummaryPill
-            id={SummaryPillId.CAR}
-            icon={faCar}
-            label={"Car"}
-            value={6}
-            color={theme.colors.accent.transportCar}
-            selected={selectedPills[SummaryPillId.CAR]}
-            onToggle={onToggleSummaryPill}
-          />
         </S.Row>
-      </S.Panel>
+      </CollapsiblePanel>
 
-      <S.Panel>
-        <SubHeading>Rollcall Page Examples</SubHeading>
-        <S.PanelDescription>
-          Example states for the rollcalls page using the same card components
-          as the live route.
-        </S.PanelDescription>
-        <S.RollCallExampleGrid>
+      <CollapsiblePanel
+        defaultExpanded={false}
+        description={
+          "Example attendee-management states using the same table panel as the live attendees route."
+        }
+        heading={"Attendee Page Examples"}
+      >
+        <S.ExampleGrid>
+          {ATTENDEE_DEMO_EXAMPLES.map((example) => (
+            <AttendeeDebugExample example={example} key={example.id} />
+          ))}
+        </S.ExampleGrid>
+      </CollapsiblePanel>
+
+      <CollapsiblePanel
+        defaultExpanded={false}
+        description={
+          "Example states for the rollcalls page using the same card components as the live route."
+        }
+        heading={"Rollcall Page Examples"}
+      >
+        <S.ExampleGrid>
           {ROLL_CALL_DEMO_EXAMPLES.map((example) => (
-            <S.RollCallExamplePanel key={example.id}>
-              <S.RollCallExampleTitle>{example.title}</S.RollCallExampleTitle>
+            <S.ExamplePanel key={example.id}>
+              <S.ExampleTitle>{example.title}</S.ExampleTitle>
               <RollCallCardList>
                 <RollCallStartCard
                   canStart={example.startEnabled}
@@ -367,10 +424,10 @@ export const Debug: React.FC = () => {
                   ))
                 )}
               </RollCallCardList>
-            </S.RollCallExamplePanel>
+            </S.ExamplePanel>
           ))}
-        </S.RollCallExampleGrid>
-      </S.Panel>
+        </S.ExampleGrid>
+      </CollapsiblePanel>
     </S.Container>
   );
 };
@@ -421,19 +478,19 @@ namespace S {
     gap: 4px;
   `;
 
-  export const RollCallExampleGrid = styled.div`
+  export const ExampleGrid = styled.div`
     display: flex;
     flex-direction: column;
     gap: 12px;
   `;
 
-  export const RollCallExamplePanel = styled.div`
+  export const ExamplePanel = styled.div`
     display: flex;
     flex-direction: column;
     gap: 10px;
   `;
 
-  export const RollCallExampleTitle = styled.div`
+  export const ExampleTitle = styled.div`
     font-size: 15px;
     font-weight: 700;
     color: ${(p) => p.theme.colors.text};

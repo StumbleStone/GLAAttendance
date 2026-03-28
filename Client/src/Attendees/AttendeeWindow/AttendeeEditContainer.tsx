@@ -1,13 +1,7 @@
 import styled from "@emotion/styled";
-import {
-  faBusSimple,
-  faCar,
-  faEdit,
-  faSave,
-} from "@fortawesome/free-solid-svg-icons";
+import { faSave, faXmarkCircle } from "@fortawesome/free-solid-svg-icons";
 import React, { useCallback, useMemo, useState } from "react";
 import { Button, ButtonContainer } from "../../Components/Button/Button";
-import { Icon } from "../../Components/Icon";
 import { Input } from "../../Components/Inputs/BaseInput";
 import { SupaBase } from "../../SupaBase/SupaBase";
 import { UpdateAttendees } from "../../SupaBase/types";
@@ -25,31 +19,26 @@ export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
 ) => {
   const { attendee, exitEdit, supabase } = props;
 
-  // const [name, setName] = useState(attendee.name);
-  // const [surname, setSurname] = useState(attendee.surname);
+  const [name, setName] = useState(attendee.name);
+  const [surname, setSurname] = useState(attendee.surname);
   const [allergies, setAllergies] = useState(attendee.allergies.join(", "));
   const [emergencyContacts, setEmergencyContacts] = useState(
     attendee.emergencyContacts.join(", "),
   );
-  const [usingCar, setUsingCar] = useState(attendee.isUsingOwnTransport);
 
-  const toggleTravel = useCallback(() => {
-    setUsingCar((prev) => !prev);
-  }, []);
+  const onChangeName = useCallback(
+    (ev: React.ChangeEvent<HTMLInputElement>) => {
+      setName(ev.target.value);
+    },
+    [],
+  );
 
-  // const onChangeName = useCallback(
-  //   (ev: React.ChangeEvent<HTMLInputElement>) => {
-  //     setName(ev.target.value);
-  //   },
-  //   []
-  // );
-  //
-  // const onChangeSurname = useCallback(
-  //   (ev: React.ChangeEvent<HTMLInputElement>) => {
-  //     setSurname(ev.target.value);
-  //   },
-  //   []
-  // );
+  const onChangeSurname = useCallback(
+    (ev: React.ChangeEvent<HTMLInputElement>) => {
+      setSurname(ev.target.value);
+    },
+    [],
+  );
 
   const onChangeAllergies = useCallback(
     (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,6 +54,13 @@ export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
     [],
   );
 
+  const trimmedName = useMemo(() => name.trim(), [name]);
+  const trimmedSurname = useMemo(() => surname.trim(), [surname]);
+
+  const hasValidationError = useMemo(() => {
+    return trimmedName.length === 0 || trimmedSurname.length === 0;
+  }, [trimmedName, trimmedSurname]);
+
   const hasChanges = useMemo(() => {
     const allergiesArr = allergies
       .split(",")
@@ -75,12 +71,12 @@ export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
 
-    // if (name !== attendee.name) {
-    //   return true;
-    // }
-    // if (surname !== attendee.surname) {
-    //   return true;
-    // }
+    if (trimmedName !== attendee.name) {
+      return true;
+    }
+    if (trimmedSurname !== attendee.surname) {
+      return true;
+    }
     if (allergiesArr.join(",") !== attendee.allergies.join(",")) {
       return true;
     }
@@ -89,10 +85,8 @@ export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
     ) {
       return true;
     }
-    if (!!usingCar !== attendee.isUsingOwnTransport) {
-      return true;
-    }
-  }, [attendee, /* name, surname, */ allergies, emergencyContacts, usingCar]);
+    return false;
+  }, [attendee, allergies, emergencyContacts, trimmedName, trimmedSurname]);
 
   const handleSave = useCallback(() => {
     const allergiesArr = allergies
@@ -104,13 +98,17 @@ export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
 
+    if (trimmedName.length === 0 || trimmedSurname.length === 0) {
+      return;
+    }
+
     const changedData: UpdateAttendees = {};
-    // if (name !== attendee.name) {
-    //   changedData.name = name;
-    // }
-    // if (surname !== attendee.surname) {
-    //   changedData.surname = surname;
-    // }
+    if (trimmedName !== attendee.name) {
+      changedData.name = trimmedName;
+    }
+    if (trimmedSurname !== attendee.surname) {
+      changedData.surname = trimmedSurname;
+    }
     if (allergiesArr.join(",") !== attendee.allergies.join(",")) {
       changedData.allergies = allergiesArr.join(", ");
     }
@@ -119,47 +117,48 @@ export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
     ) {
       changedData.emergency_contact = emergencyContactsArr.join(", ");
     }
-    if (!!usingCar !== attendee.isUsingOwnTransport) {
-      changedData.own_transport = !!usingCar;
-    }
 
     if (Object.keys(changedData).length === 0) {
       exitEdit();
       return;
     }
 
-    supabase.updateAttendee(attendee, changedData).then(() => {
-      exitEdit();
+    supabase.updateAttendee(attendee, changedData).then((didSave) => {
+      if (didSave) {
+        exitEdit();
+      }
     });
   }, [
     attendee,
-    // name,
-    // surname,
     allergies,
     emergencyContacts,
-    usingCar,
+    trimmedName,
+    trimmedSurname,
     supabase,
+    exitEdit,
   ]);
 
   return (
     <>
       <S.EditContainer>
-        {/*<S.LabelInputCombo>*/}
-        {/*  <S.Label>Name</S.Label>*/}
-        {/*  <S.EditInput*/}
-        {/*    onChange={onChangeName}*/}
-        {/*    value={name}*/}
-        {/*    placeholder={"Enter Name"}*/}
-        {/*  />*/}
-        {/*</S.LabelInputCombo>*/}
-        {/*<S.LabelInputCombo>*/}
-        {/*  <S.Label>Surname</S.Label>*/}
-        {/*  <S.EditInput*/}
-        {/*    onChange={onChangeSurname}*/}
-        {/*    value={surname}*/}
-        {/*    placeholder={"Enter Surname"}*/}
-        {/*  />*/}
-        {/*</S.LabelInputCombo>*/}
+        <S.LabelInputCombo>
+          <S.Label>Name</S.Label>
+          <S.EditInput
+            hasError={trimmedName.length === 0}
+            onChange={onChangeName}
+            value={name}
+            placeholder={"Enter Name"}
+          />
+        </S.LabelInputCombo>
+        <S.LabelInputCombo>
+          <S.Label>Surname</S.Label>
+          <S.EditInput
+            hasError={trimmedSurname.length === 0}
+            onChange={onChangeSurname}
+            value={surname}
+            placeholder={"Enter Surname"}
+          />
+        </S.LabelInputCombo>
         <S.LabelInputCombo>
           <S.Label>Allergies</S.Label>
           <S.EditInput
@@ -178,37 +177,15 @@ export const AttendeeEditContainer: React.FC<AttendeeEditContainerProps> = (
             />
           </S.SideBySide>
         </S.LabelInputCombo>
-        <S.SideBySide onClick={toggleTravel}>
-          <S.Label>Travel</S.Label>
-          <S.SideBySide>
-            <Icon
-              icon={faCar}
-              size={24}
-              color={
-                usingCar ? DefaultColors.BrightPurple : DefaultColors.BrightGrey
-              }
-            />
-            <span>{"/"}</span>
-            <Icon
-              icon={faBusSimple}
-              size={24}
-              color={
-                !usingCar
-                  ? DefaultColors.BrightOrange
-                  : DefaultColors.BrightGrey
-              }
-            />
-          </S.SideBySide>
-        </S.SideBySide>
       </S.EditContainer>
       <ButtonContainer>
         <Button
           onClick={exitEdit}
-          icon={faEdit}
+          icon={faXmarkCircle}
           color={DefaultColors.BrightRed}
         />
         <Button
-          disabled={!hasChanges}
+          disabled={!hasChanges || hasValidationError}
           onClick={handleSave}
           icon={faSave}
           color={DefaultColors.BrightGreen}

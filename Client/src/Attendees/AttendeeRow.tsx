@@ -8,7 +8,6 @@ import { epochToDate } from "../Tools/Toolbox";
 import { Attendee, AttendeeStatus } from "./Attendee";
 import { SortColumns, SortColumnSize, SortColumnsMap } from "./Shared";
 import { StatusChip } from "./StatusChip";
-import { TransportChip } from "./TransportChip";
 
 export interface AttendeeRowProps {
   att: Attendee;
@@ -88,14 +87,6 @@ const AttendeeRowComponent: React.FC<AttendeeRowProps> = (
         <S.SurnameCell>{att.surname}</S.SurnameCell>
       )}
       <S.SpacerCell />
-      {columnSizes[SortColumns.TP] && (
-        <S.TransportCell>
-          <TransportChip
-            usingOwnTransport={att.isUsingOwnTransport}
-            size={columnSizes[SortColumns.TP]}
-          />
-        </S.TransportCell>
-      )}
       {columnSizes[SortColumns.STATUS] && (
         <S.StatusCell>
           <StatusChip
@@ -156,11 +147,6 @@ namespace S {
   export const StatusCell = styled(RCCell)`
     width: 1%;
   `;
-
-  export const TransportCell = styled(RCCell)`
-    width: 1%;
-  `;
-
   export const IndexCell = styled(RCCell)`
     width: 1%;
     max-width: 1%;

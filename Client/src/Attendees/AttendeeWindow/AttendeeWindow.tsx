@@ -137,8 +137,10 @@ export const AttendeeWindow: React.FC<AtendeeWindowProps> = (
         {
           label: "Yes",
           onClick: () => {
-            supabase.deleteAttendee(attendee).then(() => {
-              layerItem.close();
+            supabase.deleteAttendee(attendee).then((didDelete) => {
+              if (didDelete) {
+                layerItem.close();
+              }
             });
           },
           color: DefaultColors.BrightGreen,

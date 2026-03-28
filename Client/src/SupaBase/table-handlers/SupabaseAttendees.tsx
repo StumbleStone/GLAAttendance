@@ -4,6 +4,7 @@ import { AttendeesEntry, Tables } from "../types";
 import {
   BaseTableHandler,
   BaseTableHandlerEvent,
+  BaseTableHandlerEventKey,
   BaseTableHandlerOptions,
   RealtimeChangeEventType,
 } from "./BaseTableHandler";
@@ -73,22 +74,47 @@ export class SupabaseAttendees extends BaseTableHandler<
   }
 
   async updateAttendeeEventReceivedFromRemote(entry: AttendeesEntry) {
-    const hash = Attendee.GenerateHash(entry);
-    const record = this.attendees.get(hash);
+    const record = this.getById(entry.id);
     if (!record) {
-      console.error(`Attendee does not exist: ${entry.name} ${entry.surname}`);
+      if (entry.deleted) {
+        return;
+      }
+
+      await this.addAttendeeEventReceivedFromRemote(entry);
       return;
     }
 
+    const previousHash = record.hash;
     console.log(`Attendee updated: ${entry.name} ${entry.surname}`);
+
+    if (entry.deleted) {
+      record.updateAttendee(entry);
+      this.attendees.delete(previousHash);
+      this.fireUpdate((cb) =>
+        cb[SupabaseAttendeesEventKey.ATTENDEE_DELETED]?.(),
+      );
+      this.fireUpdate((cb) => cb[BaseTableHandlerEventKey.DATA_CHANGED]?.());
+      return;
+    }
+
     record.updateAttendee(entry);
+
+    if (previousHash !== record.hash) {
+      this.attendees.delete(previousHash);
+      this.attendees.set(record.hash, record);
+    }
+
+    this.fireUpdate((cb) => cb[BaseTableHandlerEventKey.DATA_CHANGED]?.());
   }
 
   async addAttendeeEventReceivedFromRemote(entry: AttendeesEntry) {
+    if (entry.deleted) {
+      return;
+    }
+
     const hash = Attendee.GenerateHash(entry);
     const record = this.attendees.has(hash);
     if (record) {
-      console.error(`Attendee already exists: ${entry.name} ${entry.surname}`);
       return;
     }
 
@@ -98,6 +124,7 @@ export class SupabaseAttendees extends BaseTableHandler<
 
     this.attendees.set(attendee.hash, attendee);
     this.fireUpdate((cb) => cb[SupabaseAttendeesEventKey.ATTENDEE_ADDED]?.());
+    this.fireUpdate((cb) => cb[BaseTableHandlerEventKey.DATA_CHANGED]?.());
   }
 
   async removeAttendeeEventReceivedFromRemote(id: number) {
@@ -122,6 +149,7 @@ export class SupabaseAttendees extends BaseTableHandler<
     this.attendees.delete(hash);
 
     this.fireUpdate((cb) => cb[SupabaseAttendeesEventKey.ATTENDEE_DELETED]?.());
+    this.fireUpdate((cb) => cb[BaseTableHandlerEventKey.DATA_CHANGED]?.());
   }
 
   // Retrieve the Attendee record by using the generated Hash reference key

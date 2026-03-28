@@ -2,6 +2,7 @@ import React from "react";
 import { matchPath } from "react-router-dom";
 import { EventDetails } from "../AttendanceEvents/EventDetails";
 import { Events } from "../AttendanceEvents/Events";
+import { AttendeesPage } from "../Attendees/AttendeesPage";
 import { LoadingSpinner } from "../Components/LoadingSpinner";
 import { Login } from "../Components/Login/Login";
 import { Onboard } from "../Onboard/Onboard";
@@ -18,6 +19,7 @@ export enum RoutePath {
   LOGIN = "/login",
   ONBOARDING = "/onboard",
   DASHBOARD = "/dashboard",
+  ATTENDEES = "/attendees",
   ROLLCALLS = "/rollcalls",
   ROLLCALL = "/rollcalls/:rollcallid",
   EVENTS = "/events",
@@ -70,6 +72,14 @@ export const EventsRouteItem: RouteItem = new RouteItem({
   prerequisite: OnboardingRouteItem,
 });
 
+export const AttendeesRouteItem: RouteItem = new RouteItem({
+  path: RoutePath.ATTENDEES,
+  render: () => <AttendeesPage />,
+  check: () => true,
+  isEndpoint: true,
+  prerequisite: OnboardingRouteItem,
+});
+
 export const RollCallsRouteItem: RouteItem = new RouteItem({
   path: RoutePath.ROLLCALLS,
   render: () => <RollCalls />,
@@ -109,6 +119,7 @@ export const ROUTES: RouteItem[] = [
   LoadingProfileRouteItem,
   OnboardingRouteItem,
   DashboardRouteItem,
+  AttendeesRouteItem,
   RollCallsRouteItem,
   RollCallRouteItem,
   EventsRouteItem,

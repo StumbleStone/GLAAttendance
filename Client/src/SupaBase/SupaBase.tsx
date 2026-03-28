@@ -9,26 +9,20 @@ import {
   User,
 } from "@supabase/supabase-js";
 import React from "react";
-import { Attendee, AttendeeStatus } from "../Attendees/Attendee";
-import { LayerHandler } from "../Components/Layer";
-import { EventParticipant } from "../RollCall/EventParticipant";
-import { RollCallConfirm } from "../RollCall/RollCallConfirm";
-import { EventClass, EventClassEvents } from "../Tools/EventClass";
-import { RealtimeChannelMonitor } from "./RealtimeChannelMonitor";
-import { Database } from "./supabase-types";
-import {
-  BaseTableHandlerEventKey,
-  RealtimeChangeEventType,
-} from "./table-handlers/BaseTableHandler";
-import {
-  SupabaseAttendees,
-  SupabaseAttendeesEventKey,
-} from "./table-handlers/SupabaseAttendees";
-import { SupabaseEventParticipants } from "./table-handlers/SupabaseEventParticipants";
-import { SupabaseEventProctors } from "./table-handlers/SupabaseEventProctors";
-import { SupabaseEvents } from "./table-handlers/SupabaseEvents";
-import { SupabaseRollCallEvents } from "./table-handlers/SupabaseRollCallEvents";
-import { SupabaseRollCalls } from "./table-handlers/SupabaseRollCalls";
+import {Attendee, AttendeeStatus} from "../Attendees/Attendee";
+import {LayerHandler} from "../Components/Layer";
+import {EventParticipant} from "../RollCall/EventParticipant";
+import {RollCallConfirm} from "../RollCall/RollCallConfirm";
+import {EventClass, EventClassEvents} from "../Tools/EventClass";
+import {RealtimeChannelMonitor} from "./RealtimeChannelMonitor";
+import {Database} from "./supabase-types";
+import {BaseTableHandlerEventKey, RealtimeChangeEventType,} from "./table-handlers/BaseTableHandler";
+import {SupabaseAttendees,} from "./table-handlers/SupabaseAttendees";
+import {SupabaseEventParticipants} from "./table-handlers/SupabaseEventParticipants";
+import {SupabaseEventProctors} from "./table-handlers/SupabaseEventProctors";
+import {SupabaseEvents} from "./table-handlers/SupabaseEvents";
+import {SupabaseRollCallEvents} from "./table-handlers/SupabaseRollCallEvents";
+import {SupabaseRollCalls} from "./table-handlers/SupabaseRollCalls";
 import {
   AttendeesEntry,
   EventParticipantsEntry,
@@ -187,10 +181,7 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
       [BaseTableHandlerEventKey.DATA_LOADED]: () => {
         this.fireUpdate((cb) => cb[SupaBaseEventKey.ATTENDEES_CHANGED]?.());
       },
-      [SupabaseAttendeesEventKey.ATTENDEE_ADDED]: () => {
-        this.fireUpdate((cb) => cb[SupaBaseEventKey.ATTENDEES_CHANGED]?.());
-      },
-      [SupabaseAttendeesEventKey.ATTENDEE_DELETED]: () => {
+      [BaseTableHandlerEventKey.DATA_CHANGED]: () => {
         this.fireUpdate((cb) => cb[SupaBaseEventKey.ATTENDEES_CHANGED]?.());
       },
     });
@@ -740,7 +731,17 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     if (error) {
       console.error(error);
+      return false;
     }
+
+    const updatedEntry = data?.[0] as AttendeesEntry | undefined;
+    if (!!updatedEntry) {
+      await this.attendeesHandler.updateAttendeeEventReceivedFromRemote(
+        updatedEntry,
+      );
+    }
+
+    return true;
   }
 
   async deleteAttendee(attendee: Attendee) {
@@ -758,10 +759,17 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     if (error) {
       console.error(error);
-      return;
+      return false;
     }
 
-    attendee.updateAttendee(data[0] as AttendeesEntry);
+    const deletedEntry = data?.[0] as AttendeesEntry | undefined;
+    if (!!deletedEntry) {
+      await this.attendeesHandler.updateAttendeeEventReceivedFromRemote(
+        deletedEntry,
+      );
+    }
+
+    return true;
   }
 
   async createNewAttendanceEvent(
@@ -795,9 +803,11 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
     return true;
   }
 
-  async createNewAttendees(
-    newEntries: Pick<AttendeesEntry, "name" | "surname">[],
-  ) {
+  async createAttendee(newEntry: InsertAttendees): Promise<boolean> {
+    return this.createNewAttendees([newEntry]);
+  }
+
+  async createNewAttendees(newEntries: InsertAttendees[]): Promise<boolean> {
     const { error, data } = await this.client
       .from(Tables.ATTENDEES)
       .insert<InsertAttendees>(newEntries)
@@ -805,7 +815,16 @@ export class SupaBase extends EventClass<SupaBaseEvent> {
 
     if (error) {
       console.error(`createNewAttendees`, error);
+      return false;
     }
+
+    for (const entry of data || []) {
+      await this.attendeesHandler.addAttendeeEventReceivedFromRemote(
+        entry as AttendeesEntry,
+      );
+    }
+
+    return true;
   }
 
   async createRollCall(

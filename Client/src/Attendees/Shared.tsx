@@ -4,7 +4,6 @@ export enum SortColumns {
   STATUS = "status",
   BY = "by",
   ON = "on",
-  TP = "tp",
 
   // Always included, cannot be sorted on since it's already sorted...
   INDEX = "index",

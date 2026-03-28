@@ -123,6 +123,13 @@ function getBreadcrumbItems(
   switch (pathname) {
     case RoutePath.DASHBOARD:
       return [createDashboardBreadcrumb()];
+    case RoutePath.ATTENDEES:
+      return withDashboardBase([
+        {
+          label: "Attendees",
+          path: RoutePath.ATTENDEES,
+        },
+      ]);
     case RoutePath.ROLLCALLS:
       return withDashboardBase([
         {

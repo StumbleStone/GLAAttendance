@@ -8,7 +8,6 @@ import { Username } from "../../SupaBase/Username";
 import { DefaultColors, epochToDate } from "../../Tools/Toolbox";
 import { Attendee, AttendeeStatus } from "../Attendee";
 import { StatusChip } from "../StatusChip";
-import { TransportChip } from "../TransportChip";
 
 export interface AttendeeWindowStatusContainerProps {
   attendee: Attendee;
@@ -94,18 +93,6 @@ export const AttendeeWindowStatusContainer: React.FC<
                   <PhoneNumber number={c} key={c} />
                 </Fragment>
               ))}
-            </S.StyledCell>
-          </tr>
-          <tr>
-            <td>{"Travel:"}</td>
-            <S.StyledCell
-              color={
-                attendee.isUsingOwnTransport
-                  ? DefaultColors.BrightPurple
-                  : DefaultColors.BrightOrange
-              }
-            >
-              <TransportChip usingOwnTransport={attendee.isUsingOwnTransport} />
             </S.StyledCell>
           </tr>
         </tbody>
