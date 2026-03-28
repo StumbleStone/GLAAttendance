@@ -2,12 +2,17 @@ import styled from "@emotion/styled";
 import {
   faCheckSquare,
   faClock,
+  faLock,
   faMinusSquare,
   faQrcode,
   faXmarkSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import * as React from "react";
 import { useOutletContext, useParams } from "react-router-dom";
+import {
+  EventInfoChip,
+  EventInformationPanel,
+} from "../AttendanceEvents/EventInformationPanel";
 import { AttendeeStatus } from "../Attendees/Attendee";
 import { ShowAttendeeWindow } from "../Attendees/AttendeeWindow/AttendeeWindow";
 import { CaptureWindow } from "../Capture/CaptureWindow";
@@ -41,6 +46,8 @@ import { ShowRollCallStopPopup } from "./RollCallWindow";
 export interface RollCallDetailsProps {
   supabase: SupaBase;
 }
+
+const EVENT_STATUS_REFRESH_MS = 30 * 1000;
 
 enum RollCallParticipantState {
   PRESENT = "present",
@@ -148,6 +155,9 @@ export const RollCallDetails: React.FC = () => {
   const { supabase } = useOutletContext<RollCallDetailsProps>();
   const params = useParams();
   const [revision, forceUpdate] = React.useReducer((x) => x + 1, 0);
+  const [currentTime, setCurrentTime] = React.useState<number>(() =>
+    Date.now(),
+  );
   const [scannerOpen, setScannerOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -177,6 +187,16 @@ export const RollCallDetails: React.FC = () => {
 
     return listener;
   }, [supabase]);
+
+  React.useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(Date.now());
+    }, EVENT_STATUS_REFRESH_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const rollCallEventId = React.useMemo<number | null>(() => {
     const parsedRollCallEventId = Number(params.rollcallid);
@@ -329,7 +349,6 @@ export const RollCallDetails: React.FC = () => {
             <RollCallSessionCard
               absentCount={absentCount}
               activityState={activityState}
-              onEndRollCall={isActive ? handleCloseRollCall : undefined}
               participantCount={participantCount}
               presentCount={presentCount}
               sessionLabel={sessionLabel}
@@ -346,16 +365,60 @@ export const RollCallDetails: React.FC = () => {
                 >
                   {"Open QR Scanner"}
                 </S.ScanButton>
+                <S.CloseButton
+                  color={DefaultColors.BrightOrange}
+                  icon={faLock}
+                  onClick={handleCloseRollCall}
+                >
+                  {"Close"}
+                </S.CloseButton>
               </S.ActionRow>
             )}
 
+            <EventInformationPanel
+              currentTime={currentTime}
+              description={
+                "Expanded context for the parent event for this rollcall session."
+              }
+              event={eventRecord}
+              extraChips={
+                <EventInfoChip
+                  label={`${participantCount} Participant${
+                    participantCount === 1 ? "" : "s"
+                  }`}
+                  title={`${participantCount} participants tracked in this rollcall`}
+                />
+              }
+              heading={"Event Information"}
+              supabase={supabase}
+            />
+
             <S.DetailPanel>
-              <S.SectionTitle>{"Session Details"}</S.SectionTitle>
+              <S.SectionTitle>{"Rollcall Session"}</S.SectionTitle>
+              <S.SectionDescription>
+                {
+                  "Session-specific metadata and participant counts for this rollcall."
+                }
+              </S.SectionDescription>
+              <S.InformationBadgeRow>
+                <EventInfoChip
+                  label={sessionLabel}
+                  title={`Session ${sessionLabel}`}
+                />
+                <EventInfoChip
+                  label={`${presentCount} Present`}
+                  title={`${presentCount} present`}
+                />
+                <EventInfoChip
+                  label={`${absentCount} Absent`}
+                  title={`${absentCount} absent`}
+                />
+                <EventInfoChip
+                  label={`${unscannedCount} Unscanned`}
+                  title={`${unscannedCount} unscanned`}
+                />
+              </S.InformationBadgeRow>
               <S.DetailGrid>
-                <S.DetailItem>
-                  <S.DetailLabel>{"Event"}</S.DetailLabel>
-                  <S.DetailValue>{title}</S.DetailValue>
-                </S.DetailItem>
                 <S.DetailItem>
                   <S.DetailLabel>{"Started"}</S.DetailLabel>
                   <S.DetailValue>
@@ -518,10 +581,16 @@ namespace S {
 
   export const ActionRow = styled.div`
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-start;
+    gap: 10px;
   `;
 
   export const ScanButton = styled(Button)`
+    justify-content: center;
+  `;
+
+  export const CloseButton = styled(Button)`
     justify-content: center;
   `;
 
@@ -551,6 +620,12 @@ namespace S {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 12px;
+  `;
+
+  export const InformationBadgeRow = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   `;
 
   export const DetailItem = styled.div`

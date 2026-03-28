@@ -17,20 +17,20 @@ import { SubHeading } from "../Components/SubHeading";
 import { Tile } from "../Components/Tile";
 import { SupaBase, SupaBaseEventKey } from "../SupaBase/SupaBase";
 import { EventsEntry } from "../SupaBase/types";
-import { epochToDate, Toolbox } from "../Tools/Toolbox";
+import { Toolbox } from "../Tools/Toolbox";
+import {
+  EventStatusChip,
+  formatEventDateTime,
+  getEventDurationLabel,
+  getEventStatus,
+  parseEventTime,
+} from "./EventInformationPanel";
 
 export interface EventsProps {
   supabase: SupaBase;
 }
 
 const EVENT_STATUS_REFRESH_MS = 30 * 1000;
-
-enum EventTimingStatus {
-  ACTIVE = "active",
-  UPCOMING = "upcoming",
-  CONCLUDED = "concluded",
-  UNSCHEDULED = "unscheduled",
-}
 
 enum ActionHintTone {
   DEFAULT = "default",
@@ -139,79 +139,12 @@ export const Events: React.FC = () => {
   );
 };
 
-function formatEventDateTime(time: string | null): string {
-  const epoch = parseTime(time);
-  if (epoch === null) {
-    return "--";
-  }
-
-  return epochToDate(epoch, {
-    includeTime: true,
-  });
-}
-
 function getAssignmentCountLabel(
   count: number,
   singularLabel: string,
   pluralLabel: string,
 ): string {
   return `${count} ${count === 1 ? singularLabel : pluralLabel}`;
-}
-
-function getEventDurationLabel(event: EventsEntry): string | null {
-  return Toolbox.formatDurationBetween(
-    parseTime(event.start_time),
-    parseTime(event.end_time),
-  );
-}
-
-interface EventStatusSummary {
-  label: string;
-  status: EventTimingStatus;
-  title: string;
-}
-
-function getEventStatus(
-  event: EventsEntry,
-  currentTime: number,
-): EventStatusSummary {
-  const startEpoch = parseTime(event.start_time);
-  const endEpoch = parseTime(event.end_time);
-
-  if (
-    startEpoch === null ||
-    endEpoch === null ||
-    isNaN(currentTime) ||
-    endEpoch < startEpoch
-  ) {
-    return {
-      status: EventTimingStatus.UNSCHEDULED,
-      label: "Schedule TBD",
-      title: "Event start or end time is unavailable.",
-    };
-  }
-
-  if (currentTime < startEpoch) {
-    return {
-      status: EventTimingStatus.UPCOMING,
-      label: "Not Started",
-      title: "Event starts in the future.",
-    };
-  }
-
-  if (currentTime > endEpoch) {
-    return {
-      status: EventTimingStatus.CONCLUDED,
-      label: "Concluded",
-      title: "Event has ended.",
-    };
-  }
-
-  return {
-    status: EventTimingStatus.ACTIVE,
-    label: "Active",
-    title: "Event is currently active.",
-  };
 }
 
 export interface AttendanceEventCardProps {
@@ -238,7 +171,7 @@ export const AttendanceEventCard: React.FC<AttendanceEventCardProps> = (
     [event],
   );
 
-  const eventStatus = React.useMemo<EventStatusSummary>(
+  const eventStatus = React.useMemo(
     () => getEventStatus(event, currentTime),
     [currentTime, event.end_time, event.start_time],
   );
@@ -274,7 +207,7 @@ export const AttendanceEventCard: React.FC<AttendanceEventCardProps> = (
           </S.EventScheduleRow>
         </S.EventCardPrimary>
         <S.EventCardHeaderMeta>
-          <S.EventStatusPill
+          <EventStatusChip
             eventStatus={eventStatus.status}
             label={eventStatus.label}
             title={eventStatus.title}
@@ -341,19 +274,6 @@ function validateTime(time: string): boolean {
   return true;
 }
 
-function parseTime(time: string | null): number | null {
-  if (!validateTime(time)) {
-    return null;
-  }
-
-  const parsedTime = Date.parse(time);
-  if (isNaN(parsedTime)) {
-    return null;
-  }
-
-  return parsedTime;
-}
-
 function getNameValidationError(name: string): string | null {
   const trimmedName = name?.trim();
   if (!trimmedName) {
@@ -391,12 +311,12 @@ function getEndTimeValidationError(
     return "End time is invalid.";
   }
 
-  const parsedEndTime = parseTime(endTime);
+  const parsedEndTime = parseEventTime(endTime);
   if (parsedEndTime === null) {
     return "End time is invalid.";
   }
 
-  const parsedStartTime = parseTime(startTime);
+  const parsedStartTime = parseEventTime(startTime);
   if (startTime && parsedStartTime === null) {
     return null;
   }
@@ -497,11 +417,11 @@ export const EventCreationPanel: React.FC<EventCreationPanelProps> = (
   }, [startTime, endTime]);
 
   const parsedStartTime = React.useMemo<number | null>(() => {
-    return parseTime(startTime);
+    return parseEventTime(startTime);
   }, [startTime]);
 
   const parsedEndTime = React.useMemo<number | null>(() => {
-    return parseTime(endTime);
+    return parseEventTime(endTime);
   }, [endTime]);
 
   const durationLabel = React.useMemo<string | null>(() => {
@@ -849,38 +769,6 @@ namespace S {
       margin-left: 0;
       gap: 8px;
     }
-  `;
-
-  export const EventStatusPill = styled(Chip)<{
-    eventStatus: EventTimingStatus;
-  }>`
-    color: ${(p) =>
-      p.eventStatus === EventTimingStatus.ACTIVE
-        ? p.theme.colors.accent.success
-        : p.eventStatus === EventTimingStatus.UPCOMING
-          ? p.theme.colors.accent.primary
-          : p.eventStatus === EventTimingStatus.CONCLUDED
-            ? p.theme.colors.textMuted
-            : p.theme.colors.accent.warning};
-    border-color: ${(p) =>
-      p.eventStatus === EventTimingStatus.ACTIVE
-        ? `${p.theme.colors.accent.success}66`
-        : p.eventStatus === EventTimingStatus.UPCOMING
-          ? `${p.theme.colors.accent.primary}66`
-          : p.eventStatus === EventTimingStatus.CONCLUDED
-            ? `${p.theme.colors.textMuted}66`
-            : `${p.theme.colors.accent.warning}66`};
-    background-color: ${(p) =>
-      p.eventStatus === EventTimingStatus.ACTIVE
-        ? `${p.theme.colors.accent.success}1a`
-        : p.eventStatus === EventTimingStatus.UPCOMING
-          ? `${p.theme.colors.accent.primary}1a`
-          : p.eventStatus === EventTimingStatus.CONCLUDED
-            ? `${p.theme.colors.textMuted}14`
-            : `${p.theme.colors.accent.warning}1a`};
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
   `;
 
   export const EventScheduleRow = styled.div`
